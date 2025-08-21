@@ -1,0 +1,94 @@
+import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
+
+class ArtikelAllSkeleton extends StatelessWidget {
+  final int itemCount;
+
+  const ArtikelAllSkeleton({super.key, this.itemCount = 6});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: itemCount,
+      itemBuilder: (context, index) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Thumbnail shimmer
+              Shimmer.fromColors(
+                baseColor: Colors.grey[850]!,
+                highlightColor: Colors.grey[700]!,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[850],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Info shimmer
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Judul shimmer
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey[850]!,
+                      highlightColor: Colors.grey[700]!,
+                      child: Container(
+                        width: double.infinity,
+                        height: 16,
+                        color: Colors.grey[850],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    // Tags shimmer
+                    Row(
+                      children: [
+                        Shimmer.fromColors(
+                          baseColor: Colors.grey[850]!,
+                          highlightColor: Colors.grey[700]!,
+                          child: Container(
+                            width: 60,
+                            height: 12,
+                            color: Colors.grey[850],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Shimmer.fromColors(
+                          baseColor: Colors.grey[850]!,
+                          highlightColor: Colors.grey[700]!,
+                          child: Container(
+                            width: 40,
+                            height: 12,
+                            color: Colors.grey[850],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Date shimmer
+                    Shimmer.fromColors(
+                      baseColor: Colors.grey[850]!,
+                      highlightColor: Colors.grey[700]!,
+                      child: Container(
+                        width: 80,
+                        height: 12,
+                        color: Colors.grey[850],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
