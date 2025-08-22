@@ -42,18 +42,18 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
                 right: 16,
                 top: 16,
               ),
-              itemCount: dummyArtikel.length,
+              // itemCount: dummyArtikel.length,
               itemBuilder: (context, index) {
-                final Artikel artikel = dummyArtikel[index];
+                // final Artikel artikel = dummyArtikel[index];
                 return GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ArtikelDetailScreen(artikel: artikel),
-                      ),
-                    );
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) =>
+                    //         ArtikelDetailScreen(artikel: artikel),
+                    //   ),
+                    // );
                   },
                   child: Column(
                     children: [
@@ -65,44 +65,44 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Optimasi: cacheWidth biar gambar gak decode full-res
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                artikel.imageUrl,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                                cacheWidth: 200,
-                              ),
-                            ),
+                            // ClipRRect(
+                            //   borderRadius: BorderRadius.circular(8),
+                            //   child: Image.asset(
+                            //     artikel.imageUrl,
+                            //     width: 80,
+                            //     height: 80,
+                            //     fit: BoxFit.cover,
+                            //     cacheWidth: 200,
+                            //   ),
+                            // ),
                             const SizedBox(width: 12),
                             // Info artikel
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    artikel.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
+                            // Expanded(
+                            //   child: Column(
+                            //     crossAxisAlignment: CrossAxisAlignment.start,
+                            //     children: [
+                            //       Text(
+                            //         artikel.title,
+                            //         maxLines: 2,
+                            //         overflow: TextOverflow.ellipsis,
+                            //         style: const TextStyle(
+                            //           fontSize: 16,
+                            //           fontWeight: FontWeight.bold,
+                            //         ),
+                            //       ),
+                            //       const SizedBox(height: 6),
 
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    artikel.date,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            //       const SizedBox(height: 4),
+                            //       Text(
+                            //         artikel.date,
+                            //         style: const TextStyle(
+                            //           fontSize: 12,
+                            //           color: Colors.grey,
+                            //         ),
+                            //       ),
+                            //     ],
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),

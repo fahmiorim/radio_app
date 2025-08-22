@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/section_title.dart';
-import '../../../data/dummy_event.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
 import '../../../config/app_routes.dart';
+import '../../../models/event_model.dart';
+import '../../../services/event_service.dart';
 
 class EventList extends StatefulWidget {
   const EventList({super.key});
@@ -14,6 +15,7 @@ class EventList extends StatefulWidget {
 class _EventListState extends State<EventList>
     with AutomaticKeepAliveClientMixin {
   bool isLoading = true;
+  List<Event> eventList = [];
 
   @override
   bool get wantKeepAlive => true; // biar state tetap hidup (gak rebuild)
@@ -21,19 +23,31 @@ class _EventListState extends State<EventList>
   @override
   void initState() {
     super.initState();
-    // tampilkan skeleton 2 detik
-    Future.delayed(const Duration(seconds: 2), () {
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      final data = await EventService().fetchEvents();
       if (mounted) {
         setState(() {
+          eventList = data;
           isLoading = false;
         });
       }
-    });
+    } catch (e) {
+      debugPrint("Gagal ambil data event: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false; // biar skeleton hilang walau error
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
+    super.build(context); // wajib kalau pakai AutomaticKeepAliveClientMixin
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -47,10 +61,10 @@ class _EventListState extends State<EventList>
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(), // smooth scroll
                   shrinkWrap: true,
-                  itemCount: dummyEvent.length,
+                  itemCount: eventList.length,
                   padding: const EdgeInsets.only(left: 16),
                   itemBuilder: (context, index) {
-                    final event = dummyEvent[index];
+                    final event = eventList[index];
                     return GestureDetector(
                       onTap: () {
                         Navigator.pushNamed(
@@ -67,14 +81,13 @@ class _EventListState extends State<EventList>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(5),
-                              child: Image.asset(
-                                event.gambar,
+                              child: Image.network(
+                                event.gambarUrl,
                                 height: 220,
                                 width: 200,
                                 fit: BoxFit.cover,
-                                // optimasi rendering biar ringan
-                                cacheWidth: 400,
-                                cacheHeight: 440,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.broken_image, size: 100),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -88,7 +101,7 @@ class _EventListState extends State<EventList>
                               ),
                             ),
                             Text(
-                              event.tanggal,
+                              event.formattedTanggal,
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey,

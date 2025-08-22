@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/section_title.dart';
-import '../../../data/dummy_program.dart';
 import '../../../widgets/skeleton/program_skeleton.dart';
 import '../../../config/app_routes.dart';
+import '../../../models/program_model.dart';
+import '../../../services/program_service.dart';
 
 class ProgramList extends StatefulWidget {
   const ProgramList({super.key});
@@ -13,20 +14,33 @@ class ProgramList extends StatefulWidget {
 
 class _ProgramListState extends State<ProgramList>
     with AutomaticKeepAliveClientMixin {
-  // ✅ ditambahin
-
   bool isLoading = true;
+  List<Program> programList = [];
+  final programService = ProgramService();
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final data = await programService.fetchProgram();
+      if (mounted) {
+        setState(() {
+          programList = data;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal ambil data program: $e");
       if (mounted) {
         setState(() {
           isLoading = false;
         });
       }
-    });
+    }
   }
 
   @override
@@ -45,10 +59,11 @@ class _ProgramListState extends State<ProgramList>
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   shrinkWrap: true,
-                  itemCount: dummyProgram.length,
+                  itemCount: programList.length,
                   padding: const EdgeInsets.only(left: 16),
                   itemBuilder: (context, index) {
-                    final program = dummyProgram[index];
+                    final program = programList[index];
+
                     return GestureDetector(
                       onTap: () {
                         Navigator.pushNamed(
@@ -65,11 +80,18 @@ class _ProgramListState extends State<ProgramList>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(5),
-                              child: Image.asset(
-                                program.fotoAsset,
+                              child: Image.network(
+                                program.gambarUrl,
                                 height: 225,
                                 width: 160,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      height: 225,
+                                      width: 160,
+                                      color: Colors.grey[300],
+                                      child: const Icon(Icons.image, size: 50),
+                                    ),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -83,7 +105,7 @@ class _ProgramListState extends State<ProgramList>
                               ),
                             ),
                             Text(
-                              program.namaPenyiar,
+                              program.penyiarName ?? "-",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -91,13 +113,14 @@ class _ProgramListState extends State<ProgramList>
                                 color: Colors.grey,
                               ),
                             ),
-                            Text(
-                              "${program.hari}, ${program.jam}",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
+                            // sementara belum ada jadwal di response
+                            // const Text(
+                            //   "Jadwal belum tersedia",
+                            //   style: TextStyle(
+                            //     fontSize: 12,
+                            //     color: Colors.grey,
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/section_title.dart';
-import '../../../data/dummy_artikel.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
 import '../../../config/app_routes.dart';
+import '../../../models/artikel_model.dart';
+import '../../../services/artikel_service.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -14,6 +15,7 @@ class ArtikelList extends StatefulWidget {
 class _ArtikelListState extends State<ArtikelList>
     with AutomaticKeepAliveClientMixin {
   bool isLoading = true;
+  List<Artikel> artikelList = [];
 
   @override
   bool get wantKeepAlive => true; // biar state tetap hidup
@@ -21,14 +23,26 @@ class _ArtikelListState extends State<ArtikelList>
   @override
   void initState() {
     super.initState();
-    // tampilkan skeleton 2 detik
-    Future.delayed(const Duration(seconds: 2), () {
+    _loadArtikel();
+  }
+
+  Future<void> _loadArtikel() async {
+    try {
+      final data = await ArtikelService().fetchArtikel();
       if (mounted) {
         setState(() {
+          artikelList = data;
           isLoading = false;
         });
       }
-    });
+    } catch (e) {
+      debugPrint("Gagal ambil data artikel: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false; // skeleton hilang walau error
+        });
+      }
+    }
   }
 
   @override
@@ -47,10 +61,10 @@ class _ArtikelListState extends State<ArtikelList>
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(), // biar smooth
                   shrinkWrap: true,
-                  itemCount: dummyArtikel.length,
+                  itemCount: artikelList.length,
                   padding: const EdgeInsets.only(left: 16),
                   itemBuilder: (context, index) {
-                    final artikel = dummyArtikel[index];
+                    final artikel = artikelList[index];
                     return GestureDetector(
                       onTap: () {
                         Navigator.pushNamed(
@@ -67,14 +81,13 @@ class _ArtikelListState extends State<ArtikelList>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(5),
-                              child: Image.asset(
-                                artikel.imageUrl,
+                              child: Image.network(
+                                artikel.gambarUrl,
                                 height: 150,
                                 width: 160,
                                 fit: BoxFit.cover,
-                                // optimasi biar gambar ga berat
-                                cacheWidth: 320,
-                                cacheHeight: 300,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.broken_image, size: 80),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -88,7 +101,7 @@ class _ArtikelListState extends State<ArtikelList>
                               ),
                             ),
                             Text(
-                              artikel.date,
+                              artikel.formattedDate,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,

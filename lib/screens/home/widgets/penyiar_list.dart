@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/section_title.dart';
-import '../../../data/dummy_penyiar.dart';
-import '../../../widgets/skeleton/penyiar_skeleton.dart'; // import skeleton
+import '../../../widgets/skeleton/penyiar_skeleton.dart';
+import '../../../models/penyiar_model.dart';
+import '../../../services/penyiar_service.dart';
 
 class PenyiarList extends StatefulWidget {
-  final bool? isLoading; // bisa dikontrol dari luar, optional
-
-  const PenyiarList({super.key, this.isLoading});
+  const PenyiarList({super.key});
 
   @override
   State<PenyiarList> createState() => _PenyiarListState();
@@ -14,31 +13,40 @@ class PenyiarList extends StatefulWidget {
 
 class _PenyiarListState extends State<PenyiarList>
     with AutomaticKeepAliveClientMixin {
-  late bool isLoading;
+  bool isLoading = true;
+  List<Penyiar> penyiarList = [];
 
   @override
-  bool get wantKeepAlive => true; // biar widget tetap hidup di memori
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.isLoading == null) {
-      isLoading = true;
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            isLoading = false;
-          });
-        }
-      });
-    } else {
-      isLoading = widget.isLoading!;
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final data = await PenyiarService().fetchPenyiar();
+      if (mounted) {
+        setState(() {
+          penyiarList = data;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Gagal ambil data penyiar: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
+    super.build(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -51,29 +59,29 @@ class _PenyiarListState extends State<PenyiarList>
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: dummyPenyiar.length,
+                  itemCount: penyiarList.length,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   itemBuilder: (context, index) {
-                    final penyiar = dummyPenyiar[index];
+                    final penyiar = penyiarList[index];
+
                     return Container(
                       width: 100,
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                       child: Column(
                         children: [
                           ClipOval(
-                            child: Image.asset(
-                              penyiar.fotoAsset,
+                            child: Image.network(
+                              penyiar.avatarUrl,
                               width: 80,
                               height: 80,
                               fit: BoxFit.cover,
-                              cacheWidth: 160,
-                              cacheHeight: 160,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.person, size: 80),
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            penyiar.nama,
+                            penyiar.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontSize: 14),
