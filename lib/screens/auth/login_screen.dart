@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +13,32 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool rememberMe = false; // state untuk checkbox
   bool _obscureText = true; // state untuk show/hide password
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+
+  // Fungsi login dengan Google pakai AuthService
+  Future<void> _loginWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) return;
+
+      final authResponse = await AuthService().loginWithGoogle(idToken);
+      if (authResponse != null) {
+        print("✅ Login sukses");
+        print("Token: ${authResponse.token}");
+        print("User: ${authResponse.user.name}");
+        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+      } else {
+        print("⚠️ Gagal login Google");
+      }
+    } catch (e) {
+      print("❌ Error login Google: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,9 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: login dengan Google
-                  },
+                  onPressed: _loginWithGoogle,
                   icon: Image.asset(
                     'assets/icons/google.png',
                     width: 24,

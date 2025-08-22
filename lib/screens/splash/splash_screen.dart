@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
       // Navigasi ke Sign In Screen setelah splash
-      Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     });
   }
 
