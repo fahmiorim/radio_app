@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../data/dummy_artikel.dart';
-import '../../models/artikel_model.dart';
-import '../details/artikel_detail_screen.dart';
 import '../../widgets/skeleton/artikel_all_skeleton.dart';
 
 class ArtikelScreen extends StatefulWidget {
