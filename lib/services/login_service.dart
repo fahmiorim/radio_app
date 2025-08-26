@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 
 import '../models/login_model.dart';
-import 'api_client.dart';
-import 'user_service.dart'; // ✅ biar bisa saveToken
+import 'api_client.dart'; // central dio config
+import 'user_service.dart'; // untuk save token
+import '../config/logger.dart'; // optional, untuk logging
 
 class AuthService {
   final Dio _dio = ApiClient.dio;
@@ -18,6 +19,7 @@ class AuthService {
       if (response.statusCode == 200) {
         final auth = AuthResponse.fromJson(response.data);
 
+        // ✅ simpan token ke local storage
         await UserService.saveToken(auth.token);
         return auth;
       } else {
@@ -25,9 +27,10 @@ class AuthService {
         final errorMessage =
             data['message'] ??
             (data['errors']?.values.first.first ?? 'Login gagal');
-        throw Exception(errorMessage); // lempar ke UI
+        throw Exception(errorMessage);
       }
     } catch (e) {
+      logger.e("Login error: $e");
       throw Exception(e.toString().replaceFirst("Exception: ", ""));
     }
   }
@@ -47,59 +50,5 @@ class AuthService {
       if (response.statusCode == 201 || response.statusCode == 200) {
         final auth = AuthResponse.fromJson(response.data);
 
-        // ✅ simpan token juga kalau API balikin token
+        // ✅ simpan token kalau API mengembalikan token
         if (auth.token.isNotEmpty) {
-          await UserService.saveToken(auth.token);
-        }
-
-        return auth;
-      } else {
-        print('Registrasi gagal: ${response.data}');
-        return null;
-      }
-    } catch (e) {
-      print('Error AuthService register: $e');
-      return null;
-    }
-  }
-
-  /// Forgot password
-  Future<bool> forgotPassword(String email) async {
-    try {
-      final response = await _dio.post(
-        '/forgot-password',
-        data: {'email': email},
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Error AuthService forgotPassword: $e');
-      return false;
-    }
-  }
-
-  /// Login dengan Google
-  Future<AuthResponse?> loginWithGoogle(String idToken) async {
-    try {
-      final response = await _dio.post(
-        '/login/google',
-        data: {'token': idToken},
-      );
-
-      if (response.statusCode == 200) {
-        final auth = AuthResponse.fromJson(response.data);
-
-        // ✅ simpan token
-        await UserService.saveToken(auth.token);
-
-        return auth;
-      } else {
-        print('Login Google gagal: ${response.data}');
-        return null;
-      }
-    } catch (e) {
-      print('Error AuthService loginWithGoogle: $e');
-      return null;
-    }
-  }
-}

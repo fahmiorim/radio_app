@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:radio_odan_app/config/logger.dart';
 
 class AppApiConfig {
   static late final String baseUrl;
@@ -8,7 +9,7 @@ class AppApiConfig {
       await dotenv.load(fileName: ".env");
       baseUrl = _getEnv('BASE_URL');
     } catch (e) {
-      print('Error initializing AppApiConfig: $e');
+      logger.e('Error initializing AppApiConfig: $e');
       rethrow;
     }
   }
