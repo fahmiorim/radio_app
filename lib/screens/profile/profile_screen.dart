@@ -153,18 +153,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _navigateToEditProfile() async {
     if (_user == null) return;
     
-    final result = await Navigator.push(
+    final message = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(
           user: _user!,
-          onProfileUpdated: _loadUserProfile,
         ),
       ),
     );
-    
-    // If the edit was successful (result is true), refresh the profile
-    if (result == true && mounted) {
+
+    if (message != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message.toString()),
+          backgroundColor: Colors.green,
+        ),
+      );
       await _loadUserProfile();
     }
   }
