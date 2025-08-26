@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_api_config.dart';
 import '../models/user_model.dart';
+import '../config/logger.dart';
 
 class UserService {
   static const String _userKey = 'user_token';
@@ -30,7 +31,7 @@ class UserService {
     try {
       final token = await _getToken();
       if (token == null) {
-        print("Token tidak ada, user belum login.");
+        logger.w("Token tidak ada, user belum login.");
         return null;
       }
 
@@ -49,14 +50,14 @@ class UserService {
           // ✅ Ambil langsung object "data"
           return UserModel.fromJson(body['data']);
         } else {
-          print("API status false: ${response.body}");
+          logger.w("API status false: ${response.body}");
         }
       } else {
-        print("Request gagal: ${response.statusCode} ${response.body}");
+        logger.e("Request gagal: ${response.statusCode} ${response.body}");
       }
       return null;
     } catch (e) {
-      print('Error fetching user profile: $e');
+      logger.e('Error fetching user profile: $e');
       return null;
     }
   }

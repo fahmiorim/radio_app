@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart'; // import AppRoutes
+import 'package:radio_odan_app/config/logger.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -68,10 +69,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (authResponse != null) {
         Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
       } else {
-        print('⚠️ Gagal login Google');
+        logger.w('⚠️ Gagal login Google');
       }
     } catch (e) {
-      print('❌ Error login Google: $e');
+      logger.e('❌ Error login Google: $e');
     }
   }
 

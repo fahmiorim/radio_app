@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart';
+import 'package:radio_odan_app/config/logger.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -90,15 +91,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final authResponse = await AuthService().loginWithGoogle(idToken);
       if (authResponse != null) {
-        print("✅ Login sukses");
-        print("Token: ${authResponse.token}");
-        print("User: ${authResponse.user.name}");
+        logger.i("✅ Login sukses");
+        logger.i("Token: ${authResponse.token}");
+        logger.i("User: ${authResponse.user.name}");
         Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
       } else {
-        print("⚠️ Gagal login Google");
+        logger.w("⚠️ Gagal login Google");
       }
     } catch (e) {
-      print("❌ Error login Google: $e");
+      logger.e("❌ Error login Google: $e");
     }
   }
 
