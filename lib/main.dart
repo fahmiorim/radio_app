@@ -4,9 +4,11 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'config/app_routes.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'audio/audio_player_manager.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
   await initializeDateFormatting('id_ID', null);
   await JustAudioBackground.init(
     androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
