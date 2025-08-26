@@ -9,12 +9,9 @@ import 'package:radio_odan_app/config/app_api_config.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
-  final Function()? onProfileUpdated;
-
   const EditProfileScreen({
     super.key,
     required this.user,
-    this.onProfileUpdated,
   });
 
   @override
@@ -30,7 +27,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _imageFile;
   final picker = ImagePicker();
   bool _isLoading = false;
-  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -89,8 +85,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
-    if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -109,29 +103,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (!mounted) return;
 
       if (result['success'] == true) {
-        // Update the user data in the parent widget
-        if (widget.onProfileUpdated != null) {
-          widget.onProfileUpdated!();
-        }
-        
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Profil berhasil diperbarui'),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          
-          // Close the edit screen after a short delay
-          await Future.delayed(const Duration(seconds: 1));
-          if (mounted) {
-            Navigator.pop(context, true); // Pass true to indicate success
-          }
-        }
+        // Kembali ke ProfileScreen dengan pesan sukses dari API
+        Navigator.pop(
+          context,
+          result['message'] ?? 'Profil berhasil diperbarui',
+        );
       } else {
-        // Show error message if update was not successful
+        // Tampilkan pesan error jika gagal
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -258,10 +236,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // Simpan data (sementara balik ke profil)
-                    Navigator.pop(context);
-                  },
+                  onPressed: _isLoading ? null : _updateProfile,
                   icon: const Icon(Icons.save),
                   label: const Text("Simpan"),
                   style: ElevatedButton.styleFrom(
