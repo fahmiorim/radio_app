@@ -8,12 +8,4 @@ class AppApiConfig {
     }
     return url;
   }
-
-  static String get baseUrlStorage {
-    final url = dotenv.maybeGet('BASE_URL_STORAGE');
-    if (url == null || url.isEmpty) {
-      throw Exception("BASE_URL_STORAGE tidak ditemukan di .env");
-    }
-    return url;
-  }
 }

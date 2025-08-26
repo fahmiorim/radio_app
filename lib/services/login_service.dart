@@ -14,16 +14,24 @@ class AuthService {
         data: {'email': email, 'password': password},
       );
 
-      if (response.statusCode == 200) {
-        final auth = AuthResponse.fromJson(response.data);
-        await UserService.saveToken(auth.token);
-        return auth;
-      } else {
-        throw Exception(response.data['message'] ?? 'Login gagal');
+      final auth = AuthResponse.fromJson(response.data);
+      await UserService.saveToken(auth.token);
+      return auth;
+    } on DioException catch (e) {
+      String msg = 'Login gagal';
+      final data = e.response?.data;
+
+      if (data is Map<String, dynamic>) {
+        msg = data['message'] ?? msg;
+      } else if (data is String) {
+        msg = data;
       }
+
+      logger.e('Login error: $msg');
+      throw Exception(msg);
     } catch (e) {
-      logger.e("Login error: $e");
-      throw Exception("Gagal login: $e");
+      logger.e('Login error: $e');
+      throw Exception('Gagal login: $e');
     }
   }
 

@@ -4,7 +4,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'config/app_theme.dart';
 import 'config/app_routes.dart';
-import 'config/app_api_config.dart';
 import 'audio/audio_player_manager.dart';
 
 Future<void> main() async {

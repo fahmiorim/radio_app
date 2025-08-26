@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/user_service.dart';
-import '../../config/app_routes.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -85,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     radius: screenWidth * 0.15,
                     backgroundImage: _user?.avatar != null
                         ? NetworkImage(_user!.avatar!)
-                        : const AssetImage('assets/user4.jpg') as ImageProvider,
+                        : const AssetImage('assets/user1.jpg') as ImageProvider,
                     backgroundColor: Colors.transparent,
                     onBackgroundImageError: (exception, stackTrace) {
                       // Error handled by fallback to default image
@@ -110,7 +110,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.white,
                             fontFamily: 'Poppins',
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -120,7 +119,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             color: Colors.grey[400],
                             fontFamily: 'Poppins',
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -134,9 +132,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.editProfile);
-                      },
+                      onPressed: (_user == null || _isLoading)
+                          ? null
+                          : _navigateToEditProfile,
                       icon: const Icon(Icons.edit),
                       label: const Text("Edit Data"),
                       style: ElevatedButton.styleFrom(
@@ -152,6 +150,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _navigateToEditProfile() async {
+    if (_user == null) return;
+    
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProfileScreen(
+          user: _user!,
+          onProfileUpdated: _loadUserProfile,
+        ),
+      ),
+    );
+    
+    // If the edit was successful (result is true), refresh the profile
+    if (result == true && mounted) {
+      await _loadUserProfile();
+    }
+  }
+  
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),

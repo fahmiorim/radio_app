@@ -22,6 +22,7 @@ import '../models/artikel_model.dart';
 import '../models/program_model.dart';
 import '../models/event_model.dart';
 import '../models/album_model.dart';
+import '../models/user_model.dart';
 
 class AppRoutes {
   // --- Route Names ---
@@ -45,14 +46,25 @@ class AppRoutes {
     forgotPassword: (_) => const ForgotPasswordScreen(),
     login: (_) => const LoginScreen(),
     profile: (_) => const ProfileScreen(),
-    editProfile: (_) => const EditProfileScreen(),
     bottomNav: (_) => const BottomNav(),
     fullPlayer: (_) => const FullPlayer(),
   };
 
-  // --- Dynamic Routes (with paramameter) ---
+  // --- Dynamic Routes (with parameter) ---
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case editProfile:
+        final args = settings.arguments;
+        if (args is Map<String, dynamic> && args['user'] is UserModel) {
+          return MaterialPageRoute(
+            builder: (_) => EditProfileScreen(user: args['user'] as UserModel),
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('User tidak ditemukan'))),
+        );
+
       case artikelDetail:
         final artikel = settings.arguments as Artikel;
         return MaterialPageRoute(
