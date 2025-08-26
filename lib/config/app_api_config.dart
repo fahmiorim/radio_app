@@ -1,29 +1,19 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:radio_odan_app/config/logger.dart';
 
 class AppApiConfig {
-  static late final String baseUrl;
-
-  static Future<void> init() async {
-    try {
-      await dotenv.load(fileName: ".env");
-      baseUrl = _getEnv('BASE_URL');
-    } catch (e) {
-      logger.e('Error initializing AppApiConfig: $e');
-      rethrow;
+  static String get baseUrl {
+    final url = dotenv.maybeGet('BASE_URL');
+    if (url == null || url.isEmpty) {
+      throw Exception("BASE_URL tidak ditemukan di .env");
     }
+    return url;
   }
 
-  static String _getEnv(String key) {
-    // First try environment variables
-    final env = String.fromEnvironment(key);
-    if (env.isNotEmpty) return env;
-
-    // Then try .env file
-    final value = dotenv.env[key];
-    if (value == null || value.isEmpty) {
-      throw Exception('Environment variable $key is not set');
+  static String get baseUrlStorage {
+    final url = dotenv.maybeGet('BASE_URL_STORAGE');
+    if (url == null || url.isEmpty) {
+      throw Exception("BASE_URL_STORAGE tidak ditemukan di .env");
     }
-    return value;
+    return url;
   }
 }

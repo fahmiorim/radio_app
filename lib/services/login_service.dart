@@ -1,14 +1,12 @@
 import 'package:dio/dio.dart';
-
-import '../models/login_model.dart';
-import 'api_client.dart'; // central dio config
-import 'user_service.dart'; // untuk save token
-import '../config/logger.dart'; // optional, untuk logging
+import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/models/login_model.dart';
+import 'package:radio_odan_app/services/user_service.dart';
+import 'package:radio_odan_app/config/logger.dart';
 
 class AuthService {
   final Dio _dio = ApiClient.dio;
 
-  /// Login dengan email & password
   Future<AuthResponse?> login(String email, String password) async {
     try {
       final response = await _dio.post(
@@ -18,24 +16,17 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final auth = AuthResponse.fromJson(response.data);
-
-        // ✅ simpan token ke local storage
         await UserService.saveToken(auth.token);
         return auth;
       } else {
-        final data = response.data;
-        final errorMessage =
-            data['message'] ??
-            (data['errors']?.values.first.first ?? 'Login gagal');
-        throw Exception(errorMessage);
+        throw Exception(response.data['message'] ?? 'Login gagal');
       }
     } catch (e) {
       logger.e("Login error: $e");
-      throw Exception(e.toString().replaceFirst("Exception: ", ""));
+      throw Exception("Gagal login: $e");
     }
   }
 
-  /// Register user baru
   Future<AuthResponse?> register(
     String name,
     String email,
@@ -49,6 +40,48 @@ class AuthService {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final auth = AuthResponse.fromJson(response.data);
-
-        // ✅ simpan token kalau API mengembalikan token
         if (auth.token.isNotEmpty) {
+          await UserService.saveToken(auth.token);
+        }
+        return auth;
+      } else {
+        throw Exception(response.data['message'] ?? 'Registrasi gagal');
+      }
+    } catch (e) {
+      logger.e("Register error: $e");
+      throw Exception("Gagal registrasi: $e");
+    }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '/forgot-password',
+        data: {'email': email},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      logger.e("Forgot password error: $e");
+      return false;
+    }
+  }
+
+  Future<AuthResponse?> loginWithGoogle(String idToken) async {
+    try {
+      final response = await _dio.post(
+        '/login/google',
+        data: {'token': idToken},
+      );
+      if (response.statusCode == 200) {
+        final auth = AuthResponse.fromJson(response.data);
+        await UserService.saveToken(auth.token);
+        return auth;
+      } else {
+        throw Exception(response.data['message'] ?? 'Login Google gagal');
+      }
+    } catch (e) {
+      logger.e("Login Google error: $e");
+      throw Exception("Gagal login Google: $e");
+    }
+  }
+}

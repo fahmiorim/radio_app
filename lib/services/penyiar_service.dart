@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../models/penyiar_model.dart';
-import 'api_client.dart';
+import '../config/api_client.dart';
 
 class PenyiarService {
   final Dio _dio = ApiClient.dio;

@@ -12,8 +12,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool rememberMe = false; // state untuk checkbox
-  bool _obscureText = true; // state untuk show/hide password
+  bool rememberMe = false;
+  bool _obscureText = true;
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
@@ -36,9 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authResponse = await AuthService().login(email, password);
       if (!context.mounted) return;
+
       if (authResponse != null) {
         // ✅ Login sukses
-        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade600,
@@ -56,37 +56,39 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        if (!context.mounted) return;
         Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
       }
     } catch (e) {
-      // ✅ Login gagal → tampilkan pesan dari API
+      // ✅ Login gagal → tampilkan pesan API
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red.shade600,
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  e.toString(),
-                  style: const TextStyle(color: Colors.white),
+      ScaffoldMessenger.of(context)
+        ..clearSnackBars()
+        ..showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 4),
+            backgroundColor: Colors.red.shade600,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    e.toString().replaceFirst("Exception: ", ""),
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+        );
     }
   }
 
-  // Fungsi login dengan Google pakai AuthService
+  // Fungsi login dengan Google
   Future<void> _loginWithGoogle() async {
     try {
       final googleUser = await _googleSignIn.signIn();
@@ -121,9 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-              // Logo
-              Image.asset('assets/logo-white.png', width: 120, height: 120),
-              const SizedBox(height: 40),
+                // Logo
+                Image.asset('assets/logo-white.png', width: 120, height: 120),
+                const SizedBox(height: 40),
 
                 // Email field
                 TextFormField(
@@ -147,9 +149,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                // Password field dengan show/hide
+                // Password field
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscureText,
@@ -180,109 +182,107 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Checkbox "Ingat saya" dan "Lupa password"
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: rememberMe,
-                        onChanged: (value) {
-                          setState(() {
-                            rememberMe = value ?? false;
-                          });
-                        },
-                      ),
-                      const Text("Ingat saya"),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                    },
-                    child: const Text(
-                      "Lupa password?",
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
+                // Checkbox "Ingat saya" + lupa password
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              rememberMe = value ?? false;
+                            });
+                          },
+                        ),
+                        const Text("Ingat saya"),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.forgotPassword);
+                      },
+                      child: const Text(
+                        "Lupa password?",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Button Masuk biru
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Masuk',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-              // Belum punya akun? Daftar sekarang
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Belum punya akun? "),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.register);
-                    },
-                    child: const Text(
-                      "Daftar sekarang",
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
+                // Button Masuk
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _login,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              const Text(
-                "atau",
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-              const SizedBox(height: 15),
-
-              // Login Google
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _loginWithGoogle,
-                  icon: Image.asset(
-                    'assets/icons/google.png',
-                    width: 24,
-                    height: 24,
-                  ),
-                  label: const Text("Login dengan Google"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    child: const Text(
+                      'Masuk',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+
+                // Daftar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text("Belum punya akun? "),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, AppRoutes.register);
+                      },
+                      child: const Text(
+                        "Daftar sekarang",
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+
+                const Text("atau", style: TextStyle(color: Colors.grey)),
+                const SizedBox(height: 15),
+
+                // Login Google
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _loginWithGoogle,
+                    icon: Image.asset(
+                      'assets/icons/google.png',
+                      width: 24,
+                      height: 24,
+                    ),
+                    label: const Text("Login dengan Google"),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),

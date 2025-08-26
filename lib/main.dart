@@ -9,10 +9,10 @@ import 'audio/audio_player_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize environment variables
   await dotenv.load(fileName: '.env');
-  
+
   // Initialize other services
   await initializeDateFormatting('id_ID', null);
   await JustAudioBackground.init(
@@ -20,10 +20,7 @@ Future<void> main() async {
     androidNotificationChannelName: 'Audio playback',
     androidNotificationOngoing: true,
   );
-  
-  // Initialize app configuration
-  await AppApiConfig.init();
-  
+
   runApp(MyApp());
 }
 
