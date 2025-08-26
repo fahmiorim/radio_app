@@ -1,28 +1,46 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_api_config.dart';
 import '../models/user_model.dart';
 
 class UserService {
   static const String _userKey = 'user_token';
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
-  // Ambil token dari SharedPreferences
+  // Ambil token dari secure storage
   static Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_userKey);
+    return await _storage.read(key: _userKey);
   }
 
   // Simpan token setelah login
   static Future<void> saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userKey, token);
+    await _storage.write(key: _userKey, value: token);
   }
 
   // Hapus token saat logout
   static Future<void> clearToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_userKey);
+    await _storage.delete(key: _userKey);
+  }
+
+  // Logout dari API dan hapus token lokal
+  static Future<void> logout() async {
+    try {
+      final token = await _getToken();
+      if (token != null) {
+        await http.post(
+          Uri.parse('${AppApiConfig.baseUrl}/logout'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+    } finally {
+      await clearToken();
+    }
   }
 
   // Get user profile
