@@ -1,15 +1,23 @@
-class AppApiConfig {
-  /// Base URL for API requests. Can be overridden by passing
-  /// `--dart-define=BASE_URL=your_url` at build time.
-  static const String baseUrl = String.fromEnvironment(
-    'BASE_URL',
-    defaultValue: 'http://192.168.89.137:8000/api/v1/mobile',
-  );
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-  /// Base URL for storage. Can be overridden by passing
-  /// `--dart-define=BASE_URL_STORAGE=your_url` at build time.
-  static const String baseUrlStorage = String.fromEnvironment(
-    'BASE_URL_STORAGE',
-    defaultValue: 'http://192.168.89.137:8000/storage',
-  );
+class AppApiConfig {
+  /// Base URL for API requests. Must be provided via
+  /// `--dart-define=BASE_URL=your_url` at build time or in a `.env` file.
+  static final String baseUrl = _getEnv('BASE_URL');
+
+  /// Base URL for storage. Must be provided via
+  /// `--dart-define=BASE_URL_STORAGE=your_url` at build time or in a `.env` file.
+  static final String baseUrlStorage = _getEnv('BASE_URL_STORAGE');
+
+  static String _getEnv(String key) {
+    const envValue = String.fromEnvironment(key);
+    if (envValue.isNotEmpty) return envValue;
+
+    final fileValue = dotenv.maybeGet(key);
+    if (fileValue != null && fileValue.isNotEmpty) return fileValue;
+
+    throw StateError(
+      '$key is not set. Provide it via --dart-define or in a .env file.',
+    );
+  }
 }
