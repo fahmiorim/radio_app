@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../config/app_api_config.dart';
 import '../models/login_model.dart';
 import '../services/user_service.dart'; // ✅ biar bisa saveToken
+import '../config/logger.dart';
 
 class AuthService {
   /// Login dengan email & password
@@ -56,11 +57,11 @@ class AuthService {
 
         return auth;
       } else {
-        print('Registrasi gagal: ${response.body}');
+        logger.w('Registrasi gagal: ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Error AuthService register: $e');
+      logger.e('Error AuthService register: $e');
       return null;
     }
   }
@@ -76,7 +77,7 @@ class AuthService {
 
       return response.statusCode == 200;
     } catch (e) {
-      print('Error AuthService forgotPassword: $e');
+      logger.e('Error AuthService forgotPassword: $e');
       return false;
     }
   }
@@ -99,11 +100,11 @@ class AuthService {
 
         return auth;
       } else {
-        print('Login Google gagal: ${response.body}');
+        logger.w('Login Google gagal: ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Error AuthService loginWithGoogle: $e');
+      logger.e('Error AuthService loginWithGoogle: $e');
       return null;
     }
   }
