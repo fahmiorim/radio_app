@@ -13,9 +13,10 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
 
 import '../screens/details/artikel_detail_screen.dart';
-import '../screens/details/program_detail_screen.dart';
+import '../screens/program/program_detail_screen.dart';
 import '../screens/details/event_detail_screen.dart';
 import '../screens/details/album_detail_screen.dart';
+import '../screens/program/all_programs_screen.dart';
 
 // Models
 import '../models/artikel_model.dart';
@@ -36,6 +37,7 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String artikelDetail = '/artikel-detail';
   static const String programDetail = '/program-detail';
+  static const String allPrograms = '/program-semua';
   static const String eventDetail = '/event-detail';
   static const String albumDetail = '/album-detail';
 
@@ -48,6 +50,7 @@ class AppRoutes {
     profile: (_) => const ProfileScreen(),
     bottomNav: (_) => const BottomNav(),
     fullPlayer: (_) => const FullPlayer(),
+    allPrograms: (_) => const AllProgramsScreen(),
   };
 
   // --- Dynamic Routes (with parameter) ---
@@ -72,9 +75,9 @@ class AppRoutes {
         );
 
       case programDetail:
-        final program = settings.arguments as Program;
+        final programId = settings.arguments as int;
         return MaterialPageRoute(
-          builder: (_) => ProgramDetailScreen(program: program),
+          builder: (_) => ProgramDetailScreen(programId: programId),
         );
 
       case eventDetail:

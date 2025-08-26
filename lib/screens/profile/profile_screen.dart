@@ -152,14 +152,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _navigateToEditProfile() async {
     if (_user == null) return;
-    
+
     final message = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditProfileScreen(
-          user: _user!,
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => EditProfileScreen(user: _user!)),
     );
 
     if (message != null && mounted) {
@@ -172,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await _loadUserProfile();
     }
   }
-  
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),

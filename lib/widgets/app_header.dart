@@ -64,7 +64,7 @@ class _AppHeaderState extends State<AppHeader> {
   Widget _buildProfileAvatar() {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
-    
+
     if (_user?.avatar?.isNotEmpty == true) {
       return CachedNetworkImage(
         imageUrl: _user!.avatar!,
@@ -78,18 +78,19 @@ class _AppHeaderState extends State<AppHeader> {
           backgroundColor: theme.primaryColor.withOpacity(0.1),
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
-        errorWidget: (context, url, error) => _buildInitialsAvatar(theme, textTheme),
+        errorWidget: (context, url, error) =>
+            _buildInitialsAvatar(theme, textTheme),
       );
     }
-    
+
     return _buildInitialsAvatar(theme, textTheme);
   }
-  
+
   Widget _buildInitialsAvatar(ThemeData theme, TextTheme textTheme) {
-    final displayName = _user?.name?.trim().isNotEmpty == true 
+    final displayName = _user?.name?.trim().isNotEmpty == true
         ? _user!.name!.substring(0, 1).toUpperCase()
         : 'U';
-    
+
     return CircleAvatar(
       radius: 20,
       backgroundColor: theme.primaryColor,

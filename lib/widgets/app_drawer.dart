@@ -132,7 +132,16 @@ class _AppDrawerState extends State<AppDrawer> {
                   "Logout",
                   style: TextStyle(color: Colors.white),
                 ),
-                onTap: () {},
+                onTap: () async {
+                  await UserService.logout();
+                  if (mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.login,
+                      (route) => false, // hapus semua halaman sebelumnya
+                    );
+                  }
+                },
               ),
             ],
           ),

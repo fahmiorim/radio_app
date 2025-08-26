@@ -80,19 +80,17 @@ class _ProgramListState extends State<ProgramList>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(5),
-                              child: Image.network(
-                                program.gambarUrl,
-                                height: 225,
-                                width: 160,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
+                              child: program.gambar.isNotEmpty
+                                  ? Image.network(
+                                      program.gambarUrl,
                                       height: 225,
                                       width: 160,
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.image, size: 50),
-                                    ),
-                              ),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              _buildPlaceholderImage(),
+                                    )
+                                  : _buildPlaceholderImage(),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -113,14 +111,6 @@ class _ProgramListState extends State<ProgramList>
                                 color: Colors.grey,
                               ),
                             ),
-                            // sementara belum ada jadwal di response
-                            // const Text(
-                            //   "Jadwal belum tersedia",
-                            //   style: TextStyle(
-                            //     fontSize: 12,
-                            //     color: Colors.grey,
-                            //   ),
-                            // ),
                           ],
                         ),
                       ),
@@ -129,6 +119,15 @@ class _ProgramListState extends State<ProgramList>
                 ),
               ),
       ],
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 225,
+      width: 160,
+      color: Colors.grey[300],
+      child: const Icon(Icons.image, size: 50),
     );
   }
 

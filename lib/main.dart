@@ -60,8 +60,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Radio App',
       debugShowCheckedModeBanner: false,
-      title: 'Streaming Radio',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.dark,

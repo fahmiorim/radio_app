@@ -1,36 +1,86 @@
 import 'package:flutter/material.dart';
-import '../config/app_colors.dart';
+import 'app_colors.dart';
 
 class AppTheme {
   static ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
-    primarySwatch: Colors.deepPurple,
-    scaffoldBackgroundColor: Colors.white,
+    primaryColor: AppColors.primary,
+    scaffoldBackgroundColor: AppColors.backgroundLight,
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
+      backgroundColor: AppColors.backgroundLight,
+      foregroundColor: AppColors.textPrimary,
       elevation: 0,
+      titleTextStyle: TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
-      selectedItemColor: Colors.deepPurple,
+      backgroundColor: AppColors.backgroundLight,
+      selectedItemColor: AppColors.primary,
       unselectedItemColor: Colors.grey,
+    ),
+    cardTheme: const CardThemeData(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+      ),
     ),
   );
 
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primarySwatch: Colors.deepPurple,
+    primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors.backgroundDark,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppColors.backgroundDark,
-      foregroundColor: Colors.white,
-      elevation: 0,
+    colorScheme: const ColorScheme.dark(
+      primary: AppColors.primary,
+      secondary: AppColors.primary,
+      surface: AppColors.surface,
+      background: AppColors.backgroundDark,
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: Colors.black,
-      selectedItemColor: Colors.deepPurple,
-      unselectedItemColor: Colors.grey,
+    appBarTheme: AppBarTheme(
+      backgroundColor: AppColors.backgroundDark,
+      elevation: 0,
+      titleTextStyle: const TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+      iconTheme: const IconThemeData(color: AppColors.textPrimary),
+    ),
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: AppColors.backgroundDarker.withOpacity(0.9),
+      selectedItemColor: AppColors.primary,
+      unselectedItemColor: AppColors.textSecondary,
+    ),
+    cardTheme: const CardThemeData(
+      color: AppColors.surface,
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+      ),
+    ),
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.bold,
+        fontSize: 24,
+      ),
+      bodyLarge: TextStyle(
+        color: AppColors.textPrimary,
+        fontSize: 16,
+      ),
+      bodyMedium: TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: 14,
+      ),
     ),
   );
+
+  // Custom decoration for gradient background
+  static BoxDecoration get backgroundDecoration => const BoxDecoration(
+        gradient: AppColors.darkGradient,
+      );
 }

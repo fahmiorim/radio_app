@@ -4,6 +4,7 @@ import '../home/widgets/penyiar_list.dart';
 import '../home/widgets/program_list.dart';
 import '../home/widgets/event_list.dart';
 import '../home/widgets/artikel_list.dart';
+import '../../config/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,26 +29,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          automaticallyImplyLeading: false,
-          title: AppHeader(
-            isLoading: isLoading,
-          ), // ⬅️ skeleton atau header asli
+    return Scaffold(
+      backgroundColor: AppColors.backgroundDark,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // Header
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                color: AppColors.backgroundDark,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
+                child: AppHeader(isLoading: isLoading),
+              ),
+            ),
+            
+            // Content
+            SliverPadding(
+              padding: const EdgeInsets.only(top: 8, bottom: 80),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 8),
+                  const PenyiarList(),
+                  const SizedBox(height: 24),
+                  const ProgramList(),
+                  const SizedBox(height: 24),
+                  const EventList(),
+                  const SizedBox(height: 24),
+                  const ArtikelList(),
+                ]),
+              ),
+            ),
+          ],
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: PenyiarList()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: ProgramList()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: EventList()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: ArtikelList()),
-        // Padding tambahan supaya tidak menempel ke MiniPlayer / BottomNav
-        SliverPadding(padding: const EdgeInsets.only(bottom: 170)),
-      ],
+      ),
     );
   }
 }

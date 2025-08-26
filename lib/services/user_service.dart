@@ -106,45 +106,52 @@ class UserService {
         throw Exception('Token tidak tersedia. Silakan login kembali.');
       }
 
+      // Trim & validate
+      final trimmedName = name.trim();
+      final trimmedEmail = email.trim();
+      if (trimmedName.isEmpty || trimmedEmail.isEmpty) {
+        throw Exception('Nama dan email harus diisi');
+      }
+
+      // Log values
+      logger.d('Updating profile with values:');
+      logger.d('- name: $trimmedName');
+      logger.d('- email: $trimmedEmail');
+      logger.d('- phone: $phone');
+      logger.d('- address: $address');
+      logger.d('- has avatar: ${avatarPath != null}');
+
+      // Build form data dengan override method
       final formData = FormData.fromMap({
-        'name': name,
-        'email': email,
-        if (phone != null && phone.isNotEmpty) 'phone': phone,
-        if (address != null && address.isNotEmpty) 'address': address,
-        if (avatarPath != null && avatarPath.isNotEmpty)
-          'avatar': await MultipartFile.fromFile(avatarPath),
+        '_method': 'PUT', // 👈 trik Laravel method override
+        'name': trimmedName,
+        'email': trimmedEmail,
+        if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+        if (address != null && address.trim().isNotEmpty)
+          'address': address.trim(),
+        if (avatarPath != null && avatarPath.trim().isNotEmpty)
+          'avatar': await MultipartFile.fromFile(avatarPath.trim()),
       });
 
-      logger.d('Sending update profile request...');
-      final response = await ApiClient.dio.put(
-        '/profile',
+      // Kirim sebagai POST
+      final response = await ApiClient.dio.post(
+        '/profile', // atau '/api/v1/mobile/profile' sesuai route kamu
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
           },
         ),
       );
 
       logger.d('Update profile response: ${response.data}');
 
-      // Handle different possible response structures
+      // Handle sukses
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data;
         if (responseData is Map<String, dynamic>) {
-          // Handle case where success is in the response
-          if (responseData['success'] == true) {
-            return {
-              'success': true,
-              'data': responseData['data'] ?? responseData,
-              'message':
-                  responseData['message'] ?? 'Profil berhasil diperbarui',
-            };
-          }
-          // Handle case where there's no explicit success field but has data
-          if (responseData['data'] != null) {
+          if (responseData['status'] == true) {
             return {
               'success': true,
               'data': responseData['data'],
@@ -153,15 +160,9 @@ class UserService {
             };
           }
         }
-        // If we get here, the response structure is unexpected
-        return {
-          'success': true,
-          'data': responseData,
-          'message': 'Profil berhasil diperbarui',
-        };
       }
 
-      // If we get here, the request was not successful
+      // Handle gagal
       return {
         'success': false,
         'message': response.data['message'] ?? 'Gagal memperbarui profil',
@@ -176,7 +177,7 @@ class UserService {
         if (e.response!.data is Map<String, dynamic>) {
           message = e.response!.data['message'] ?? message;
 
-          // Handle Laravel validation errors
+          // Laravel validation errors
           if (e.response!.data['errors'] != null) {
             final errors = e.response!.data['errors'] as Map<String, dynamic>;
             message = errors.values.first is List
