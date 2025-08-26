@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,30 @@ class _LoginScreenState extends State<LoginScreen> {
   bool rememberMe = false; // state untuk checkbox
   bool _obscureText = true; // state untuk show/hide password
 
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    final authResponse = await AuthService().login(email, password);
+    if (authResponse != null) {
+      Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login gagal')),
+      );
+    }
+  }
 
   // Fungsi login dengan Google pakai AuthService
   Future<void> _loginWithGoogle() async {
@@ -40,6 +64,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _loginWithFacebook() async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login();
+      if (result.status != LoginStatus.success) {
+        print('⚠️ Gagal login Facebook: ${result.status}');
+        return;
+      }
+      final token = result.accessToken?.token;
+      if (token == null) return;
+
+      final authResponse = await AuthService().loginWithFacebook(token);
+      if (authResponse != null) {
+        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+      } else {
+        print('⚠️ Gagal login Facebook backend');
+      }
+    } catch (e) {
+      print('❌ Error login Facebook: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,6 +100,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Email field
               TextField(
+                controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email',
@@ -68,6 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               // Password field dengan show/hide
               TextField(
+                controller: _passwordController,
                 obscureText: _obscureText,
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -126,9 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // TODO: Tambahkan fungsi login
-                  },
+                  onPressed: _login,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -196,9 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: login dengan Facebook
-                  },
+                  onPressed: _loginWithFacebook,
                   icon: Image.asset(
                     'assets/icons/facebook.png',
                     width: 24,
