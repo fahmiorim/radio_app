@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 
-import '../config/app_api_config.dart';
 import '../models/penyiar_model.dart';
+import 'api_client.dart';
 
 class PenyiarService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: AppApiConfig.baseUrl));
+  final Dio _dio = ApiClient.dio;
 
   Future<List<Penyiar>> fetchPenyiar() async {
     try {

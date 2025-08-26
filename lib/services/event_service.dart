@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 
-import '../config/app_api_config.dart';
 import '../models/event_model.dart';
+import 'api_client.dart';
 
 class EventService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: AppApiConfig.baseUrl));
+  final Dio _dio = ApiClient.dio;
 
   Future<List<Event>> fetchEvents() async {
     try {
