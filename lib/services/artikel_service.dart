@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 
-import '../config/app_api_config.dart';
 import '../models/artikel_model.dart';
+import 'api_client.dart';
 
 class ArtikelService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: AppApiConfig.baseUrl));
+  final Dio _dio = ApiClient.dio;
 
   Future<List<Artikel>> fetchArtikel() async {
     try {

@@ -1,27 +1,27 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../config/app_api_config.dart';
+import 'package:dio/dio.dart';
+
 import '../models/login_model.dart';
-import '../services/user_service.dart'; // ✅ biar bisa saveToken
+import 'api_client.dart';
+import 'user_service.dart'; // ✅ biar bisa saveToken
 
 class AuthService {
+  final Dio _dio = ApiClient.dio;
+
   /// Login dengan email & password
   Future<AuthResponse?> login(String email, String password) async {
     try {
-      final baseUrl = AppApiConfig.baseUrl;
-      final response = await http.post(
-        Uri.parse('$baseUrl/login'),
-        body: {'email': email, 'password': password},
+      final response = await _dio.post(
+        '/login',
+        data: {'email': email, 'password': password},
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final auth = AuthResponse.fromJson(data);
+        final auth = AuthResponse.fromJson(response.data);
 
         await UserService.saveToken(auth.token);
         return auth;
       } else {
-        final data = jsonDecode(response.body);
+        final data = response.data;
         final errorMessage =
             data['message'] ??
             (data['errors']?.values.first.first ?? 'Login gagal');
@@ -39,15 +39,13 @@ class AuthService {
     String password,
   ) async {
     try {
-      final baseUrl = AppApiConfig.baseUrl;
-      final response = await http.post(
-        Uri.parse('$baseUrl/register'),
-        body: {'name': name, 'email': email, 'password': password},
+      final response = await _dio.post(
+        '/register',
+        data: {'name': name, 'email': email, 'password': password},
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final auth = AuthResponse.fromJson(data);
+        final auth = AuthResponse.fromJson(response.data);
 
         // ✅ simpan token juga kalau API balikin token
         if (auth.token.isNotEmpty) {
@@ -56,7 +54,7 @@ class AuthService {
 
         return auth;
       } else {
-        print('Registrasi gagal: ${response.body}');
+        print('Registrasi gagal: ${response.data}');
         return null;
       }
     } catch (e) {
@@ -68,10 +66,9 @@ class AuthService {
   /// Forgot password
   Future<bool> forgotPassword(String email) async {
     try {
-      final baseUrl = AppApiConfig.baseUrl;
-      final response = await http.post(
-        Uri.parse('$baseUrl/forgot-password'),
-        body: {'email': email},
+      final response = await _dio.post(
+        '/forgot-password',
+        data: {'email': email},
       );
 
       return response.statusCode == 200;
@@ -84,22 +81,20 @@ class AuthService {
   /// Login dengan Google
   Future<AuthResponse?> loginWithGoogle(String idToken) async {
     try {
-      final baseUrl = AppApiConfig.baseUrl;
-      final response = await http.post(
-        Uri.parse('$baseUrl/login/google'),
-        body: {'token': idToken},
+      final response = await _dio.post(
+        '/login/google',
+        data: {'token': idToken},
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final auth = AuthResponse.fromJson(data);
+        final auth = AuthResponse.fromJson(response.data);
 
         // ✅ simpan token
         await UserService.saveToken(auth.token);
 
         return auth;
       } else {
-        print('Login Google gagal: ${response.body}');
+        print('Login Google gagal: ${response.data}');
         return null;
       }
     } catch (e) {
