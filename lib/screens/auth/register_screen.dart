@@ -40,6 +40,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final confirm = _confirmPasswordController.text;
 
     if (password != confirm) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Password tidak sama')));
@@ -48,8 +49,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final authResponse = await AuthService().register(name, email, password);
     if (authResponse != null) {
+      if (!context.mounted) return;
       Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
     } else {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Registrasi gagal')));

@@ -32,8 +32,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final authResponse = await AuthService().login(email, password);
+      if (!context.mounted) return;
       if (authResponse != null) {
         // ✅ Login sukses
+        if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.green.shade600,
@@ -51,10 +53,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
+        if (!context.mounted) return;
         Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
       }
     } catch (e) {
       // ✅ Login gagal → tampilkan pesan dari API
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red.shade600,
