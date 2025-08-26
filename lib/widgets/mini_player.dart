@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../data/dummy_radio.dart';
 import '../audio/audio_player_manager.dart';
-import '../../../config/app_routes.dart';
+import '../config/app_routes.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
