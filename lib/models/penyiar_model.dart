@@ -1,5 +1,3 @@
-import '../config/app_api_config.dart';
-
 class Penyiar {
   final int id;
   final String name;
@@ -31,5 +29,16 @@ class Penyiar {
     );
   }
 
-  String get avatarUrl => "${AppApiConfig.baseUrlStorage}/$avatar";
+  String get avatarUrl {
+    // Return empty string if no avatar
+    if (avatar.isEmpty) return '';
+    
+    // If the avatar URL is already a full URL, return it as is
+    if (avatar.startsWith('http')) {
+      return avatar;
+    }
+    
+    // Return the avatar path as is (assuming it's already correct from the API)
+    return avatar;
+  }
 }

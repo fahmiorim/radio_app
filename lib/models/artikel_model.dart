@@ -1,4 +1,3 @@
-import '../config/app_api_config.dart';
 import 'package:intl/intl.dart';
 
 class Artikel {
@@ -42,5 +41,16 @@ class Artikel {
     return DateFormat("EEEE, dd MMMM yyyy", "id_ID").format(publishedAt!);
   }
 
-  String get gambarUrl => "${AppApiConfig.baseUrlStorage}/$image";
+  String get gambarUrl {
+    // Return empty string if no image
+    if (image.isEmpty) return '';
+    
+    // If the image URL is already a full URL, return it as is
+    if (image.startsWith('http')) {
+      return image;
+    }
+    
+    // Return the image path as is (assuming it's already correct from the API)
+    return image;
+  }
 }

@@ -1,8 +1,49 @@
 import 'package:flutter/material.dart';
-import '../../config/app_routes.dart'; // pastikan import route
+import '../../models/user_model.dart';
+import '../../services/user_service.dart';
+import '../../config/app_routes.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  UserModel? _user;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = await UserService.getProfile();
+      if (mounted) {
+        setState(() {
+          _user = user;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Gagal memuat profil: $e';
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,68 +53,129 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF121212),
         title: const Text("Profil"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadUserProfile,
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // foto profil
-            CircleAvatar(
-              radius: screenWidth * 0.1,
-              backgroundImage: const AssetImage(
-                "assets/user4.jpg", // ganti sesuai path gambar kamu
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(_errorMessage!),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadUserProfile,
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
               ),
-              backgroundColor: Colors.transparent, // biar ga ketimpa warna
-            ),
-            const SizedBox(height: 16),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Foto profil
+                  CircleAvatar(
+                    radius: screenWidth * 0.15,
+                    backgroundImage: _user?.avatar != null
+                        ? NetworkImage(_user!.avatar!)
+                        : const AssetImage('assets/user4.jpg') as ImageProvider,
+                    backgroundColor: Colors.transparent,
+                    onBackgroundImageError: (exception, stackTrace) {
+                      // Error handled by fallback to default image
+                    },
+                    child: _user?.avatar == null
+                        ? const Icon(Icons.person, size: 40)
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
 
-            // nama
-            const Text(
-              "Agungbahari",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+                  // Nama pengguna
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          _user?.name ?? 'Nama tidak tersedia',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontFamily: 'Poppins',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _user?.email ?? 'Email tidak tersedia',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[400],
+                            fontFamily: 'Poppins',
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
 
-            const SizedBox(height: 20),
-            const Divider(),
-            const SizedBox(height: 20),
+                  const SizedBox(height: 20),
+                  const Divider(),
+                  const SizedBox(height: 20),
 
-            // Info tambahan
-            ListTile(
-              leading: const Icon(Icons.email),
-              title: const Text("Email"),
-              subtitle: const Text("agungbahari3007@gmail.com"),
-            ),
-            ListTile(
-              leading: const Icon(Icons.phone),
-              title: const Text("Nomor HP"),
-              subtitle: const Text("+62 812-3456-7890"),
-            ),
-            ListTile(
-              leading: const Icon(Icons.location_on),
-              title: const Text("Alamat"),
-              subtitle: const Text("Jakarta, Indonesia"),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Tombol Edit Data
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.editProfile);
-                },
-                icon: const Icon(Icons.edit),
-                label: const Text("Edit Data"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.brown,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
+                  // Tombol Edit Data
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(context, AppRoutes.editProfile);
+                      },
+                      icon: const Icon(Icons.edit),
+                      label: const Text("Edit Data"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: Colors.white70,
+              fontFamily: 'Poppins',
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'Poppins',
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

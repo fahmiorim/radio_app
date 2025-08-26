@@ -17,8 +17,7 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Configuration
 
-The application requires API endpoints to be provided at runtime. Set `BASE_URL`
-and `BASE_URL_STORAGE` using either `--dart-define` when launching the app or a
+The application requires API endpoints to be provided at runtime. Set `BASE_URL` using either `--dart-define` when launching the app or a
 `.env` file in the project root.
 
 ### Using `--dart-define`
@@ -26,7 +25,7 @@ and `BASE_URL_STORAGE` using either `--dart-define` when launching the app or a
 ```bash
 flutter run \
   --dart-define=BASE_URL=https://example.com \
-  --dart-define=BASE_URL_STORAGE=https://example.com/storage
+
 ```
 
 ### Using a `.env` file
@@ -35,5 +34,4 @@ Create a `.env` file in the project root:
 
 ```env
 BASE_URL=https://example.com
-BASE_URL_STORAGE=https://example.com/storage
 ```

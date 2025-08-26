@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
 import '../config/app_api_config.dart';
 import '../models/login_model.dart';
+import '../services/user_service.dart'; // ✅ biar bisa saveToken
 
 class AuthService {
   /// Login dengan email & password
   Future<AuthResponse?> login(String email, String password) async {
     try {
-      final baseUrl = AppApiConfig.baseUrl; // ✅ ambil saat dipakai
+      final baseUrl = AppApiConfig.baseUrl;
       final response = await http.post(
         Uri.parse('$baseUrl/login'),
         body: {'email': email, 'password': password},
@@ -16,14 +16,19 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return AuthResponse.fromJson(data);
+        final auth = AuthResponse.fromJson(data);
+
+        await UserService.saveToken(auth.token);
+        return auth;
       } else {
-        print('Login gagal: ${response.body}');
-        return null;
+        final data = jsonDecode(response.body);
+        final errorMessage =
+            data['message'] ??
+            (data['errors']?.values.first.first ?? 'Login gagal');
+        throw Exception(errorMessage); // lempar ke UI
       }
     } catch (e) {
-      print('Error AuthService login: $e');
-      return null;
+      throw Exception(e.toString().replaceFirst("Exception: ", ""));
     }
   }
 
@@ -42,7 +47,14 @@ class AuthService {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return AuthResponse.fromJson(data);
+        final auth = AuthResponse.fromJson(data);
+
+        // ✅ simpan token juga kalau API balikin token
+        if (auth.token.isNotEmpty) {
+          await UserService.saveToken(auth.token);
+        }
+
+        return auth;
       } else {
         print('Registrasi gagal: ${response.body}');
         return null;
@@ -62,12 +74,7 @@ class AuthService {
         body: {'email': email},
       );
 
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        print('Forgot password gagal: ${response.body}');
-        return false;
-      }
+      return response.statusCode == 200;
     } catch (e) {
       print('Error AuthService forgotPassword: $e');
       return false;
@@ -85,35 +92,18 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return AuthResponse.fromJson(data);
+        final auth = AuthResponse.fromJson(data);
+
+        // ✅ simpan token
+        await UserService.saveToken(auth.token);
+
+        return auth;
       } else {
         print('Login Google gagal: ${response.body}');
         return null;
       }
     } catch (e) {
       print('Error AuthService loginWithGoogle: $e');
-      return null;
-    }
-  }
-
-  /// Login dengan Facebook
-  Future<AuthResponse?> loginWithFacebook(String accessToken) async {
-    try {
-      final baseUrl = AppApiConfig.baseUrl;
-      final response = await http.post(
-        Uri.parse('$baseUrl/login/facebook'),
-        body: {'token': accessToken},
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return AuthResponse.fromJson(data);
-      } else {
-        print('Login Facebook gagal: ${response.body}');
-        return null;
-      }
-    } catch (e) {
-      print('Error AuthService loginWithFacebook: $e');
       return null;
     }
   }

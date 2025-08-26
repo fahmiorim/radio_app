@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart'; // import AppRoutes
@@ -19,7 +18,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
@@ -39,9 +39,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final confirm = _confirmPasswordController.text;
 
     if (password != confirm) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password tidak sama')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Password tidak sama')));
       return;
     }
 
@@ -49,9 +49,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (authResponse != null) {
       Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registrasi gagal')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Registrasi gagal')));
     }
   }
 
@@ -72,27 +72,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       print('❌ Error login Google: $e');
-    }
-  }
-
-  Future<void> _loginWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login();
-      if (result.status != LoginStatus.success) {
-        print('⚠️ Gagal login Facebook: ${result.status}');
-        return;
-      }
-      final token = result.accessToken?.token;
-      if (token == null) return;
-
-      final authResponse = await AuthService().loginWithFacebook(token);
-      if (authResponse != null) {
-        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
-      } else {
-        print('⚠️ Gagal login Facebook backend');
-      }
-    } catch (e) {
-      print('❌ Error login Facebook: $e');
     }
   }
 
@@ -282,26 +261,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Login Facebook
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _loginWithFacebook,
-                  icon: Image.asset(
-                    'assets/icons/facebook.png',
-                    width: 24,
-                    height: 24,
-                  ),
-                  label: const Text("Login dengan Facebook"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

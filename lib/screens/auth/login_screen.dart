@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart';
@@ -27,15 +26,54 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    final email = _emailController.text;
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    final authResponse = await AuthService().login(email, password);
-    if (authResponse != null) {
-      Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
-    } else {
+    try {
+      final authResponse = await AuthService().login(email, password);
+      if (authResponse != null) {
+        // ✅ Login sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.green.shade600,
+            content: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 10),
+                Text("Login berhasil", style: TextStyle(color: Colors.white)),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+
+        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+      }
+    } catch (e) {
+      // ✅ Login gagal → tampilkan pesan dari API
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login gagal')),
+        SnackBar(
+          backgroundColor: Colors.red.shade600,
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  e.toString(),
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
       );
     }
   }
@@ -61,27 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       print("❌ Error login Google: $e");
-    }
-  }
-
-  Future<void> _loginWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login();
-      if (result.status != LoginStatus.success) {
-        print('⚠️ Gagal login Facebook: ${result.status}');
-        return;
-      }
-      final token = result.accessToken?.token;
-      if (token == null) return;
-
-      final authResponse = await AuthService().loginWithFacebook(token);
-      if (authResponse != null) {
-        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
-      } else {
-        print('⚠️ Gagal login Facebook backend');
-      }
-    } catch (e) {
-      print('❌ Error login Facebook: $e');
     }
   }
 
@@ -236,26 +253,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Login Facebook
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _loginWithFacebook,
-                  icon: Image.asset(
-                    'assets/icons/facebook.png',
-                    width: 24,
-                    height: 24,
-                  ),
-                  label: const Text("Login dengan Facebook"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

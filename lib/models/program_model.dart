@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import '../config/app_api_config.dart';
 
 class Program {
@@ -39,5 +40,22 @@ class Program {
     };
   }
 
-  String get gambarUrl => "${AppApiConfig.baseUrlStorage}/$gambar";
+  /// ✅ fallback kalau gambar kosong
+  String get gambarUrl {
+    // Return default image if no image is set
+    if (gambar.isEmpty) {
+      return 'assets/default_program.png';
+    }
+
+    // If the image URL is already a full URL, return it as is
+    if (gambar.startsWith('http')) {
+      return gambar;
+    }
+
+    // If it's a relative path, prepend the base URL
+    return '${AppApiConfig.baseUrl}/$gambar'.replaceAll(
+      RegExp(r'(?<!:)/+'),
+      '/',
+    );
+  }
 }
