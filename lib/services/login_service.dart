@@ -11,7 +11,7 @@ class AuthService {
   Future<AuthResponse?> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
+        Uri.parse('$_baseUrl/api/v1/mobile/login'),
         body: {'email': email, 'password': password},
       );
 
