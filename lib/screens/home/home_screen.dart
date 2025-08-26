@@ -53,13 +53,16 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.only(top: 8, bottom: 80),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SizedBox(height: 8),
+                  // The `SizedBox` widgets here are intentionally non-const
+                  // because using the same const instance multiple times in a
+                  // `SliverChildListDelegate` can cause layout issues.
+                  SizedBox(height: 8),
                   const PenyiarList(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   const ProgramList(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   const EventList(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   const ArtikelList(),
                 ]),
               ),
