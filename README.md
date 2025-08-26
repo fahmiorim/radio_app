@@ -25,7 +25,7 @@ and `BASE_URL_STORAGE` using either `--dart-define` when launching the app or a
 
 ```bash
 flutter run \
-  --dart-define=BASE_URL=https://example.com/api/v1/mobile \
+  --dart-define=BASE_URL=https://example.com \
   --dart-define=BASE_URL_STORAGE=https://example.com/storage
 ```
 
@@ -34,6 +34,6 @@ flutter run \
 Create a `.env` file in the project root:
 
 ```env
-BASE_URL=https://example.com/api/v1/mobile
+BASE_URL=https://example.com
 BASE_URL_STORAGE=https://example.com/storage
 ```
