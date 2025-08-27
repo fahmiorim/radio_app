@@ -1,4 +1,11 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppApiConfig {
-  static const String baseUrl = "http://192.168.89.137:8000/api/v1/mobile";
-  static const String baseUrlStorage = "http://192.168.89.137:8000/storage";
+  static String get baseUrl {
+    final url = dotenv.maybeGet('BASE_URL');
+    if (url == null || url.isEmpty) {
+      throw Exception("BASE_URL tidak ditemukan di .env");
+    }
+    return url;
+  }
 }

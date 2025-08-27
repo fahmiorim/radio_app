@@ -1,7 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/services/login_service.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
+
+  @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  final TextEditingController _emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendResetLink() async {
+    final email = _emailController.text;
+    final success = await AuthService().forgotPassword(email);
+    final message =
+        success ? 'Link reset dikirim ke email' : 'Gagal mengirim link reset';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +41,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E1E), // dark container
+                    color: const Color(0xFF1E1E1E),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -35,29 +59,23 @@ class ForgotPasswordScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Title
                 const Text(
-                  "Forgot Password",
+                  'Forgot Password',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white, // white text for dark theme
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 8),
 
-                // Subtitle
                 const Text(
-                  "Enter your email to reset your password",
+                  'Enter your email to reset your password',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey, // slightly grey for dark theme
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
                 const SizedBox(height: 20),
 
-                // Description
                 const Text(
                   "Enter the email address associated with your account and we'll send you a link to reset your password.",
                   textAlign: TextAlign.center,
@@ -65,14 +83,14 @@ class ForgotPasswordScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Email TextField
                 TextField(
+                  controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: "Email Address",
+                    labelText: 'Email Address',
                     labelStyle: const TextStyle(color: Colors.grey),
-                    hintText: "you@example.com",
+                    hintText: 'you@example.com',
                     hintStyle: const TextStyle(color: Colors.grey),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -93,13 +111,10 @@ class ForgotPasswordScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Send Password Reset Link Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: fungsi kirim link reset
-                    },
+                    onPressed: _sendResetLink,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueAccent,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -108,30 +123,29 @@ class ForgotPasswordScreen extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      "Send Password Reset Link",
+                      'Send Password Reset Link',
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
                 ),
                 const SizedBox(height: 50),
 
-                // Back to login
                 GestureDetector(
                   onTap: () {
-                    Navigator.pop(context); // kembali ke halaman login
+                    Navigator.pop(context);
                   },
                   child: RichText(
-                    text: TextSpan(
-                      text: "Remember your password? ",
-                      style: const TextStyle(
-                        color: Colors.white, // putih
+                    text: const TextSpan(
+                      text: 'Remember your password? ',
+                      style: TextStyle(
+                        color: Colors.white,
                         decoration: TextDecoration.none,
                       ),
-                      children: const [
+                      children: [
                         TextSpan(
-                          text: "Back to login",
+                          text: 'Back to login',
                           style: TextStyle(
-                            color: Colors.blueAccent, // biru
+                            color: Colors.blueAccent,
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -147,3 +161,4 @@ class ForgotPasswordScreen extends StatelessWidget {
     );
   }
 }
+

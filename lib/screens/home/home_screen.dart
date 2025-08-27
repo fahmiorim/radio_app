@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/app_drawer.dart';
 import '../home/widgets/penyiar_list.dart';
 import '../home/widgets/program_list.dart';
 import '../home/widgets/event_list.dart';
 import '../home/widgets/artikel_list.dart';
+import '../../config/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,34 +21,63 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
     });
   }
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          automaticallyImplyLeading: false,
-          title: AppHeader(
-            isLoading: isLoading,
-          ), // ⬅️ skeleton atau header asli
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: AppColors.backgroundDark,
+      drawer: const AppDrawer(),
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // Header
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                color: AppColors.backgroundDark,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 12.0,
+                ),
+                child: AppHeader(
+                  isLoading: isLoading,
+                  onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                ),
+              ),
+            ),
+
+            // Content
+            SliverPadding(
+              padding: const EdgeInsets.only(top: 8, bottom: 80),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // The `SizedBox` widgets here are intentionally non-const
+                  // because using the same const instance multiple times in a
+                  // `SliverChildListDelegate` can cause layout issues.
+                  SizedBox(height: 8),
+                  const PenyiarList(),
+                  SizedBox(height: 24),
+                  const ProgramList(),
+                  SizedBox(height: 24),
+                  const EventList(),
+                  SizedBox(height: 24),
+                  const ArtikelList(),
+                ]),
+              ),
+            ),
+          ],
         ),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: PenyiarList()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: ProgramList()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: EventList()),
-        const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        const SliverToBoxAdapter(child: ArtikelList()),
-        // Padding tambahan supaya tidak menempel ke MiniPlayer / BottomNav
-        SliverPadding(padding: const EdgeInsets.only(bottom: 170)),
-      ],
+      ),
     );
   }
 }

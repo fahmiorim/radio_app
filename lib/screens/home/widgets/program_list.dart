@@ -45,11 +45,37 @@ class _ProgramListState extends State<ProgramList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ✅ WAJIB kalau pakai AutomaticKeepAlive
+    super.build(context); // WAJIB kalau pakai AutomaticKeepAlive
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: "Program"),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SectionTitle(title: "Program"),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.allPrograms);
+                },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Lihat Semua',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
         isLoading
             ? const ProgramSkeleton()
@@ -69,7 +95,7 @@ class _ProgramListState extends State<ProgramList>
                         Navigator.pushNamed(
                           context,
                           AppRoutes.programDetail,
-                          arguments: program,
+                          arguments: program.id, // Pass only the program ID
                         );
                       },
                       child: Container(
@@ -80,19 +106,17 @@ class _ProgramListState extends State<ProgramList>
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(5),
-                              child: Image.network(
-                                program.gambarUrl,
-                                height: 225,
-                                width: 160,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
+                              child: program.gambar.isNotEmpty
+                                  ? Image.network(
+                                      program.gambarUrl,
                                       height: 225,
                                       width: 160,
-                                      color: Colors.grey[300],
-                                      child: const Icon(Icons.image, size: 50),
-                                    ),
-                              ),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              _buildPlaceholderImage(),
+                                    )
+                                  : _buildPlaceholderImage(),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -113,14 +137,6 @@ class _ProgramListState extends State<ProgramList>
                                 color: Colors.grey,
                               ),
                             ),
-                            // sementara belum ada jadwal di response
-                            // const Text(
-                            //   "Jadwal belum tersedia",
-                            //   style: TextStyle(
-                            //     fontSize: 12,
-                            //     color: Colors.grey,
-                            //   ),
-                            // ),
                           ],
                         ),
                       ),
@@ -129,6 +145,15 @@ class _ProgramListState extends State<ProgramList>
                 ),
               ),
       ],
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 225,
+      width: 160,
+      color: Colors.grey[300],
+      child: const Icon(Icons.image, size: 50),
     );
   }
 

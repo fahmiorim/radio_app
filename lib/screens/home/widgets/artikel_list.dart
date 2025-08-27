@@ -4,6 +4,7 @@ import '../../../widgets/skeleton/artikel_skeleton.dart';
 import '../../../config/app_routes.dart';
 import '../../../models/artikel_model.dart';
 import '../../../services/artikel_service.dart';
+import '../../../screens/artikel/artikel_screen.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -28,7 +29,7 @@ class _ArtikelListState extends State<ArtikelList>
 
   Future<void> _loadArtikel() async {
     try {
-      final data = await ArtikelService().fetchArtikel();
+      final data = await ArtikelService().fetchRecentArtikel();
       if (mounted) {
         setState(() {
           artikelList = data;
@@ -51,7 +52,32 @@ class _ArtikelListState extends State<ArtikelList>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: "Artikel"),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SectionTitle(title: "Artikel"),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ArtikelScreen(),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(50, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Lihat Semua'),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
         isLoading
             ? const ArtikelSkeleton()
@@ -82,7 +108,7 @@ class _ArtikelListState extends State<ArtikelList>
                             ClipRRect(
                               borderRadius: BorderRadius.circular(5),
                               child: Image.network(
-                                artikel.gambarUrl,
+                                artikel.image,
                                 height: 150,
                                 width: 160,
                                 fit: BoxFit.cover,

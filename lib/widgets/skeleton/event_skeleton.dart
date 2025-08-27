@@ -12,6 +12,8 @@ class EventSkeleton extends StatelessWidget {
       height: 300,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(), // penting
+        shrinkWrap: true, // penting
         padding: const EdgeInsets.only(left: 16),
         itemCount: itemCount,
         itemBuilder: (context, index) {

@@ -9,11 +9,13 @@ class ProgramSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 300,
+      height: 300, // tinggi tetap untuk skeleton
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.only(left: 16),
         itemCount: itemCount,
+        shrinkWrap: true, // biar gak bikin "unbounded height"
+        physics: const ClampingScrollPhysics(),
         itemBuilder: (context, index) {
           return Container(
             width: 160,
@@ -37,34 +39,43 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 8),
                 // shimmer judul program
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!, // dark mode
+                  baseColor: Colors.grey[850]!,
                   highlightColor: Colors.grey[700]!,
                   child: Container(
                     width: 120,
                     height: 16,
-                    color: Colors.grey[850],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[850],
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 // shimmer nama penyiar
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!, // dark mode
+                  baseColor: Colors.grey[850]!,
                   highlightColor: Colors.grey[700]!,
                   child: Container(
                     width: 100,
                     height: 14,
-                    color: Colors.grey[850],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[850],
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
                 // shimmer hari & jam
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!, // dark mode
+                  baseColor: Colors.grey[850]!,
                   highlightColor: Colors.grey[700]!,
                   child: Container(
                     width: 80,
                     height: 12,
-                    color: Colors.grey[850],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[850],
+                      borderRadius: BorderRadius.circular(3),
+                    ),
                   ),
                 ),
               ],

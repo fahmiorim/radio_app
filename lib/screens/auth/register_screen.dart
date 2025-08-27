@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:radio_odan_app/services/login_service.dart';
 import '../../config/app_routes.dart'; // import AppRoutes
+import 'package:radio_odan_app/config/logger.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,6 +16,69 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    final name = _nameController.text;
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final confirm = _confirmPasswordController.text;
+
+    if (password != confirm) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Password tidak sama')));
+      return;
+    }
+
+    final authResponse = await AuthService().register(name, email, password);
+    if (authResponse != null) {
+      if (!context.mounted) return;
+      Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+    } else {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Registrasi gagal')));
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return;
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) return;
+
+      final authResponse = await AuthService().loginWithGoogle(idToken);
+      if (authResponse != null) {
+        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
+      } else {
+        logger.w('⚠️ Gagal login Google');
+      }
+    } catch (e) {
+      logger.e('❌ Error login Google: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,6 +91,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 50),
               // Nama
               TextField(
+                controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'Nama',
                   border: OutlineInputBorder(
@@ -37,6 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Email
               TextField(
+                controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email',
@@ -50,6 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Password
               TextField(
+                controller: _passwordController,
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
@@ -75,6 +144,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
               // Ulangi Password
               TextField(
+                controller: _confirmPasswordController,
                 obscureText: _obscureConfirmPassword,
                 decoration: InputDecoration(
                   labelText: 'Ulangi Password',
@@ -131,11 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: agreeTerms
-                      ? () {
-                          // TODO: fungsi daftar
-                        }
-                      : null,
+                  onPressed: agreeTerms ? _register : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -183,9 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: login dengan Google
-                  },
+                  onPressed: _loginWithGoogle,
                   icon: Image.asset(
                     'assets/icons/google.png',
                     width: 24,
@@ -201,28 +265,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Login Facebook
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: login dengan Facebook
-                  },
-                  icon: Image.asset(
-                    'assets/icons/facebook.png',
-                    width: 24,
-                    height: 24,
-                  ),
-                  label: const Text("Login dengan Facebook"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
