@@ -128,11 +128,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return WillPopScope(
-      onWillPop: () async {
-        // Prevent going back to previous screen if it's the login screen
-        return !Navigator.of(context).userGestureInProgress;
-      },
+    return PopScope(
+      canPop: false, // Prevent navigating back to previous routes like home
       child: Scaffold(
         body: Stack(
           children: [
