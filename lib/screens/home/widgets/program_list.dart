@@ -45,11 +45,37 @@ class _ProgramListState extends State<ProgramList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ✅ WAJIB kalau pakai AutomaticKeepAlive
+    super.build(context); // WAJIB kalau pakai AutomaticKeepAlive
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: "Program"),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SectionTitle(title: "Program"),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, AppRoutes.allPrograms);
+                },
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Lihat Semua',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
         isLoading
             ? const ProgramSkeleton()
@@ -69,7 +95,7 @@ class _ProgramListState extends State<ProgramList>
                         Navigator.pushNamed(
                           context,
                           AppRoutes.programDetail,
-                          arguments: program,
+                          arguments: program.id, // Pass only the program ID
                         );
                       },
                       child: Container(

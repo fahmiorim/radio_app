@@ -47,72 +47,88 @@ class _PenyiarListState extends State<PenyiarList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     return Column(
-      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: SectionTitle(title: "Penyiar"),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         SizedBox(
-          height: 140,
+          height: 160,
           child: isLoading
               ? const PenyiarSkeleton()
               : (penyiarList.isEmpty
-                  ? const Center(
-                      child: Text('Tidak ada data penyiar'),
-                    )
-                  : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: penyiarList.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      itemBuilder: (context, index) {
-                        final penyiar = penyiarList[index];
-                        return Container(
-                          width: 100,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              ClipOval(
-                                child: Image.network(
-                                  penyiar.avatarUrl,
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                    width: 80,
-                                    height: 80,
-                                    color: Colors.grey[300],
-                                    child: const Icon(Icons.person, size: 40, color: Colors.grey),
+                    ? const Center(
+                        child: Text(
+                          'Tidak ada data penyiar',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      )
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: penyiarList.length,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemBuilder: (context, index) {
+                          final penyiar = penyiarList[index];
+                          return Container(
+                            width: 110,
+                            margin: const EdgeInsets.only(right: 12),
+                            child: Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                // Full image
+                                Container(
+                                  width: 110,
+                                  height: 160,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[900],
+                                    image: penyiar.avatarUrl.isNotEmpty
+                                        ? DecorationImage(
+                                            image: NetworkImage(
+                                              penyiar.avatarUrl,
+                                            ),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : null,
+                                  ),
+                                  child: penyiar.avatarUrl.isEmpty
+                                      ? const Icon(
+                                          Icons.person,
+                                          size: 50,
+                                          color: Colors.grey,
+                                        )
+                                      : null,
+                                ),
+                                // Overlay nama
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 6,
+                                    horizontal: 6,
+                                  ),
+                                  color: Colors.black.withOpacity(0.5),
+                                  child: Text(
+                                    penyiar.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 6),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4),
-                                child: Text(
-                                  penyiar.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    )),
-        )
+                              ],
+                            ),
+                          );
+                        },
+                      )),
+        ),
       ],
     );
   }

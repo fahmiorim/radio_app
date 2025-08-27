@@ -4,7 +4,7 @@ import '../../config/app_routes.dart';
 import '../../config/app_colors.dart';
 import '../../models/program_model.dart';
 import '../../services/program_service.dart';
-import '../../widgets/skeleton/program_skeleton.dart';
+import '../../widgets/skeleton/all_programs_skeleton.dart';
 import '../../widgets/mini_player.dart';
 
 class AllProgramsScreen extends StatefulWidget {
@@ -147,7 +147,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 80), // Padding untuk MiniPlayer
       child: isLoading
-          ? const Center(child: ProgramSkeleton())
+          ? const AllProgramsSkeleton()
           : programList.isEmpty
               ? const Center(child: Text('Tidak ada program tersedia'))
               : _buildProgramList(),

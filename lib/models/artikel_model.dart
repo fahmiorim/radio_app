@@ -5,9 +5,9 @@ class Artikel {
   final String title;
   final String slug;
   final String content;
+  final String excerpt;
   final String image;
-  final bool isPublished;
-  final DateTime? publishedAt;
+  final DateTime? publishedAt; // ✅ konsisten DateTime
   final String user;
 
   Artikel({
@@ -15,24 +15,29 @@ class Artikel {
     required this.title,
     required this.slug,
     required this.content,
+    required this.excerpt,
     required this.image,
-    required this.isPublished,
-    this.publishedAt,
+    required this.publishedAt,
     required this.user,
   });
 
   factory Artikel.fromJson(Map<String, dynamic> json) {
+    DateTime? parsedDate;
+
+    // published_at dari API itu String -> parse ke DateTime
+    if (json['published_at'] != null) {
+      parsedDate = DateTime.tryParse(json['published_at'].toString());
+    }
+
     return Artikel(
-      id: json['id'],
-      title: json['title'] ?? '',
-      slug: json['slug'] ?? '',
-      content: json['content'] ?? '',
-      image: json['image'] ?? '',
-      isPublished: json['is_published'] == 1 || json['is_published'] == true,
-      publishedAt: json['published_at'] != null
-          ? DateTime.tryParse(json['published_at'])
-          : null,
-      user: json['user'] ?? "Tidak ada data",
+      id: json['id'] as int? ?? 0,
+      title: json['title'] as String? ?? '',
+      slug: json['slug'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+      excerpt: json['excerpt'] as String? ?? '',
+      image: json['image'] as String? ?? '',
+      publishedAt: parsedDate,
+      user: json['user'] as String? ?? 'Admin',
     );
   }
 
@@ -41,16 +46,5 @@ class Artikel {
     return DateFormat("EEEE, dd MMMM yyyy", "id_ID").format(publishedAt!);
   }
 
-  String get gambarUrl {
-    // Return empty string if no image
-    if (image.isEmpty) return '';
-    
-    // If the image URL is already a full URL, return it as is
-    if (image.startsWith('http')) {
-      return image;
-    }
-    
-    // Return the image path as is (assuming it's already correct from the API)
-    return image;
-  }
+  String get gambarUrl => image;
 }

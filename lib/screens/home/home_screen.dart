@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/app_drawer.dart';
 import '../home/widgets/penyiar_list.dart';
 import '../home/widgets/program_list.dart';
 import '../home/widgets/event_list.dart';
@@ -27,10 +28,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.backgroundDark,
+      drawer: const AppDrawer(),
       body: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
@@ -44,10 +49,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   horizontal: 16.0,
                   vertical: 12.0,
                 ),
-                child: AppHeader(isLoading: isLoading),
+                child: AppHeader(
+                  isLoading: isLoading,
+                  onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                ),
               ),
             ),
-            
+
             // Content
             SliverPadding(
               padding: const EdgeInsets.only(top: 8, bottom: 80),

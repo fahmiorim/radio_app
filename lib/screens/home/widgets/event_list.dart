@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
-import '../../../config/app_routes.dart';
 import '../../../models/event_model.dart';
 import '../../../services/event_service.dart';
+import '../../../screens/event/all_events_screen.dart';
 
 class EventList extends StatefulWidget {
   const EventList({super.key});
@@ -28,7 +28,7 @@ class _EventListState extends State<EventList>
 
   Future<void> _loadEvents() async {
     try {
-      final data = await EventService().fetchEvents();
+      final data = await EventService().fetchRecentEvents();
       if (mounted) {
         setState(() {
           eventList = data;
@@ -51,7 +51,32 @@ class _EventListState extends State<EventList>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: "Event"),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const SectionTitle(title: "Event"),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AllEventsScreen(),
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(50, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Lihat Semua'),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
         isLoading
             ? const EventSkeleton()
@@ -59,19 +84,14 @@ class _EventListState extends State<EventList>
                 height: 300,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(), // smooth scroll
-                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  physics: const BouncingScrollPhysics(),
                   itemCount: eventList.length,
-                  padding: const EdgeInsets.only(left: 16),
                   itemBuilder: (context, index) {
                     final event = eventList[index];
                     return GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.eventDetail,
-                          arguments: event,
-                        );
+                        // Navigation to event detail removed
                       },
                       child: Container(
                         width: 200,

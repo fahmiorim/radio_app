@@ -1,6 +1,6 @@
-// lib/widgets/app_header.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:radio_odan_app/services/user_service.dart';
 import 'package:radio_odan_app/config/logger.dart';
 import 'package:radio_odan_app/models/user_model.dart';
@@ -8,7 +8,9 @@ import 'package:radio_odan_app/widgets/skeleton/app_header_skeleton.dart';
 
 class AppHeader extends StatefulWidget {
   final bool isLoading;
-  const AppHeader({super.key, this.isLoading = false});
+  final VoidCallback? onMenuTap;
+
+  const AppHeader({super.key, this.isLoading = false, this.onMenuTap});
 
   @override
   State<AppHeader> createState() => _AppHeaderState();
@@ -47,58 +49,97 @@ class _AppHeaderState extends State<AppHeader> {
       return const AppHeaderSkeleton();
     }
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Image.asset('assets/logo-white.png', height: 50),
-        Builder(
-          builder: (context) => GestureDetector(
-            onTap: () => Scaffold.of(context).openDrawer(),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.blueAccent.withOpacity(0.15),
+            Colors.purpleAccent.withOpacity(0.15),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Branding
+          Row(
+            children: [
+              Image.asset('assets/logo-white.png', height: 40),
+              const SizedBox(width: 12),
+              const Text(
+                "ODAN FM",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ],
+          ),
+
+          // Avatar User
+          InkWell(
+            borderRadius: BorderRadius.circular(30),
+            onTap:
+                widget.onMenuTap ??
+                () {
+                  if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
+                    Scaffold.of(context).openDrawer();
+                  }
+                },
             child: _buildProfileAvatar(),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildProfileAvatar() {
     final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
 
     if (_user?.avatar?.isNotEmpty == true) {
       return CachedNetworkImage(
         imageUrl: _user!.avatar!,
         imageBuilder: (context, imageProvider) => CircleAvatar(
-          radius: 20,
-          backgroundColor: theme.primaryColor,
-          backgroundImage: imageProvider,
+          radius: 22,
+          backgroundColor: Colors.white,
+          child: CircleAvatar(radius: 20, backgroundImage: imageProvider),
         ),
-        placeholder: (context, url) => CircleAvatar(
-          radius: 20,
-          backgroundColor: theme.primaryColor.withOpacity(0.1),
-          child: const CircularProgressIndicator(strokeWidth: 2),
-        ),
-        errorWidget: (context, url, error) =>
-            _buildInitialsAvatar(theme, textTheme),
+        placeholder: (context, url) => _buildShimmerAvatar(),
+        errorWidget: (context, url, error) => _buildInitialsAvatar(theme),
       );
     }
 
-    return _buildInitialsAvatar(theme, textTheme);
+    return _buildInitialsAvatar(theme);
   }
 
-  Widget _buildInitialsAvatar(ThemeData theme, TextTheme textTheme) {
+  Widget _buildShimmerAvatar() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[800]!,
+      highlightColor: Colors.grey[600]!,
+      child: const CircleAvatar(radius: 22, backgroundColor: Colors.grey),
+    );
+  }
+
+  Widget _buildInitialsAvatar(ThemeData theme) {
     final displayName = _user?.name?.trim().isNotEmpty == true
-        ? _user!.name!.substring(0, 1).toUpperCase()
+        ? _user!.name![0].toUpperCase()
         : 'U';
 
     return CircleAvatar(
-      radius: 20,
-      backgroundColor: theme.primaryColor,
+      radius: 22,
+      backgroundColor: Colors.blueAccent,
       child: Text(
         displayName,
-        style: textTheme.titleMedium?.copyWith(
+        style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
+          fontSize: 16,
         ),
       ),
     );
