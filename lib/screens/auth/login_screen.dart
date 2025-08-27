@@ -130,8 +130,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        // Prevent going back to previous screen if it's the login screen
-        return !Navigator.of(context).userGestureInProgress;
+        // Stay on the login screen when the back button is pressed
+        // so users can't navigate to the previous route (e.g. home).
+        return false;
       },
       child: Scaffold(
         body: Stack(
