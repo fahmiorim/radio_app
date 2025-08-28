@@ -49,12 +49,13 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   void _navigateToEditProfile() {
-    if (_user != null) {
+    final currentUser = _user;
+    if (currentUser != null) {
       Navigator.pop(context);
       Navigator.pushNamed(
         context,
         '/edit-profile',
-        arguments: {'user': _user!},
+        arguments: {'user': currentUser},
       );
     }
   }
@@ -247,9 +248,10 @@ class _AppDrawerState extends State<AppDrawer> {
         child: const CircularProgressIndicator(strokeWidth: 2),
       );
     }
-    if (_user?.avatar?.isNotEmpty == true) {
+    final avatarUrl = _user?.avatar;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: _user!.avatar!,
+        imageUrl: avatarUrl,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: size / 2,
           backgroundColor: Colors.white,
@@ -271,8 +273,9 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Widget _buildInitialsAvatar(double size, Color color) {
-    final displayName = _user?.name?.trim().isNotEmpty == true
-        ? _user!.name![0].toUpperCase()
+    final name = _user?.name;
+    final displayName = (name != null && name.trim().isNotEmpty)
+        ? name[0].toUpperCase()
         : 'U';
 
     return CircleAvatar(

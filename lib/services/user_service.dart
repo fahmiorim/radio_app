@@ -194,19 +194,20 @@ class UserService {
       logger.e('Error response: ${e.response?.data}');
 
       String message = 'Terjadi kesalahan saat memperbarui profil';
-      if (e.response?.data != null) {
-        if (e.response!.data is Map<String, dynamic>) {
-          message = e.response!.data['message'] ?? message;
+      final responseData = e.response?.data;
+      if (responseData != null) {
+        if (responseData is Map<String, dynamic>) {
+          message = responseData['message'] ?? message;
 
           // Laravel validation errors
-          if (e.response!.data['errors'] != null) {
-            final errors = e.response!.data['errors'] as Map<String, dynamic>;
+          if (responseData['errors'] != null) {
+            final errors = responseData['errors'] as Map<String, dynamic>;
             message = errors.values.first is List
                 ? (errors.values.first as List).first.toString()
-                : errors.values.join('\n');
+                : errors.values.join(', ');
           }
-        } else if (e.response!.data is String) {
-          message = e.response!.data;
+        } else if (responseData is String) {
+          message = responseData;
         }
       }
 

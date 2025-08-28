@@ -143,9 +143,10 @@ class _AppHeaderState extends State<AppHeader> {
   Widget _buildProfileAvatar() {
     final theme = Theme.of(context);
 
-    if (_user?.avatar?.isNotEmpty == true) {
+    final avatarUrl = _user?.avatar;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: _user!.avatar!,
+        imageUrl: avatarUrl,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: 22,
           backgroundColor: Colors.white,
@@ -168,8 +169,9 @@ class _AppHeaderState extends State<AppHeader> {
   }
 
   Widget _buildInitialsAvatar(ThemeData theme) {
-    final displayName = _user?.name?.trim().isNotEmpty == true
-        ? _user!.name![0].toUpperCase()
+    final name = _user?.name;
+    final displayName = (name != null && name.trim().isNotEmpty)
+        ? name[0].toUpperCase()
         : 'U';
 
     return CircleAvatar(

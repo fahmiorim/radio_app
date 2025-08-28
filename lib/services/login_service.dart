@@ -81,17 +81,18 @@ class AuthService {
       String errorMessage = 'Gagal melakukan registrasi';
       
       if (e.response?.statusCode == 422) {
+        final respData = e.response?.data;
         // Handle validation errors
-        if (e.response?.data is Map && e.response?.data['errors'] != null) {
-          final errors = e.response!.data['errors'] as Map<String, dynamic>;
+        if (respData is Map && respData['errors'] != null) {
+          final errors = respData['errors'] as Map<String, dynamic>;
           errorMessage = errors.values.first?.first?.toString() ?? errorMessage;
-        } else if (e.response?.data is Map && e.response?.data['message'] != null) {
-          errorMessage = e.response!.data['message'];
+        } else if (respData is Map && respData['message'] != null) {
+          errorMessage = respData['message'];
         }
       } else if (e.response?.data is String) {
-        errorMessage = e.response!.data;
+        errorMessage = e.response?.data;
       }
-      
+
       logger.e('Register error: $errorMessage');
       throw Exception(errorMessage);
     } catch (e) {
