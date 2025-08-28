@@ -76,7 +76,6 @@ class _ProgramListState extends State<ProgramList>
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
       children: [
         SectionTitle(
           title: "Program Hari Ini",
