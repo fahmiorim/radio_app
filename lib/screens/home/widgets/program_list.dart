@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/program_skeleton.dart';
-import '../../../config/app_routes.dart';
 import '../../../models/program_model.dart';
-import '../../../services/program_service.dart';
+import '../../../providers/program_provider.dart';
+import '../../../screens/program/all_programs_screen.dart';
 
 class ProgramList extends StatefulWidget {
   const ProgramList({super.key});
@@ -14,78 +15,93 @@ class ProgramList extends StatefulWidget {
 
 class _ProgramListState extends State<ProgramList>
     with AutomaticKeepAliveClientMixin {
-  bool isLoading = true;
-  List<Program> programList = [];
-  final programService = ProgramService();
+  bool get isLoading => context.watch<ProgramProvider>().isLoading;
+  List<Program> get programList => context.watch<ProgramProvider>().programs;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    try {
-      final data = await programService.fetchProgram();
-      if (mounted) {
-        setState(() {
-          programList = data;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal ambil data program: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
+    // Always fetch today's programs when the widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<ProgramProvider>();
+      provider.fetchProgram(); // This will fetch today's programs
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // WAJIB kalau pakai AutomaticKeepAlive
+
+    // Handle error
+    final error = context.select<ProgramProvider, String?>((p) => p.error);
+    if (error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Gagal memuat data program. Silakan coba lagi.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
+
+    // Show empty state if no programs for today
+    if (programList.isEmpty && !isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(
+            title: "Program Hari Ini",
+            onSeeAll: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AllProgramsScreen(),
+                ),
+              );
+            },
+          ),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Tidak ada program untuk hari ini',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SectionTitle(title: "Program"),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, AppRoutes.allPrograms);
-                },
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Lihat Semua',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+        SectionTitle(
+          title: "Program Hari Ini",
+          onSeeAll: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AllProgramsScreen(),
               ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 8),
-        isLoading
-            ? const ProgramSkeleton()
-            : SizedBox(
-                height: 300,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  shrinkWrap: true,
+        if (isLoading)
+          const ProgramSkeleton()
+        else if (programList.isEmpty)
+          const SizedBox.shrink()
+        else
+          SizedBox(
+            height: 300,
+            child: ListView.builder(
+              key: const PageStorageKey('programs_list'),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              shrinkWrap: true,
                   itemCount: programList.length,
                   padding: const EdgeInsets.only(left: 16),
                   itemBuilder: (context, index) {
@@ -93,11 +109,8 @@ class _ProgramListState extends State<ProgramList>
 
                     return GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.programDetail,
-                          arguments: program.id, // Pass only the program ID
-                        );
+                        final provider = context.read<ProgramProvider>();
+                        provider.selectProgram(program, context);
                       },
                       child: Container(
                         width: 160,
@@ -127,6 +140,7 @@ class _ProgramListState extends State<ProgramList>
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             Text(
@@ -135,7 +149,7 @@ class _ProgramListState extends State<ProgramList>
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: Colors.white,
                               ),
                             ),
                           ],

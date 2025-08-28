@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/penyiar_skeleton.dart';
-import '../../../models/penyiar_model.dart';
-import '../../../services/penyiar_service.dart';
+import '../../../providers/penyiar_provider.dart';
 
 class PenyiarList extends StatefulWidget {
   const PenyiarList({super.key});
@@ -13,49 +14,47 @@ class PenyiarList extends StatefulWidget {
 
 class _PenyiarListState extends State<PenyiarList>
     with AutomaticKeepAliveClientMixin {
-  bool isLoading = true;
-  List<Penyiar> penyiarList = [];
-
   @override
   bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  Future<void> _loadData() async {
-    try {
-      final data = await PenyiarService().fetchPenyiar();
-      if (mounted) {
-        setState(() {
-          penyiarList = data;
-          isLoading = false;
-        });
+    // Load data hanya jika belum dimuat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<PenyiarProvider>(context, listen: false);
+      if (provider.penyiars.isEmpty) {
+        provider.fetchPenyiars();
       }
-    } catch (e) {
-      debugPrint("Gagal ambil data penyiar: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    
+    final isLoading = context.watch<PenyiarProvider>().isLoading;
+    final penyiarList = context.watch<PenyiarProvider>().penyiars;
+    final error = context.watch<PenyiarProvider>().error;
+    
+    // Handle error
+    if (error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Gagal memuat data penyiar. Silakan coba lagi.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: SectionTitle(title: "Penyiar"),
-        ),
+        SectionTitle(title: 'Penyiar'),
         const SizedBox(height: 12),
         SizedBox(
           height: 160,

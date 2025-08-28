@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -19,6 +20,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final IconThemeData? iconTheme;
   final bool primary;
   final double? titleSpacingNavigation;
+  final Widget? flexibleSpace;
 
   const CustomAppBar({
     Key? key,
@@ -40,6 +42,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.iconTheme,
     this.primary = true,
     this.titleSpacingNavigation,
+    this.flexibleSpace,
   }) : super(key: key);
 
   // Factory constructor untuk kasus-kasus khusus
@@ -48,6 +51,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     Color? titleColor = Colors.white,
     Color? iconColor = Colors.white,
     List<Widget>? actions,
+    Widget? leading,
   }) {
     return CustomAppBar(
       title: title,
@@ -56,6 +60,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       titleColor: titleColor,
       iconColor: iconColor,
       actions: actions,
+      leading: leading,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary, Colors.transparent],
+          ),
+        ),
+      ),
     );
   }
 
@@ -83,7 +97,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(
         title,
-        style: titleStyle ??
+        style:
+            titleStyle ??
             TextStyle(
               color: titleColor ?? appBarTheme.titleTextStyle?.color,
               fontWeight: FontWeight.bold,
@@ -92,11 +107,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
-      backgroundColor: backgroundColor ?? appBarTheme.backgroundColor ?? scaffoldBackgroundColor,
+      backgroundColor:
+          backgroundColor ??
+          appBarTheme.backgroundColor ??
+          scaffoldBackgroundColor,
       elevation: elevation,
+      flexibleSpace: flexibleSpace,
       actions: actions,
       bottom: bottom,
-      iconTheme: iconTheme ?? IconThemeData(color: iconColor ?? appBarTheme.iconTheme?.color),
+      iconTheme:
+          iconTheme ??
+          IconThemeData(color: iconColor ?? appBarTheme.iconTheme?.color),
       leading: leading ?? (showBackButton ? const BackButton() : null),
       titleSpacing: titleSpacing,
       toolbarHeight: toolbarHeight,

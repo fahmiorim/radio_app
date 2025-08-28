@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/video_model.dart';
 import '../../services/video_service.dart';
-import '../../widgets/app_bar/custom_app_bar.dart';
+import '../../widgets/app_bar.dart';
 
 class AllVideosScreen extends StatefulWidget {
   const AllVideosScreen({Key? key}) : super(key: key);
@@ -46,7 +46,7 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
           _videos.addAll(response['videos']);
           _isLoading = false;
           _hasError = false;
-          
+
           final pagination = response['pagination'];
           if (pagination != null) {
             _hasMore = pagination['current_page'] < pagination['last_page'];
@@ -95,22 +95,14 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Semua Video',
-        showBackButton: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: _buildBody(),
-      ),
+      appBar: const CustomAppBar(title: 'Semua Video', showBackButton: true),
+      body: Padding(padding: const EdgeInsets.all(16.0), child: _buildBody()),
     );
   }
 
   Widget _buildBody() {
     if (_isLoading && _videos.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_hasError && _videos.isEmpty) {
@@ -143,10 +135,7 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Gagal memuat video'),
-            TextButton(
-              onPressed: _fetchVideos,
-              child: const Text('Coba Lagi'),
-            ),
+            TextButton(onPressed: _fetchVideos, child: const Text('Coba Lagi')),
           ],
         ),
       );
@@ -208,16 +197,18 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
                     return Container(
                       height: 120,
                       color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                      child: const Center(child: CircularProgressIndicator()),
                     );
                   },
                   errorBuilder: (context, error, stackTrace) => Container(
                     height: 120,
                     color: Colors.grey[200],
                     child: const Center(
-                      child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 40,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),
@@ -244,10 +235,7 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
           const SizedBox(height: 8),
           Text(
             video.title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -255,9 +243,8 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
       ),
     );
   }
-  
+
   String _formatDate(DateTime dateTime) {
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year}';
   }
-
 }

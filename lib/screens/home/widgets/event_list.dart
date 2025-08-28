@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
-import '../../../models/event_model.dart';
-import '../../../services/event_service.dart';
+import '../../../providers/event_provider.dart';
 import '../../../screens/event/all_events_screen.dart';
 
 class EventList extends StatefulWidget {
@@ -14,69 +15,53 @@ class EventList extends StatefulWidget {
 
 class _EventListState extends State<EventList>
     with AutomaticKeepAliveClientMixin {
-  bool isLoading = true;
-  List<Event> eventList = [];
-
   @override
   bool get wantKeepAlive => true; // biar state tetap hidup (gak rebuild)
 
   @override
   void initState() {
     super.initState();
-    _loadEvents();
-  }
-
-  Future<void> _loadEvents() async {
-    try {
-      final data = await EventService().fetchRecentEvents();
-      if (mounted) {
-        setState(() {
-          eventList = data;
-          isLoading = false;
-        });
+    // Load data hanya jika belum dimuat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<EventProvider>(context, listen: false);
+      if (provider.events.isEmpty) {
+        provider.fetchEvents();
       }
-    } catch (e) {
-      debugPrint("Gagal ambil data event: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false; // biar skeleton hilang walau error
-        });
-      }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // wajib kalau pakai AutomaticKeepAliveClientMixin
+
+    final isLoading = context.watch<EventProvider>().isLoading;
+    final eventList = context.watch<EventProvider>().events;
+    final error = context.watch<EventProvider>().error;
+
+    // Handle error
+    if (error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Gagal memuat data event. Silakan coba lagi.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SectionTitle(title: "Event"),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AllEventsScreen(),
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(50, 30),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('Lihat Semua'),
-              ),
-            ],
-          ),
+        SectionTitle(
+          title: "Event",
+          onSeeAll: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AllEventsScreen()),
+            );
+          },
         ),
         const SizedBox(height: 8),
         isLoading
@@ -119,13 +104,14 @@ class _EventListState extends State<EventList>
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             Text(
                               event.formattedTanggal,
                               style: const TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey,
+                                color: Colors.white,
                               ),
                             ),
                           ],

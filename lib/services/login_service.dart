@@ -43,21 +43,60 @@ class AuthService {
     try {
       final response = await _dio.post(
         '/register',
-        data: {'name': name, 'email': email, 'password': password},
+        data: {
+          'name': name.trim(),
+          'email': email.trim().toLowerCase(),
+          'password': password,
+          'password_confirmation': password,
+        },
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final auth = AuthResponse.fromJson(response.data);
-        if (auth.token.isNotEmpty) {
-          await UserService.saveToken(auth.token);
+        // Check if response.data is a Map and contains the expected fields
+        if (response.data is Map && response.data['token'] != null) {
+          final auth = AuthResponse.fromJson(response.data);
+          if (auth.token.isNotEmpty) {
+            await UserService.saveToken(auth.token);
+          }
+          return auth;
+        } else {
+          // If no token in response but registration was successful
+          logger.i('Registration successful but no token received');
+          return AuthResponse(
+            token: '',
+            user: UserModel(
+              id: 0,
+              name: name,
+              email: email,
+            ),
+          );
         }
-        return auth;
       } else {
-        throw Exception(response.data['message'] ?? 'Registrasi gagal');
+        final errorMessage = response.data is Map && response.data['message'] != null
+            ? response.data['message']
+            : 'Registrasi gagal';
+        throw Exception(errorMessage);
       }
+    } on DioException catch (e) {
+      String errorMessage = 'Gagal melakukan registrasi';
+      
+      if (e.response?.statusCode == 422) {
+        // Handle validation errors
+        if (e.response?.data is Map && e.response?.data['errors'] != null) {
+          final errors = e.response!.data['errors'] as Map<String, dynamic>;
+          errorMessage = errors.values.first?.first?.toString() ?? errorMessage;
+        } else if (e.response?.data is Map && e.response?.data['message'] != null) {
+          errorMessage = e.response!.data['message'];
+        }
+      } else if (e.response?.data is String) {
+        errorMessage = e.response!.data;
+      }
+      
+      logger.e('Register error: $errorMessage');
+      throw Exception(errorMessage);
     } catch (e) {
-      logger.e("Register error: $e");
-      throw Exception("Gagal registrasi: $e");
+      logger.e('Register error: $e');
+      throw Exception('Terjadi kesalahan saat registrasi');
     }
   }
 
