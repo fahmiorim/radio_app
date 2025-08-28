@@ -21,10 +21,12 @@ class _ProgramListState extends State<ProgramList>
   @override
   void initState() {
     super.initState();
-    // Always fetch today's programs when the widget initializes
+    // Fetch program only once when first initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<ProgramProvider>();
-      provider.fetchProgram(); // This will fetch today's programs
+      if (provider.programs.isEmpty) {
+        provider.fetchProgram();
+      }
     });
   }
 
