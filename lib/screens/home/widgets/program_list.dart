@@ -15,8 +15,8 @@ class ProgramList extends StatefulWidget {
 
 class _ProgramListState extends State<ProgramList>
     with AutomaticKeepAliveClientMixin {
-  bool get isLoading => context.watch<ProgramProvider>().isLoading;
-  List<Program> get programList => context.watch<ProgramProvider>().programs;
+  bool get isLoading => context.watch<ProgramProvider>().isLoadingTodays;
+  List<Program> get programList => context.watch<ProgramProvider>().todaysPrograms;
 
   @override
   void initState() {
@@ -24,8 +24,8 @@ class _ProgramListState extends State<ProgramList>
     // Fetch program only once when first initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<ProgramProvider>();
-      if (provider.programs.isEmpty) {
-        provider.fetchProgram();
+      if (provider.todaysPrograms.isEmpty) {
+        provider.fetchTodaysPrograms();
       }
     });
   }
@@ -35,7 +35,7 @@ class _ProgramListState extends State<ProgramList>
     super.build(context); // WAJIB kalau pakai AutomaticKeepAlive
 
     // Handle error
-    final error = context.select<ProgramProvider, String?>((p) => p.error);
+    final error = context.select<ProgramProvider, String?>((p) => p.todaysError);
     if (error != null) {
       return Center(
         child: Padding(

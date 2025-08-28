@@ -87,7 +87,8 @@ class AppHeader extends StatelessWidget {
           ),
           InkWell(
             borderRadius: BorderRadius.circular(30),
-            onTap: onMenuTap ??
+            onTap:
+                onMenuTap ??
                 () {
                   if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
                     Scaffold.of(context).openDrawer();

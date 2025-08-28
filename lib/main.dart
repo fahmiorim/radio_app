@@ -13,6 +13,10 @@ import 'package:radio_odan_app/providers/penyiar_provider.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
+import 'package:radio_odan_app/providers/video_provider.dart';
+import 'package:radio_odan_app/providers/album_provider.dart';
+import 'package:radio_odan_app/providers/album_detail_provider.dart';
+import 'package:radio_odan_app/providers/radio_station_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +77,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => PenyiarProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
         ChangeNotifierProvider(create: (_) => ArtikelProvider()),
+        ChangeNotifierProvider(create: (_) => VideoProvider()),
+        ChangeNotifierProvider(create: (_) => AlbumProvider()),
+        ChangeNotifierProvider(create: (_) => AlbumDetailProvider()),
+        ChangeNotifierProvider(create: (_) => RadioStationProvider()),
         ChangeNotifierProvider(
           create: (_) => UserProvider()..fetchUser(),
         ),

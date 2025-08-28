@@ -22,15 +22,20 @@ class Program {
   });
 
   factory Program.fromJson(Map<String, dynamic> json) {
+    // Handle both API response formats
+    final deskripsi = json['deskripsi'] is String 
+        ? (json['deskripsi'] as String).replaceAll(RegExp(r'<[^>]*>'), '').trim() 
+        : '';
+        
     return Program(
-      id: json['id'] as int,
-      namaProgram: json['nama_program'] as String,
-      deskripsi: (json['deskripsi'] as String?)?.replaceAll(RegExp(r'<[^>]*>'), '').trim() ?? '',
-      gambar: json['gambar'] as String? ?? '',
-      status: json['status'] as String? ?? 'aktif',
-      penyiar: json['penyiar'] as String?,
-      jadwal: json['jadwal'] as String?,
-      penyiarName: json['penyiarName'] as String?,
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      namaProgram: json['nama_program']?.toString() ?? 'Program Tanpa Nama',
+      deskripsi: deskripsi,
+      gambar: json['gambar']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'aktif',
+      penyiar: json['penyiar']?.toString(),
+      jadwal: json['jadwal']?.toString(),
+      penyiarName: json['penyiarName']?.toString() ?? json['penyiar']?.toString(),
     );
   }
 
@@ -47,7 +52,7 @@ class Program {
     };
   }
 
-  /// ✅ fallback kalau gambar kosong
+  /// Get the image URL with fallback
   String get gambarUrl {
     // Return default image if no image is set
     if (gambar.isEmpty) {
@@ -59,7 +64,12 @@ class Program {
       return gambar;
     }
 
-    // If it's a relative path, prepend the base URL
+    // Handle different URL formats
+    if (gambar.startsWith('/storage/')) {
+      return '${AppApiConfig.baseUrl}$gambar';
+    }
+
+    // Default case - prepend base URL
     return '${AppApiConfig.baseUrl}/$gambar'.replaceAll(
       RegExp(r'(?<!:)/+'),
       '/',

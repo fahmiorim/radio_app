@@ -16,7 +16,6 @@ class ArtikelScreen extends StatefulWidget {
 
 class _ArtikelScreenState extends State<ArtikelScreen> {
   final ScrollController _scrollController = ScrollController();
-  late final ArtikelProvider _provider;
 
   @override
   void initState() {
@@ -25,8 +24,9 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
 
     // Fetch initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_provider.artikels.isEmpty) {
-        _provider.fetchArtikels();
+      final provider = context.read<ArtikelProvider>();
+      if (provider.artikels.isEmpty) {
+        provider.fetchArtikels();
       }
     });
   }
@@ -40,28 +40,28 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      if (!_provider.isLoadingMore && _provider.hasMore) {
-        _provider.loadMoreArtikels();
+      final provider = context.read<ArtikelProvider>();
+      if (!provider.isLoadingMore && provider.hasMore) {
+        provider.loadMoreArtikels();
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    _provider = Provider.of<ArtikelProvider>(context, listen: false);
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: AppColors.backgroundDark,
       appBar: CustomAppBar.transparent(title: 'Artikel'),
       body: Stack(
         children: [
           // Background with gradient and bubbles
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF1E88E5), Color(0xFF121212)],
+                  colors: [AppColors.primary, AppColors.backgroundDark],
                 ),
               ),
               child: Stack(
@@ -174,7 +174,8 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => ArtikelDetailScreen(artikelSlug: artikel.slug),
+                builder: (context) =>
+                    ArtikelDetailScreen(artikelSlug: artikel.slug),
               ),
             );
           },

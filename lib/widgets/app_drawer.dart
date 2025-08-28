@@ -15,8 +15,7 @@ class AppDrawer extends StatelessWidget {
       Navigator.pop(context);
       Navigator.pushNamed(
         context,
-        // Pakai route yang sudah kamu daftarkan. Ganti ke AppRoutes.editProfile jika ada.
-        '/edit-profile',
+        AppRoutes.editProfile,
         arguments: {'user': user},
       );
     }

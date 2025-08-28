@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import '../../data/dummy_radio.dart';
+import 'package:provider/provider.dart';
 import '../../audio/audio_player_manager.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../providers/radio_station_provider.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -16,7 +17,27 @@ class _FullPlayerState extends State<FullPlayer> {
   bool isFavorited = false;
 
   @override
+  void dispose() {
+    _audioManager.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final radioProvider = Provider.of<RadioStationProvider>(context);
+    final currentStation = radioProvider.currentStation;
+
+    if (currentStation == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(
+          child: Text(
+            'No radio station selected',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -49,7 +70,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.asset(
-                      dummyRadio.coverUrl,
+                      currentStation.coverUrl,
                       width: double.infinity,
                       fit: BoxFit.cover,
                     ),
@@ -65,7 +86,7 @@ class _FullPlayerState extends State<FullPlayer> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    dummyRadio.title,
+                    currentStation.title,
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -75,7 +96,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    dummyRadio.host,
+                    currentStation.host,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),
@@ -124,7 +145,7 @@ class _FullPlayerState extends State<FullPlayer> {
                         height: 4,
                         child: LinearProgressIndicator(
                           value: progress,
-                          backgroundColor: Colors.white.withValues(alpha: 0.3),
+                          backgroundColor: Colors.white.withAlpha(30),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Colors.red,
                           ),
@@ -205,12 +226,12 @@ class _FullPlayerState extends State<FullPlayer> {
                                     isPlaying ? Icons.pause : Icons.play_arrow,
                                   ),
                                   onPressed: () {
-                                    if (isPlaying) {
+                                    if (radioProvider.isPlaying) {
                                       _audioManager.pause();
+                                      radioProvider.setPlaying(false);
                                     } else {
-                                      _audioManager.playRadio(
-                                        dummyRadio,
-                                      ); // <-- pakai RadioStation
+                                      _audioManager.playRadio(currentStation);
+                                      radioProvider.setPlaying(true);
                                     }
                                   },
                                 ),
@@ -222,8 +243,8 @@ class _FullPlayerState extends State<FullPlayer> {
                           iconSize: 28,
                           onPressed: () async {
                             await Share.share(
-                              '🎵 Listening to "${dummyRadio.title}" on ${dummyRadio.host}\n\n${dummyRadio.streamUrl}',
-                              subject: 'Listen to ${dummyRadio.title}',
+                              '🎵 Listening to "${currentStation.title}" on ${currentStation.host}\n\n${currentStation.streamUrl}',
+                              subject: 'Listen to ${currentStation.title}',
                             );
                           },
                         ),

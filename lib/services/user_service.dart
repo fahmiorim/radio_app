@@ -28,18 +28,19 @@ class UserService {
     await _storage.delete(key: _userDataKey);
   }
 
-  /// Ambil data profil user dengan caching
+  /// Ambil data profil user
   static Future<UserModel?> getProfile({bool forceRefresh = false}) async {
-    // Return cached user if available and not forcing refresh
-    if (_cachedUser != null && !forceRefresh) {
-      return _cachedUser;
-    }
-
     try {
       final token = await getToken();
       if (token == null) {
         logger.w("Token tidak ada, user belum login.");
         return null;
+      }
+
+      // Clear cache if force refresh is true
+      if (forceRefresh) {
+        _cachedUser = null;
+        await _storage.delete(key: _userDataKey);
       }
 
       final response = await ApiClient.dio.get(
@@ -48,6 +49,7 @@ class UserService {
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
+            'Cache-Control': 'no-cache',
           },
         ),
       );
@@ -135,12 +137,14 @@ class UserService {
       }
 
       // Log values
-      logger.d('Updating profile with values:');
-      logger.d('- name: $trimmedName');
-      logger.d('- email: $trimmedEmail');
-      logger.d('- phone: $phone');
-      logger.d('- address: $address');
-      logger.d('- has avatar: ${avatarPath != null}');
+      logger.d('🚀 Preparing to update profile with values:');
+      logger.d('🔹 name: $trimmedName');
+      logger.d('🔹 email: $trimmedEmail');
+      logger.d('🔹 phone: $phone');
+      logger.d('🔹 address: $address');
+      logger.d('🔹 has avatar: ${avatarPath != null}');
+      logger.d('🔹 API Endpoint: /profile (POST)');
+      logger.d('🔹 Using token: ${token.substring(0, 10)}...');
 
       // Build form data dengan override method
       final formData = FormData.fromMap({
@@ -155,68 +159,111 @@ class UserService {
       });
 
       // Kirim sebagai POST
+      logger.d('📡 Sending profile update request...');
+      final startTime = DateTime.now();
+      
       final response = await ApiClient.dio.post(
-        '/profile', // atau '/api/v1/mobile/profile' sesuai route kamu
+        '/profile',
         data: formData,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
           },
         ),
       );
+      
+      final endTime = DateTime.now();
+      final duration = endTime.difference(startTime);
+      
+      logger.d('✅ Received response in ${duration.inMilliseconds}ms');
+      logger.d('📥 Response status: ${response.statusCode}');
+      logger.d('📥 Response data: ${response.data}');
 
-      logger.d('Update profile response: ${response.data}');
-
-      // Handle sukses
+      // Handle response
+      final responseData = response.data;
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = response.data;
         if (responseData is Map<String, dynamic>) {
-          if (responseData['status'] == true) {
+          // Update the cached user data
+          if (responseData['status'] == true && responseData['data'] != null) {
+            _cachedUser = UserModel.fromJson(
+              responseData['data'] is Map<String, dynamic> 
+                  ? responseData['data'] 
+                  : responseData,
+            );
+            // Save to secure storage
+            await _storage.write(
+              key: _userDataKey,
+              value: jsonEncode(_cachedUser?.toJson()),
+            );
+            
             return {
               'success': true,
-              'data': responseData['data'],
-              'message':
-                  responseData['message'] ?? 'Profil berhasil diperbarui',
+              'data': _cachedUser,
+              'message': responseData['message'] ?? 'Profil berhasil diperbarui',
             };
           }
         }
+        return {
+          'success': true,
+          'data': responseData,
+          'message': 'Profil berhasil diperbarui',
+        };
       }
 
-      // Handle gagal
+      // Handle error response
       return {
         'success': false,
-        'message': response.data['message'] ?? 'Gagal memperbarui profil',
-        'data': response.data,
+        'message': (responseData is Map && responseData['message'] != null)
+            ? responseData['message']
+            : 'Gagal memperbarui profil',
+        'data': responseData,
       };
     } on DioException catch (e) {
-      logger.e('Error updateProfile: ${e.message}');
-      logger.e('Error response: ${e.response?.data}');
-
-      String message = 'Terjadi kesalahan saat memperbarui profil';
-      final responseData = e.response?.data;
-      if (responseData != null) {
-        if (responseData is Map<String, dynamic>) {
-          message = responseData['message'] ?? message;
-
-          // Laravel validation errors
-          if (responseData['errors'] != null) {
-            final errors = responseData['errors'] as Map<String, dynamic>;
-            message = errors.values.first is List
-                ? (errors.values.first as List).first.toString()
-                : errors.values.join(', ');
+      logger.e('❌ API Error: ${e.message}');
+      if (e.response != null) {
+        logger.e('❌ Status code: ${e.response?.statusCode}');
+        logger.e('❌ Response data: ${e.response?.data}');
+        logger.e('❌ Headers: ${e.response?.headers}');
+        
+        String message = 'Terjadi kesalahan saat memperbarui profil';
+        final responseData = e.response?.data;
+        
+        if (responseData != null) {
+          if (responseData is Map<String, dynamic>) {
+            message = responseData['message'] ?? message;
+            // Laravel validation errors
+            if (responseData['errors'] != null) {
+              final errors = responseData['errors'] as Map<String, dynamic>;
+              message = errors.values.first is List
+                  ? (errors.values.first as List).first.toString()
+                  : errors.values.join(', ');
+            }
+          } else if (responseData is String) {
+            message = responseData;
           }
-        } else if (responseData is String) {
-          message = responseData;
         }
+        
+        return {
+          'success': false, 
+          'message': message,
+          'error': e.toString(),
+          'statusCode': e.response?.statusCode,
+        };
       }
-
-      return {'success': false, 'message': message, 'error': e.toString()};
+      
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server: ${e.message}',
+        'error': e.toString(),
+      };
     } catch (e) {
-      logger.e('Error updateProfile: $e');
+      logger.e('Unexpected error in updateProfile: $e');
       return {
         'success': false,
         'message': 'Terjadi kesalahan yang tidak diketahui: $e',
+        'error': e.toString(),
       };
     }
   }

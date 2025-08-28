@@ -14,25 +14,35 @@ class ProgramDetailScreen extends StatefulWidget {
 }
 
 class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
-  bool _isLoading = false;
-  String _errorMessage = '';
-
+  bool _isInitialized = false;
+  
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _checkProgramData();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _loadProgramData();
+    }
   }
 
-  void _checkProgramData() {
+  Future<void> _loadProgramData() async {
     final programProvider = Provider.of<ProgramProvider>(
       context,
       listen: false,
     );
-    if (programProvider.selectedProgram == null) {
-      setState(() {
-        _errorMessage = 'Program tidak ditemukan';
-        _isLoading = false;
-      });
+    
+    // If we already have the selected program, no need to fetch again
+    if (programProvider.selectedProgram != null) return;
+    
+    // Get program ID from route arguments if available
+    final programId = ModalRoute.of(context)?.settings.arguments as int?;
+    if (programId == null) return;
+    
+    try {
+      await programProvider.fetchProgramById(programId);
+    } catch (e) {
+      // Error is already handled by the provider
+      debugPrint('Error loading program: $e');
     }
   }
 
@@ -100,6 +110,8 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
     return Consumer<ProgramProvider>(
       builder: (context, programProvider, _) {
         final program = programProvider.selectedProgram;
+        final isLoading = programProvider.isLoadingDetail && program == null;
+        final error = programProvider.detailError;
 
         return Scaffold(
           backgroundColor: AppColors.backgroundDark,
@@ -110,8 +122,10 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
-                programProvider.clearSelectedProgram();
-                Navigator.of(context).pop();
+                if (Navigator.canPop(context)) {
+                  programProvider.clearSelectedProgram();
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ),
@@ -173,20 +187,52 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                 ),
               ),
               // Content
-              _isLoading
+              isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _errorMessage.isNotEmpty
+                  : error != null
                   ? Center(
-                      child: Text(
-                        _errorMessage,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Gagal memuat detail program',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              error,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: AppColors.textSecondary),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadProgramData,
+                              child: const Text('Coba Lagi'),
+                            ),
+                          ],
+                        ),
                       ),
                     )
                   : program == null
-                  ? const Center(
-                      child: Text(
-                        'Program tidak ditemukan',
-                        style: TextStyle(color: Colors.white),
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.radio, size: 64, color: AppColors.textSecondary),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Program tidak ditemukan',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
                       ),
                     )
                   : CustomScrollView(
@@ -202,7 +248,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                                       child: Image.network(
                                         program.gambar.startsWith('http')
                                             ? program.gambar
-                                            : 'https://example.com${program.gambar}',
+                                            : 'https://radio.odanfm.com${program.gambar}',
                                         width: double.infinity,
                                         height: double.infinity,
                                         fit: BoxFit.cover,

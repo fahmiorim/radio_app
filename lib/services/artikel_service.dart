@@ -3,27 +3,19 @@ import '../models/artikel_model.dart';
 import '../config/api_client.dart';
 
 class ArtikelService {
-  static const String _newsPath = '/news';
-  static const String _allNewsPath = '/news/semua';
-
+  static const String _basePath = '/news';
   final Dio _dio = ApiClient.dio;
 
   // Fetch recent articles (without pagination)
   Future<List<Artikel>> fetchRecentArtikel() async {
     try {
-      final response = await _dio.get(
-        _newsPath,
-        queryParameters: {
-          'per_page': 5, // Only get 5 recent articles for the home screen
-          'page': 1,
-        },
-      );
+      final response = await _dio.get(_basePath);
 
       if (response.statusCode == 200 && response.data['status'] == true) {
         List<dynamic> artikelList = response.data['data'];
         return artikelList.map((json) => Artikel.fromJson(json)).toList();
       } else {
-        throw Exception("Gagal mengambil data artikel terbaru");
+        throw Exception('Gagal mengambil data artikel terbaru');
       }
     } catch (e) {
       print('Error in fetchRecentArtikel: $e');
@@ -34,12 +26,15 @@ class ArtikelService {
   // Fetch all articles with pagination
   Future<Map<String, dynamic>> fetchAllArtikel({
     int page = 1,
-    int perPage = 20,
+    int perPage = 10,
   }) async {
     try {
       final response = await _dio.get(
-        _allNewsPath,
-        queryParameters: {'page': page, 'per_page': perPage},
+        '$_basePath/semua',
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+        },
       );
 
       if (response.statusCode == 200 && response.data['status'] == true) {
@@ -48,12 +43,11 @@ class ArtikelService {
           'data': (data['data'] as List)
               .map((json) => Artikel.fromJson(json))
               .toList(),
-          'currentPage': data['pagination']['current_page'] ?? page,
-          'lastPage': data['pagination']['last_page'] ?? 1,
-          'total': data['pagination']['total'] ?? 0,
+          'currentPage': data['current_page'] ?? 1,
+          'lastPage': data['last_page'] ?? 1,
         };
       } else {
-        throw Exception("Gagal mengambil data semua artikel");
+        throw Exception('Gagal mengambil data artikel');
       }
     } catch (e) {
       print('Error in fetchAllArtikel: $e');
@@ -64,27 +58,15 @@ class ArtikelService {
   // Fetch single article by slug
   Future<Artikel> fetchArtikelBySlug(String slug) async {
     try {
-      print('Fetching article with slug: $slug');
-      final response = await _dio.get(
-        '$_newsPath/$slug',
-        options: Options(
-          validateStatus: (status) => status! < 500, // Don't throw for 4xx errors
-        ),
-      );
-      
-      print('Response status: ${response.statusCode}');
-      print('Response data: ${response.data}');
-      
-      if (response.statusCode == 200) {
-        if (response.data['status'] == true && response.data['data'] != null) {
-          return Artikel.fromJson(response.data['data']);
-        } else {
-          throw Exception(response.data['message'] ?? 'Artikel tidak ada');
-        }
+      final response = await _dio.get('$_basePath/$slug');
+
+      if (response.statusCode == 200 && response.data['status'] == true) {
+        return Artikel.fromJson(response.data['data']);
       } else if (response.statusCode == 404) {
         throw Exception('Artikel tidak ada');
       } else {
-        throw Exception('Gagal mengambil detail artikel. Kode status: ${response.statusCode}');
+        throw Exception(
+            'Gagal mengambil detail artikel. Kode status: ${response.statusCode}');
       }
     } on DioException catch (e) {
       print('Dio Error:');
@@ -94,9 +76,11 @@ class ArtikelService {
       print('- Response: ${e.response?.data}');
       
       if (e.response != null) {
-        throw Exception('Gagal mengambil detail artikel: ${e.response?.data['message'] ?? 'Tidak ada pesan error'}');
+        throw Exception(
+            'Gagal mengambil detail artikel: ${e.response?.data['message'] ?? 'Tidak ada pesan error'}');
       } else {
-        throw Exception('Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil.');
+        throw Exception(
+            'Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil.');
       }
     } catch (e) {
       print('Unexpected error in fetchArtikelBySlug: $e');

@@ -21,17 +21,34 @@ class _AllProgramsScreenState extends State<AllProgramsScreen> {
   bool _isInitialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ProgramProvider>();
-      if (!_isInitialized) {
-        _isInitialized = true;
-        if (provider.programs.isEmpty) {
-          provider.fetchPrograms();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isInitialized) {
+      _isInitialized = true;
+      _loadInitialData();
+    }
+  }
+
+  Future<void> _loadInitialData() async {
+    final provider = context.read<ProgramProvider>();
+    
+    // Only fetch if we don't have any data and not already loading
+    if (provider.allPrograms.isEmpty && !provider.isLoadingAll) {
+      try {
+        await provider.fetchAllPrograms();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Gagal memuat daftar program')),
+          );
         }
       }
-    });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
     _scrollController.addListener(_onScroll);
   }
 
@@ -157,30 +174,64 @@ class _AllProgramsScreenState extends State<AllProgramsScreen> {
   Widget _buildBody() {
     return Consumer<ProgramProvider>(
       builder: (context, provider, _) {
-        if (provider.isLoading && provider.programs.isEmpty) {
+        // Show loading skeleton only on initial load
+        if (provider.isLoadingAll && provider.allPrograms.isEmpty) {
           return const AllProgramsSkeleton();
         }
 
-        if (provider.error != null) {
+        // Show error message if there's an error and no programs are loaded
+        if (provider.allProgramsError != null && provider.allPrograms.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Gagal memuat data program. Silakan coba lagi.',
-                style: Theme.of(context).textTheme.bodyMedium,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Gagal memuat daftar program',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.allProgramsError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadInitialData,
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
               ),
             ),
           );
         }
 
-        if (provider.programs.isEmpty) {
-          return const Center(child: Text('Tidak ada program tersedia'));
+        // Show empty state if no programs are available
+        if (provider.allPrograms.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.radio, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum ada program tersedia',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white70,
+                      ),
+                ),
+              ],
+            ),
+          );
         }
 
-        return Padding(
-          padding: const EdgeInsets.only(
-            bottom: 80,
-          ), // Padding untuk MiniPlayer
+        // Show program list
+        return RefreshIndicator(
+          onRefresh: () => provider.fetchAllPrograms(),
           child: _buildProgramList(provider),
         );
       },
@@ -190,13 +241,15 @@ class _AllProgramsScreenState extends State<AllProgramsScreen> {
   Widget _buildProgramList(ProgramProvider provider) {
     return ListView.builder(
       controller: _scrollController,
+      // Add this to prevent unnecessary rebuilds
+      addAutomaticKeepAlives: true,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: provider.programs.length + (provider.hasMore ? 1 : 0),
+      itemCount: provider.allPrograms.length + (provider.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index >= provider.programs.length) {
+        if (index >= provider.allPrograms.length) {
           return _buildLoader();
         }
-        final program = provider.programs[index];
+        final program = provider.allPrograms[index];
         return _buildProgramItem(program);
       },
     );

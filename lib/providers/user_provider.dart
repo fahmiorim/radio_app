@@ -5,32 +5,35 @@ import '../services/user_service.dart';
 
 class UserProvider with ChangeNotifier {
   UserModel? _user;
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _error;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchUser({bool forceRefresh = false}) async {
-    if (_user != null && !forceRefresh) {
-      _isLoading = false;
-      notifyListeners();
-      return;
-    }
-
+  /// Always fetches fresh data from the server
+  Future<void> fetchUser() async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _user = await UserService.getProfile(forceRefresh: forceRefresh);
+      // Always force refresh to get latest data from server
+      _user = await UserService.getProfile(forceRefresh: true);
       _error = null;
     } catch (e) {
       _error = e.toString();
+      rethrow; // Re-throw to allow error handling in the UI
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Updates the user data with new values
+  void updateUser(UserModel newUser) {
+    _user = newUser;
+    notifyListeners();
   }
 }

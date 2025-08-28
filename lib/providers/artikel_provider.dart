@@ -5,8 +5,11 @@ import 'package:radio_odan_app/services/artikel_service.dart';
 class ArtikelProvider with ChangeNotifier {
   final ArtikelService _artikelService = ArtikelService();
   List<Artikel> _artikels = [];
+  List<Artikel> _recentArtikels = [];
+  Artikel? _selectedArtikel;
   bool _isLoading = false;
   bool _isLoadingMore = false;
+  bool _isLoadingDetail = false;
   String? _error;
   int _currentPage = 1;
   int _lastPage = 1;
@@ -14,12 +17,41 @@ class ArtikelProvider with ChangeNotifier {
 
   // Getters
   List<Artikel> get artikels => _artikels;
+  List<Artikel> get recentArtikels => _recentArtikels;
+  Artikel? get selectedArtikel => _selectedArtikel;
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
+  bool get isLoadingDetail => _isLoadingDetail;
   String? get error => _error;
   bool get hasMore => _hasMore;
 
-  // Fetch initial list of articles
+  // Clear error message
+  void clearError() {
+    _error = null;
+    notifyListeners();
+  }
+
+  // Fetch recent articles (for home screen)
+  Future<void> fetchRecentArtikels() async {
+    if (_isLoading) return;
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _recentArtikels = await _artikelService.fetchRecentArtikel();
+      _error = null;
+    } catch (e) {
+      _error = 'Gagal memuat artikel terbaru. Silakan coba lagi.';
+      debugPrint('Error fetching recent artikels: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Fetch initial list of articles with pagination
   Future<void> fetchArtikels({bool forceRefresh = false}) async {
     if ((_artikels.isNotEmpty && !forceRefresh) || _isLoading) return;
 
@@ -30,7 +62,9 @@ class ArtikelProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _artikelService.fetchAllArtikel(page: _currentPage);
+      final response = await _artikelService.fetchAllArtikel(
+        page: _currentPage,
+      );
       _artikels = response['data'];
       _currentPage = response['currentPage'];
       _lastPage = response['lastPage'];
@@ -50,19 +84,20 @@ class ArtikelProvider with ChangeNotifier {
     if (_isLoadingMore || !_hasMore) return;
 
     _isLoadingMore = true;
+    _error = null;
     notifyListeners();
 
     try {
       final nextPage = _currentPage + 1;
       final response = await _artikelService.fetchAllArtikel(page: nextPage);
-      
+
       _artikels.addAll(response['data']);
-      _currentPage = nextPage;
+      _currentPage = response['currentPage'];
       _lastPage = response['lastPage'];
       _hasMore = _currentPage < _lastPage;
       _error = null;
     } catch (e) {
-      _error = 'Gagal memuat artikel tambahan.';
+      _error = 'Gagal memuat artikel tambahan. Silakan coba lagi.';
       debugPrint('Error loading more artikels: $e');
     } finally {
       _isLoadingMore = false;
@@ -71,22 +106,27 @@ class ArtikelProvider with ChangeNotifier {
   }
 
   // Fetch single article by slug
-  Future<Artikel?> fetchArtikelBySlug(String slug) async {
-    _isLoading = true;
+  Future<void> fetchArtikelBySlug(String slug) async {
+    _isLoadingDetail = true;
     _error = null;
+    _selectedArtikel = null;
     notifyListeners();
 
     try {
-      final artikel = await _artikelService.fetchArtikelBySlug(slug);
+      _selectedArtikel = await _artikelService.fetchArtikelBySlug(slug);
       _error = null;
-      return artikel;
     } catch (e) {
-      _error = 'Gagal memuat detail artikel. Silakan coba lagi.';
-      debugPrint('Error fetching artikel by slug: $e');
-      return null;
+      _error = e.toString();
+      debugPrint('Error fetching artikel detail: $e');
     } finally {
-      _isLoading = false;
+      _isLoadingDetail = false;
       notifyListeners();
     }
+  }
+
+  // Clear selected article
+  void clearSelectedArtikel() {
+    _selectedArtikel = null;
+    notifyListeners();
   }
 }

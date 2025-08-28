@@ -22,11 +22,11 @@ class _ArtikelListState extends State<ArtikelList>
   @override
   void initState() {
     super.initState();
-    // Load data hanya jika belum dimuat
+    // Load recent articles
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ArtikelProvider>(context, listen: false);
-      if (provider.artikels.isEmpty) {
-        provider.fetchArtikels();
+      if (provider.recentArtikels.isEmpty) {
+        provider.fetchRecentArtikels();
       }
     });
   }
@@ -37,7 +37,7 @@ class _ArtikelListState extends State<ArtikelList>
 
     final provider = context.watch<ArtikelProvider>();
     final isLoading = provider.isLoading;
-    final artikelList = provider.artikels;
+    final artikelList = provider.recentArtikels; // Use recent articles for the home screen
     final error = provider.error;
 
     // Handle error
@@ -55,10 +55,8 @@ class _ArtikelListState extends State<ArtikelList>
               ),
               const SizedBox(height: 8),
               ElevatedButton(
-                onPressed: () {
-                  context
-                      .read<ArtikelProvider>()
-                      .fetchArtikels(forceRefresh: true);
+                onPressed: () async {
+                  await context.read<ArtikelProvider>().fetchRecentArtikels();
                 },
                 child: const Text('Coba Lagi'),
               ),
@@ -86,18 +84,17 @@ class _ArtikelListState extends State<ArtikelList>
         isLoading
             ? const ArtikelSkeleton()
             : SizedBox(
-                height: 200,
+height: 220,
                 child: RefreshIndicator(
-                  onRefresh: () => context
-                      .read<ArtikelProvider>()
-                      .fetchArtikels(forceRefresh: true),
+                  onRefresh: () =>
+                      context.read<ArtikelProvider>().fetchRecentArtikels(),
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(
                       parent: AlwaysScrollableScrollPhysics(),
                     ), // biar smooth
                     shrinkWrap: true,
-                    itemCount: artikelList.length,
+                    itemCount: artikelList.length > 5 ? 5 : artikelList.length, // Show max 5 items
                     padding: const EdgeInsets.only(left: 16),
                     itemBuilder: (context, index) {
                       final artikel = artikelList[index];
@@ -106,7 +103,8 @@ class _ArtikelListState extends State<ArtikelList>
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (context) => ArtikelDetailScreen(
-                                  artikelSlug: artikel.slug),
+                                artikelSlug: artikel.slug,
+                              ),
                             ),
                           );
                         },

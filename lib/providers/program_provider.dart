@@ -5,130 +5,152 @@ import 'package:radio_odan_app/services/program_service.dart';
 
 class ProgramProvider with ChangeNotifier {
   final ProgramService _programService = ProgramService();
-  List<Program> _programs = [];
-  Program? _selectedProgram;
-  bool _isLoading = true;
+  
+  // State for today's programs
+  List<Program> _todaysPrograms = [];
+  bool _isLoadingTodays = false;
+  String? _todaysError;
+  
+  // State for all programs with pagination
+  List<Program> _allPrograms = [];
+  bool _isLoadingAll = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  int _page = 1;
+  int _currentPage = 1;
   final int _perPage = 10;
-  String? _error;
+  String? _allProgramsError;
+  
+  // Selected program state
+  Program? _selectedProgram;
+  bool _isLoadingDetail = false;
+  String? _detailError;
 
-  List<Program> get programs => _programs;
+  // Getters
+  List<Program> get todaysPrograms => _todaysPrograms;
+  List<Program> get allPrograms => _allPrograms;
   Program? get selectedProgram => _selectedProgram;
-  bool get isLoading => _isLoading;
+  
+  bool get isLoadingTodays => _isLoadingTodays;
+  bool get isLoadingAll => _isLoadingAll;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMore => _hasMore;
-  String? get error => _error;
+  bool get isLoadingDetail => _isLoadingDetail;
+  
+  String? get todaysError => _todaysError;
+  String? get allProgramsError => _allProgramsError;
+  String? get detailError => _detailError;
 
-  Future<void> fetchPrograms({bool forceRefresh = false}) async {
-    if (_isLoadingMore) return;
-
-    if (_programs.isNotEmpty && !forceRefresh) {
-      return;
-    }
-
-    _isLoading = true;
-    _page = 1;
-    _error = null;
+  /// Fetch today's programs
+  Future<void> fetchTodaysPrograms({bool forceRefresh = false}) async {
+    if (_isLoadingTodays && !forceRefresh) return;
+    
+    _isLoadingTodays = true;
+    _todaysError = null;
     notifyListeners();
 
     try {
-      final data = await _programService.fetchPrograms(
-        page: _page,
-        perPage: _perPage,
-      );
-
-      _programs = data;
-      _hasMore = data.length == _perPage;
-      _error = null;
+      final programs = await _programService.fetchTodaysPrograms();
+      _todaysPrograms = programs;
+      _todaysError = null;
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Error fetching programs: $e');
+      _todaysError = e.toString();
+      debugPrint('Error fetching today\'s programs: $e');
     } finally {
-      _isLoading = false;
+      _isLoadingTodays = false;
       notifyListeners();
     }
   }
 
-  Future<void> loadMorePrograms() async {
-    if (_isLoadingMore || !_hasMore) return;
-
-    _isLoadingMore = true;
-    _page++;
+  /// Fetch all programs with pagination
+  Future<void> fetchAllPrograms({bool loadMore = false}) async {
+    if ((_isLoadingAll && !loadMore) || (_isLoadingMore && loadMore)) return;
+    
+    if (loadMore) {
+      _isLoadingMore = true;
+    } else {
+      _isLoadingAll = true;
+      _currentPage = 1;
+      _allProgramsError = null;
+    }
+    
     notifyListeners();
 
     try {
-      final data = await _programService.fetchPrograms(
-        page: _page,
+      final result = await _programService.fetchAllPrograms(
+        page: _currentPage,
         perPage: _perPage,
       );
-
-      _programs.addAll(data);
-      _hasMore = data.length == _perPage;
-      _error = null;
+      
+      if (loadMore) {
+        _allPrograms.addAll(result['programs'] as List<Program>);
+      } else {
+        _allPrograms = result['programs'] as List<Program>;
+      }
+      
+      _hasMore = result['hasMore'] as bool;
+      _currentPage = result['currentPage'] as int;
+      _allProgramsError = null;
     } catch (e) {
-      _page--; // Rollback page on error
-      _error = e.toString();
-      debugPrint('Error loading more programs: $e');
+      _allProgramsError = e.toString();
+      debugPrint('Error fetching all programs: $e');
+      
+      if (loadMore) {
+        _currentPage--; // Rollback page on error
+      }
     } finally {
+      _isLoadingAll = false;
       _isLoadingMore = false;
       notifyListeners();
     }
   }
 
-  // Set selected program and navigate to detail
+  /// Load more programs (pagination)
+  Future<void> loadMorePrograms() async {
+    if (_isLoadingMore || !_hasMore) return;
+    _currentPage++;
+    await fetchAllPrograms(loadMore: true);
+  }
+
+  /// Fetch program by ID
+  Future<Program> fetchProgramById(int id) async {
+    _isLoadingDetail = true;
+    _detailError = null;
+    notifyListeners();
+
+    try {
+      final program = await _programService.fetchProgramById(id);
+      _selectedProgram = program;
+      _detailError = null;
+      return program;
+    } catch (e) {
+      _detailError = e.toString();
+      debugPrint('Error fetching program $id: $e');
+      rethrow;
+    } finally {
+      _isLoadingDetail = false;
+      notifyListeners();
+    }
+  }
+
+  /// Set selected program and navigate to detail
   void selectProgram(Program program, BuildContext context) {
     _selectedProgram = program;
     notifyListeners();
     Navigator.of(context).pushNamed(AppRoutes.programDetail);
   }
 
-  // Clear selected program
+  /// Clear selected program
   void clearSelectedProgram() {
     _selectedProgram = null;
+    _detailError = null;
     notifyListeners();
   }
 
-  // Fetch single program by ID
-  Future<Program> fetchProgramById(int id) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final program = await _programService.fetchProgramById(id);
-      _selectedProgram = program;
-      _error = null;
-      return program;
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('Error fetching program by ID: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // Fetch today's programs
-  Future<void> fetchProgram() async {
-    _isLoading = true;
-    _page = 1;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final data = await _programService.fetchProgram();
-      _programs = data;
-      _hasMore = false; // Since this is just for today's programs, no pagination
-      _error = null;
-    } catch (e) {
-      _error = e.toString();
-      debugPrint('Error fetching today\'s programs: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  /// Refresh all data
+  Future<void> refreshAll() async {
+    await Future.wait([
+      fetchTodaysPrograms(forceRefresh: true),
+      fetchAllPrograms(),
+    ]);
   }
 }

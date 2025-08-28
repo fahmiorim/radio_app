@@ -5,10 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../../config/app_colors.dart';
-import '../../../models/artikel_model.dart';
 import '../../../providers/artikel_provider.dart';
 import '../../../widgets/app_bar.dart';
 import '../../../widgets/loading/loading_widget.dart';
+import '../../../widgets/mini_player.dart';
 
 class ArtikelDetailScreen extends StatefulWidget {
   final String artikelSlug;
@@ -19,66 +19,61 @@ class ArtikelDetailScreen extends StatefulWidget {
 }
 
 class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
-  Artikel? _artikel;
-  String? _error;
-  bool _loading = true;
-
-  Future<void> _load({bool force = false}) async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      final prov = context.read<ArtikelProvider>();
-      // Pastikan ini memanggil endpoint DETAIL dan mengembalikan Artikel dengan content terisi
-      final detail = await prov.fetchArtikelBySlug(widget.artikelSlug);
-      setState(() => _artikel = detail);
-    } catch (e) {
-      setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    _load();
+    // Load article when screen is first displayed
+    _loadArticle();
+  }
+
+  Future<void> _loadArticle() async {
+    final provider = context.read<ArtikelProvider>();
+    // Clear any previous error and selected article
+    provider.clearError();
+    provider.clearSelectedArtikel();
+    
+    // Fetch the article by slug
+    await provider.fetchArtikelBySlug(widget.artikelSlug);
   }
 
   @override
   Widget build(BuildContext context) {
-    final artikel = _artikel;
+    return Consumer<ArtikelProvider>(
+      builder: (context, provider, _) {
+        final artikel = provider.selectedArtikel;
+        final error = provider.error;
+        final isLoading = provider.isLoadingDetail;
 
-    if (_loading) {
-      return const Scaffold(
-        backgroundColor: AppColors.backgroundDark,
-        body: Center(child: LoadingWidget()),
-      );
-    }
+        if (isLoading) {
+          return const Scaffold(
+            backgroundColor: AppColors.backgroundDark,
+            body: Center(child: LoadingWidget()),
+          );
+        }
 
-    if (_error != null || artikel == null) {
-      return Scaffold(
-        backgroundColor: AppColors.backgroundDark,
-        appBar: CustomAppBar.transparent(title: 'Error'),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Terjadi kesalahan',
-                style: TextStyle(color: Colors.white),
+        if (error != null || artikel == null) {
+          return Scaffold(
+            backgroundColor: AppColors.backgroundDark,
+            appBar: CustomAppBar.transparent(title: 'Error'),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    error ?? 'Artikel tidak ditemukan',
+                    style: const TextStyle(color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _loadArticle,
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => _load(force: true),
-                child: const Text('Coba Lagi'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+            ),
+          );
+        }
 
     final content = (artikel.content).trim();
     final isEmptyContent =
@@ -86,9 +81,11 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      appBar: CustomAppBar.transparent(title: artikel.title),
+      appBar: CustomAppBar.transparent(
+        title: artikel.title,
+      ),
       body: RefreshIndicator(
-        onRefresh: () => _load(force: true),
+        onRefresh: _loadArticle,
         color: AppColors.primary,
         backgroundColor: AppColors.backgroundDark,
         child: Stack(
@@ -277,9 +274,19 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                 ],
               ),
             ),
+            
+            // Mini Player
+            const Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: MiniPlayer(),
+            ),
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

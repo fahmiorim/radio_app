@@ -13,6 +13,9 @@ import '../screens/auth/forgot_password_screen.dart';
 import '../screens/program/all_programs_screen.dart';
 import '../screens/program/program_detail_screen.dart';
 import '../screens/artikel/artikel_detail_screen.dart';
+import '../screens/galeri/all_videos_screen.dart';
+import '../screens/galeri/all_albums_screen.dart';
+import '../screens/profile/edit_profile_screen.dart';
 import '../models/artikel_model.dart';
 
 class AppRoutes {
@@ -28,18 +31,24 @@ class AppRoutes {
   static const String programDetail = '/program-detail';
   static const String allPrograms = '/program-semua';
   static const String allEvents = '/event-semua';
-  static const String albumDetail = '/album-detail';
+  static const String albumList = '/album-semua';
   static const String allVideos = '/all-videos';
+  static const String albumDetail = '/album-detail';
   static const String verification = '/verification';
 
   // List of public routes that don't require authentication
-  static const List<String> publicRoutes = [
-    splash,
-    login,
-    register,
-    forgotPassword,
-    verification,
-  ];
+  static List<String> get publicRoutes => [
+        splash,
+        login,
+        register,
+        forgotPassword,
+        bottomNav,
+        artikelDetail,
+        programDetail,
+        allPrograms,
+        allEvents,
+        allVideos,
+      ];
 
   // --- Static Routes (no parameter) ---
   static final Map<String, WidgetBuilder> routes = {
@@ -49,6 +58,8 @@ class AppRoutes {
     forgotPassword: (_) => const ForgotPasswordScreen(),
     bottomNav: (_) => const BottomNav(),
     allPrograms: (_) => const AllProgramsScreen(),
+    allVideos: (_) => const AllVideosScreen(),
+    albumList: (_) => const AllAlbumsScreen(),
     verification: (context) {
       final email = ModalRoute.of(context)?.settings.arguments as String? ?? '';
       return VerificationScreen(email: email);
@@ -127,6 +138,17 @@ class AppRoutes {
         final artikel = settings.arguments as Artikel?;
         if (artikel != null) {
           return ArtikelDetailScreen(artikelSlug: artikel.slug);
+        }
+        return const BottomNav();
+      case allVideos:
+        return const AllVideosScreen();
+      case albumList:
+        return const AllAlbumsScreen();
+      case editProfile:
+        final args = settings.arguments as Map<String, dynamic>?;
+        final user = args?['user'];
+        if (user != null) {
+          return EditProfileScreen(user: user);
         }
         return const BottomNav();
       default:
