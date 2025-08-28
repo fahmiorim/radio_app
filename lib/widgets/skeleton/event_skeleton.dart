@@ -7,10 +7,11 @@ class EventSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The list is wrapped with `shrinkWrap` and non-scrollable physics so it can
-    // live inside another scrollable widget without causing layout issues. Make
-    // sure that a surrounding widget (e.g. a `Column` or `SizedBox`) provides
-    // adequate height if further scrolling is required.
+    // The list uses `shrinkWrap` and non-scrollable physics so it can live
+    // inside another scrollable widget without causing layout issues. When
+    // placing this skeleton inside a `Column` or `SliverList`, wrap it with a
+    // `SizedBox` of fixed height or use `Expanded` to provide the necessary
+    // vertical constraints.
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       shrinkWrap: true,
