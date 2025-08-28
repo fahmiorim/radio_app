@@ -1,60 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:radio_odan_app/services/user_service.dart';
-import 'package:radio_odan_app/config/logger.dart';
-import 'package:radio_odan_app/models/user_model.dart';
-import 'package:radio_odan_app/widgets/skeleton/app_header_skeleton.dart';
+import 'package:provider/provider.dart';
 
-class AppHeader extends StatefulWidget {
+import '../models/user_model.dart';
+import '../providers/user_provider.dart';
+import 'skeleton/app_header_skeleton.dart';
+
+class AppHeader extends StatelessWidget {
   final bool isLoading;
   final VoidCallback? onMenuTap;
 
   const AppHeader({super.key, this.isLoading = false, this.onMenuTap});
 
   @override
-  State<AppHeader> createState() => _AppHeaderState();
-}
-
-class _AppHeaderState extends State<AppHeader> {
-  UserModel? _user;
-  bool _isLoading = true;
-  bool _isMounted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isMounted = true;
-    _loadUserProfile();
-  }
-
-  @override
-  void dispose() {
-    _isMounted = false;
-    super.dispose();
-  }
-
-  Future<void> _loadUserProfile() async {
-    if (!_isMounted) return;
-
-    try {
-      final user = await UserService.getProfile(forceRefresh: false);
-      if (!_isMounted) return;
-      
-      setState(() {
-        _user = user;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!_isMounted) return;
-      logger.e('Error loading user profile: $e');
-      setState(() => _isLoading = false);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.isLoading || _isLoading) {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
+
+    if (isLoading || userProvider.isLoading) {
       return const AppHeaderSkeleton();
     }
 
@@ -62,9 +26,9 @@ class _AppHeaderState extends State<AppHeader> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            const Color.fromARGB(255, 2, 45, 155),
-            const Color.fromARGB(255, 2, 42, 128),
+          colors: const [
+            Color.fromARGB(255, 2, 45, 155),
+            Color.fromARGB(255, 2, 42, 128),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -81,7 +45,6 @@ class _AppHeaderState extends State<AppHeader> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Branding
           Row(
             children: [
               Image.asset('assets/logo-white.png', height: 40),
@@ -122,41 +85,37 @@ class _AppHeaderState extends State<AppHeader> {
               ),
             ],
           ),
-
-          // Avatar User
           InkWell(
             borderRadius: BorderRadius.circular(30),
-            onTap:
-                widget.onMenuTap ??
-                () {
-                  if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
-                    Scaffold.of(context).openDrawer();
-                  }
-                },
-            child: _buildProfileAvatar(),
+            onTap: onMenuTap ?? () {
+              if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
+                Scaffold.of(context).openDrawer();
+              }
+            },
+            child: _buildProfileAvatar(context, user),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProfileAvatar() {
+  Widget _buildProfileAvatar(BuildContext context, UserModel? user) {
     final theme = Theme.of(context);
 
-    if (_user?.avatar?.isNotEmpty == true) {
+    if (user?.avatar?.isNotEmpty == true) {
       return CachedNetworkImage(
-        imageUrl: _user!.avatar!,
+        imageUrl: user!.avatar!,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: 22,
           backgroundColor: Colors.white,
           child: CircleAvatar(radius: 20, backgroundImage: imageProvider),
         ),
         placeholder: (context, url) => _buildShimmerAvatar(),
-        errorWidget: (context, url, error) => _buildInitialsAvatar(theme),
+        errorWidget: (context, url, error) => _buildInitialsAvatar(theme, user),
       );
     }
 
-    return _buildInitialsAvatar(theme);
+    return _buildInitialsAvatar(theme, user);
   }
 
   Widget _buildShimmerAvatar() {
@@ -167,9 +126,9 @@ class _AppHeaderState extends State<AppHeader> {
     );
   }
 
-  Widget _buildInitialsAvatar(ThemeData theme) {
-    final displayName = _user?.name?.trim().isNotEmpty == true
-        ? _user!.name![0].toUpperCase()
+  Widget _buildInitialsAvatar(ThemeData theme, UserModel? user) {
+    final displayName = user?.name?.trim().isNotEmpty == true
+        ? user!.name![0].toUpperCase()
         : 'U';
 
     return CircleAvatar(
