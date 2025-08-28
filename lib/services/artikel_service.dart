@@ -3,13 +3,16 @@ import '../models/artikel_model.dart';
 import '../config/api_client.dart';
 
 class ArtikelService {
+  static const String _newsPath = '/news';
+  static const String _allNewsPath = '/news/semua';
+
   final Dio _dio = ApiClient.dio;
 
   // Fetch recent articles (without pagination)
   Future<List<Artikel>> fetchRecentArtikel() async {
     try {
       final response = await _dio.get(
-        '/news/semua',
+        _newsPath,
         queryParameters: {
           'per_page': 5, // Only get 5 recent articles for the home screen
           'page': 1,
@@ -35,7 +38,7 @@ class ArtikelService {
   }) async {
     try {
       final response = await _dio.get(
-        '/news/semua',
+        _allNewsPath,
         queryParameters: {'page': page, 'per_page': perPage},
       );
 
@@ -63,7 +66,7 @@ class ArtikelService {
     try {
       print('Fetching article with slug: $slug');
       final response = await _dio.get(
-        '/news/$slug',
+        '$_newsPath/$slug',
         options: Options(
           validateStatus: (status) => status! < 500, // Don't throw for 4xx errors
         ),
