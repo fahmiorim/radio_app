@@ -75,11 +75,12 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                         fit: BoxFit.cover,
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
+                          final totalBytes = loadingProgress.expectedTotalBytes;
                           return Center(
                             child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
+                              value: totalBytes != null
                                   ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
+                                      totalBytes
                                   : null,
                             ),
                           );
