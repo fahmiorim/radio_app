@@ -35,9 +35,10 @@ class _ArtikelListState extends State<ArtikelList>
   Widget build(BuildContext context) {
     super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
 
-    final isLoading = context.watch<ArtikelProvider>().isLoading;
-    final artikelList = context.watch<ArtikelProvider>().artikels;
-    final error = context.watch<ArtikelProvider>().error;
+    final provider = context.watch<ArtikelProvider>();
+    final isLoading = provider.isLoading;
+    final artikelList = provider.artikels;
+    final error = provider.error;
 
     // Handle error
     if (error != null) {
