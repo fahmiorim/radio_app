@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // for SystemNavigator.pop
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/services/auth_service.dart' as auth_service;
@@ -55,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Show success message
         if (mounted) {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Row(
@@ -70,14 +70,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
 
-          // Add a small delay to show the success message
+          // Small delay to show the message
           await Future.delayed(const Duration(seconds: 1));
 
-          // Clear all routes and navigate to home
           if (mounted) {
-            Navigator.of(
-              context,
-            ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
+            Navigator.of(context)
+                .pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
           }
         }
       } else {
@@ -103,12 +101,43 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        // user cancelled
+        return;
+      }
+
+      // TODO: tukar auth code/idToken ke backend kamu
+      // final auth = await account.authentication;
+      // await login_service.AuthService().loginWithGoogle(auth.idToken, auth.accessToken);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login Google belum diaktifkan di app ini.'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google Sign-In gagal: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // Handle back button on Android
   Future<bool> _onWillPop() async {
-    // If there's no previous route, allow exit
     final canPop = Navigator.of(context).canPop();
     if (!canPop) {
-      // Show confirmation dialog before exiting
       final shouldExit = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -133,12 +162,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      // Blokir pop default agar kita bisa tampilkan dialog sendiri
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (didPop) return; // sudah di-pop oleh navigator
+        final allow = await _onWillPop();
+        if (allow) {
+          // Tutup app dengan rapi
+          await SystemNavigator.pop();
+        }
+      },
       child: Scaffold(
         body: Stack(
           children: [
-            // Background with wave circles
+            // Background gradient
             Positioned.fill(
               child: Container(
                 decoration: const BoxDecoration(
@@ -154,14 +192,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo and title
-                        // ===== HEADER =====
                         const SizedBox(height: 6),
+                        // Logo
                         Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Logo
                             ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
                               child: Image.asset(
                                 'assets/logo-white.png',
                                 width: 96,
@@ -174,34 +211,38 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Selamat datang',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.onSurface,
+                                color:
+                                    Theme.of(context).colorScheme.onSurface,
                               ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'Masuk untuk melanjutkan ke Radio Odan',
                           textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(.7),
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withOpacity(.7),
+                                  ),
                         ),
                         const SizedBox(height: 24),
 
-                        // Login form
+                        // Card Form
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withOpacity(0.92),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withOpacity(0.08),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -213,16 +254,14 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 TextFormField(
                                   controller: _emailController,
-                                  style: const TextStyle(color: Colors.black87),
-                                  decoration: InputDecoration(
+                                  style:
+                                      const TextStyle(color: Colors.black87),
+                                  decoration: const InputDecoration(
                                     labelText: 'Email',
-                                    labelStyle: const TextStyle(
-                                      color: Colors.black54,
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.email,
-                                      color: Colors.black54,
-                                    ),
+                                    labelStyle:
+                                        TextStyle(color: Colors.black54),
+                                    prefixIcon: Icon(Icons.email,
+                                        color: Colors.black54),
                                   ),
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (value) {
@@ -238,16 +277,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(height: 16),
                                 TextFormField(
                                   controller: _passwordController,
-                                  style: const TextStyle(color: Colors.black87),
+                                  style:
+                                      const TextStyle(color: Colors.black87),
                                   decoration: InputDecoration(
                                     labelText: 'Password',
                                     labelStyle: const TextStyle(
-                                      color: Colors.black54,
-                                    ),
-                                    prefixIcon: const Icon(
-                                      Icons.lock,
-                                      color: Colors.black54,
-                                    ),
+                                        color: Colors.black54),
+                                    prefixIcon: const Icon(Icons.lock,
+                                        color: Colors.black54),
                                     suffixIcon: IconButton(
                                       icon: Icon(
                                         _obscureText
@@ -255,11 +292,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                             : Icons.visibility_off,
                                         color: Colors.black54,
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscureText = !_obscureText;
-                                        });
-                                      },
+                                      onPressed: () => setState(() {
+                                        _obscureText = !_obscureText;
+                                      }),
                                     ),
                                   ),
                                   obscureText: _obscureText,
@@ -278,11 +313,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   children: [
                                     Checkbox(
                                       value: rememberMe,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          rememberMe = value ?? false;
-                                        });
-                                      },
+                                      onChanged: (value) => setState(() {
+                                        rememberMe = value ?? false;
+                                      }),
                                     ),
                                     const Text('Ingat saya'),
                                     const Spacer(),
@@ -324,14 +357,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ? const CircularProgressIndicator(
                                             color: Colors.white,
                                           )
-                                        : Text(
+                                        : const Text(
                                             'MASUK',
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
+                                              color: Colors.white,
                                             ),
                                           ),
                                   ),
@@ -341,9 +372,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   children: [
                                     Expanded(child: Divider()),
                                     Padding(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
+                                      padding:
+                                          EdgeInsets.symmetric(horizontal: 16),
                                       child: Text('ATAU'),
                                     ),
                                     Expanded(child: Divider()),
@@ -356,9 +386,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: OutlinedButton.icon(
                                     onPressed: _isLoading
                                         ? null
-                                        : () {
-                                            // Handle Google sign in
-                                          },
+                                        : _signInWithGoogle,
                                     icon: Image.asset(
                                       'assets/google.png',
                                       height: 24,
@@ -371,9 +399,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
+                                      side: const BorderSide(color: Colors.grey),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
@@ -411,6 +437,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
