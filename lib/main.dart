@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+
 import 'config/app_theme.dart';
 import 'config/app_routes.dart';
 import 'audio/audio_player_manager.dart';
+import 'screens/auth/auth_wrapper.dart';
+import 'package:radio_odan_app/providers/program_provider.dart';
+import 'package:radio_odan_app/providers/penyiar_provider.dart';
+import 'package:radio_odan_app/providers/event_provider.dart';
+import 'package:radio_odan_app/providers/artikel_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,15 +66,26 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Radio App',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.dark,
-      routes: AppRoutes.routes,
-      initialRoute: AppRoutes.splash,
-      onGenerateRoute: AppRoutes.onGenerateRoute,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProgramProvider()),
+        ChangeNotifierProvider(create: (_) => PenyiarProvider()),
+        ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider(create: (_) => ArtikelProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Radio App',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.dark,
+        builder: (context, child) => AuthWrapper(
+          child: child!,
+        ),
+        routes: AppRoutes.routes,
+        initialRoute: AppRoutes.splash,
+        onGenerateRoute: AppRoutes.onGenerateRoute,
+      ),
     );
   }
 }

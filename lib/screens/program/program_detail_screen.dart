@@ -1,47 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:html/parser.dart' show parse;
-import '../../models/program_model.dart';
-import '../../services/program_service.dart';
+import '../../providers/program_provider.dart';
 import '../../config/app_colors.dart';
+import '../../widgets/app_bar.dart';
 import '../../widgets/mini_player.dart';
 
 class ProgramDetailScreen extends StatefulWidget {
-  final int programId;
-
-  const ProgramDetailScreen({super.key, required this.programId});
+  const ProgramDetailScreen({super.key});
 
   @override
   State<ProgramDetailScreen> createState() => _ProgramDetailScreenState();
 }
 
 class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
-  final ProgramService _programService = ProgramService();
-  bool _isLoading = true;
-  Program? _program;
+  bool _isLoading = false;
   String _errorMessage = '';
 
   @override
-  void initState() {
-    super.initState();
-    _fetchProgramDetails();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkProgramData();
   }
 
-  Future<void> _fetchProgramDetails() async {
-    try {
-      final program = await _programService.fetchProgramById(widget.programId);
-      if (mounted) {
-        setState(() {
-          _program = program;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Gagal memuat detail program';
-          _isLoading = false;
-        });
-      }
+  void _checkProgramData() {
+    final programProvider = Provider.of<ProgramProvider>(
+      context,
+      listen: false,
+    );
+    if (programProvider.selectedProgram == null) {
+      setState(() {
+        _errorMessage = 'Program tidak ditemukan';
+        _isLoading = false;
+      });
     }
   }
 
@@ -54,234 +45,277 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
     }
   }
 
+  Widget _buildInfoCard(String title, String value, {IconData? icon}) {
+    return Card(
+      color: const Color(0xFF1E1E1E),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (icon != null) ...[
+              Row(
+                children: [
+                  Icon(icon, color: AppColors.textSecondary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ] else
+              Text(
+                title,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          _program?.namaProgram ?? 'Detail Program',
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            shadows: [
-              Shadow(
-                color: AppColors.surface,
-                blurRadius: 4,
-                offset: Offset(1, 1),
-              ),
-            ],
+    return Consumer<ProgramProvider>(
+      builder: (context, programProvider, _) {
+        final program = programProvider.selectedProgram;
+
+        return Scaffold(
+          backgroundColor: AppColors.backgroundDark,
+          appBar: CustomAppBar.transparent(
+            title: program?.namaProgram ?? 'Detail Program',
+            titleColor: AppColors.textPrimary,
+            iconColor: AppColors.textPrimary,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                programProvider.clearSelectedProgram();
+                Navigator.of(context).pop();
+              },
+            ),
           ),
-        ),
-        centerTitle: true,
-      ),
-      body: Stack(
-        children: [
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _errorMessage.isNotEmpty
+          body: Stack(
+            children: [
+              // Bubble/Wave Background
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [AppColors.primary, AppColors.backgroundDark],
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // Large bubble top right
+                      Positioned(
+                        top: -50,
+                        right: -50,
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        ),
+                      ),
+                      // Medium bubble bottom left
+                      Positioned(
+                        bottom: -30,
+                        left: -30,
+                        child: Container(
+                          width: 150,
+                          height: 150,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        ),
+                      ),
+                      // Small bubble center
+                      Positioned(
+                        top: 100,
+                        left: 100,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Content
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage.isNotEmpty
                   ? Center(
                       child: Text(
                         _errorMessage,
                         style: const TextStyle(color: AppColors.textPrimary),
                       ),
                     )
-                  : _program == null
-                      ? const Center(
-                          child: Text(
-                            'Program tidak ditemukan',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        )
-                      : CustomScrollView(
-                          slivers: [
-                            // Header with poster image
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: 8.0, // Menggunakan nilai fixed yang lebih kecil
-                                ),
-                                child: _program!.gambar.isNotEmpty
-                                    ? AspectRatio(
-                                        aspectRatio: 3 / 4, // Standard portrait ratio
-                                        child: Image.network(
-                                          _program!.gambar,
-                                          width: double.infinity,
-                                          fit: BoxFit.contain,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              Container(
-                                                color: AppColors.surface,
-                                                child: const Center(
-                                                  child: Icon(
-                                                    Icons.radio,
-                                                    size: 80,
-                                                    color: AppColors.textSecondary,
-                                                  ),
+                  : program == null
+                  ? const Center(
+                      child: Text(
+                        'Program tidak ditemukan',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  : CustomScrollView(
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 0.0),
+                            child: program.gambar.isNotEmpty
+                                ? AspectRatio(
+                                    aspectRatio: 2 / 3,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.network(
+                                        program.gambar.startsWith('http')
+                                            ? program.gambar
+                                            : 'https://example.com${program.gambar}',
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) => Container(
+                                              color: const Color(0xFF1E1E1E),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.radio,
+                                                  size: 80,
+                                                  color:
+                                                      AppColors.textSecondary,
                                                 ),
                                               ),
-                                        ),
-                                      )
-                                    : Container(
-                                        height:
-                                            MediaQuery.of(context).size.width *
-                                            1.33, // 3:4 ratio
-                                        color: AppColors.surface,
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.radio,
-                                            size: 80,
-                                            color: AppColors.textSecondary,
-                                          ),
-                                        ),
-                                      ),
-                              ),
-                            ),
-
-                            // Content
-                            SliverToBoxAdapter(
-                              child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF121212),
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(30),
-                                    topRight: Radius.circular(30),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 16,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Program Title
-                                    Text(
-                                      _program!.namaProgram,
-                                      style: const TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
-                                        height: 1.2,
+                                            ),
                                       ),
                                     ),
-
-                                    const SizedBox(height: 16),
-
-                                    // Host Name
-                                    if (_program!.penyiarName?.isNotEmpty == true)
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.person_outline,
-                                            color: AppColors.textSecondary,
-                                            size: 18,
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _program!.penyiarName!,
-                                            style: const TextStyle(
-                                              color: AppColors.textSecondary,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
+                                  )
+                                : AspectRatio(
+                                    aspectRatio: 2 / 3,
+                                    child: Container(
+                                      color: const Color(0xFF1E1E1E),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.radio,
+                                          size: 80,
+                                          color: AppColors.textSecondary,
+                                        ),
                                       ),
-
-                                    const SizedBox(height: 24),
-
-                                    // Schedule
-                                    if (_program!.jadwal?.isNotEmpty == true)
-                                      _buildInfoCard(
-                                        context,
-                                        title: 'Jadwal Siaran',
-                                        content: _program!.jadwal!,
-                                        icon: Icons.schedule,
-                                      ),
-
-                                    const SizedBox(height: 16),
-
-                                    // Description
-                                    if (_program!.deskripsi.isNotEmpty)
-                                      _buildInfoCard(
-                                        context,
-                                        title: 'Tentang Program',
-                                        content: _parseHtmlString(_program!.deskripsi),
-                                        icon: Icons.info_outline,
-                                      ),
-
-                                    const SizedBox(height: 30),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                                    ),
+                                  ),
+                          ),
                         ),
-          // Mini Player
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: const MiniPlayer(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(
-    BuildContext context, {
-    required String title,
-    required String content,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: AppColors.primary, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0,
+                                  ),
+                                  child: Text(
+                                    program.namaProgram,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.textPrimary,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                if (program.penyiarName != null &&
+                                    program.penyiarName!.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24.0,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.person_outline,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          program.penyiarName!,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                const SizedBox(height: 24),
+                                if (program.deskripsi.isNotEmpty)
+                                  _buildInfoCard(
+                                    'Tentang Program',
+                                    _parseHtmlString(program.deskripsi),
+                                    icon: Icons.info_outline,
+                                  ),
+                                if (program.jadwal != null &&
+                                    program.jadwal!.isNotEmpty)
+                                  _buildInfoCard(
+                                    'Jadwal Siaran',
+                                    program.jadwal!,
+                                    icon: Icons.schedule,
+                                  ),
+                                const SizedBox(height: 80),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: MiniPlayer(),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

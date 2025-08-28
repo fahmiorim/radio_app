@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
 import '../../../config/app_routes.dart';
-import '../../../models/artikel_model.dart';
-import '../../../services/artikel_service.dart';
+import '../../../providers/artikel_provider.dart';
 import '../../../screens/artikel/artikel_screen.dart';
 
 class ArtikelList extends StatefulWidget {
@@ -15,41 +16,43 @@ class ArtikelList extends StatefulWidget {
 
 class _ArtikelListState extends State<ArtikelList>
     with AutomaticKeepAliveClientMixin {
-  bool isLoading = true;
-  List<Artikel> artikelList = [];
-
   @override
   bool get wantKeepAlive => true; // biar state tetap hidup
 
   @override
   void initState() {
     super.initState();
-    _loadArtikel();
-  }
-
-  Future<void> _loadArtikel() async {
-    try {
-      final data = await ArtikelService().fetchRecentArtikel();
-      if (mounted) {
-        setState(() {
-          artikelList = data;
-          isLoading = false;
-        });
+    // Load data hanya jika belum dimuat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<ArtikelProvider>(context, listen: false);
+      if (provider.artikels.isEmpty) {
+        provider.fetchArtikels();
       }
-    } catch (e) {
-      debugPrint("Gagal ambil data artikel: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false; // skeleton hilang walau error
-        });
-      }
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
+    
+    final isLoading = context.watch<ArtikelProvider>().isLoading;
+    final artikelList = context.watch<ArtikelProvider>().artikels;
+    final error = context.watch<ArtikelProvider>().error;
+    
+    // Handle error
+    if (error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            'Gagal memuat data artikel. Silakan coba lagi.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      );
+    }
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(

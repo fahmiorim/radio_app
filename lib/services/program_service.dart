@@ -21,23 +21,21 @@ class ProgramService {
     }
   }
 
-  Future<List<Program>> fetchPrograms({
-    int page = 1,
-    int perPage = 10,
-  }) async {
+  Future<List<Program>> fetchPrograms({int page = 1, int perPage = 10}) async {
     try {
+      print('Fetching programs - Page: $page, Per Page: $perPage');
       final response = await _dio.get(
         '/program-siaran/semua',
-        queryParameters: {
-          'page': page,
-          'per_page': perPage,
-        },
+        queryParameters: {'page': page, 'per_page': perPage},
       );
 
       if (response.statusCode == 200 && response.data['status'] == true) {
+        print('API Response: ${response.data}');
         List<dynamic> programList = response.data['data'] ?? [];
+        print('Total programs received: ${programList.length}');
         return programList.map((json) => Program.fromJson(json)).toList();
       } else {
+        print('API Error: ${response.data}');
         throw Exception("Gagal mengambil data program");
       }
     } catch (e) {
@@ -49,7 +47,7 @@ class ProgramService {
   Future<Program> fetchProgramById(int id) async {
     try {
       final response = await _dio.get('/program-siaran/$id');
-      
+
       if (response.statusCode == 200 && response.data['status'] == true) {
         return Program.fromJson(response.data['data']);
       } else {

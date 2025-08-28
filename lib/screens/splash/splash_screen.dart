@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../config/app_routes.dart'; // import AppRoutes
+import '../../config/app_routes.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,7 +16,6 @@ class _SplashScreenState extends State<SplashScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future.delayed(const Duration(seconds: 3));
       if (!mounted) return;
-      // Navigasi ke Sign In Screen setelah splash
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     });
   }
@@ -23,19 +23,55 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Background gambar
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/splash.png'),
-                fit: BoxFit.cover,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary, AppColors.backgroundDark],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Wave circles background
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.backgroundDark.withValues(alpha: 0.1),
+                ),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              bottom: -150,
+              left: -50,
+              child: Container(
+                width: 400,
+                height: 400,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.backgroundDark.withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+            // Center logo
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/logo-white.png',
+                  width: 150,
+                  height: 150,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

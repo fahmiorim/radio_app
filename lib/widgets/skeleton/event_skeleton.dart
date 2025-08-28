@@ -1,78 +1,75 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../config/app_colors.dart';
 
 class EventSkeleton extends StatelessWidget {
-  final int itemCount;
-
-  const EventSkeleton({super.key, this.itemCount = 5});
+  const EventSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 300,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        physics: const NeverScrollableScrollPhysics(), // penting
-        shrinkWrap: true, // penting
-        padding: const EdgeInsets.only(left: 16),
-        itemCount: itemCount,
-        itemBuilder: (context, index) {
-          return Container(
-            width: 200,
-            margin: const EdgeInsets.only(right: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // shimmer gambar
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
-                  child: Container(
-                    height: 220,
-                    width: 200,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[850],
-                      borderRadius: BorderRadius.circular(5),
-                    ),
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 3,
+      itemBuilder: (context, index) => const Padding(
+        padding: EdgeInsets.only(bottom: 16.0),
+        child: EventCardSkeleton(),
+      ),
+    );
+  }
+}
+
+class EventCardSkeleton extends StatelessWidget {
+  const EventCardSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[800]!,
+      highlightColor: Colors.grey[700]!,
+      child: Card(
+        color: AppColors.surface.withOpacity(0.9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image placeholder
+              AspectRatio(
+                aspectRatio: 16/9,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
-                const SizedBox(height: 8),
-                // shimmer judul
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
-                  child: Container(
-                    width: 150,
-                    height: 16,
-                    color: Colors.grey[850],
-                  ),
+              ),
+              SizedBox(height: 12),
+              // Title placeholder
+              Container(
+                height: 20,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(height: 4),
-                // shimmer tanggal
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
-                  child: Container(
-                    width: 100,
-                    height: 14,
-                    color: Colors.grey[850],
-                  ),
+              ),
+              SizedBox(height: 8),
+              // Date placeholder
+              Container(
+                height: 16,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                const SizedBox(height: 2),
-                // shimmer waktu
-                Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
-                  child: Container(
-                    width: 60,
-                    height: 12,
-                    color: Colors.grey[850],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

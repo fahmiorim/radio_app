@@ -19,27 +19,36 @@ class AppHeader extends StatefulWidget {
 class _AppHeaderState extends State<AppHeader> {
   UserModel? _user;
   bool _isLoading = true;
+  bool _isMounted = false;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _loadUserProfile();
   }
 
+  @override
+  void dispose() {
+    _isMounted = false;
+    super.dispose();
+  }
+
   Future<void> _loadUserProfile() async {
+    if (!_isMounted) return;
+
     try {
-      final user = await UserService.getProfile();
-      if (mounted) {
-        setState(() {
-          _user = user;
-          _isLoading = false;
-        });
-      }
+      final user = await UserService.getProfile(forceRefresh: false);
+      if (!_isMounted) return;
+      
+      setState(() {
+        _user = user;
+        _isLoading = false;
+      });
     } catch (e) {
+      if (!_isMounted) return;
       logger.e('Error loading user profile: $e');
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -54,13 +63,20 @@ class _AppHeaderState extends State<AppHeader> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.blueAccent.withOpacity(0.15),
-            Colors.purpleAccent.withOpacity(0.15),
+            const Color.fromARGB(255, 2, 45, 155),
+            const Color.fromARGB(255, 2, 42, 128),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -70,13 +86,38 @@ class _AppHeaderState extends State<AppHeader> {
             children: [
               Image.asset('assets/logo-white.png', height: 40),
               const SizedBox(width: 12),
-              const Text(
-                "ODAN FM",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'ODAN',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        fontFamily: 'Poppins',
+                        shadows: [
+                          Shadow(
+                            color: Colors.black.withOpacity(0.3),
+                            offset: const Offset(0, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextSpan(
+                      text: ' FM',
+                      style: TextStyle(
+                        color: Colors.amber[300],
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                        fontFamily: 'Poppins',
+                        fontStyle: FontStyle.normal,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -120,8 +161,8 @@ class _AppHeaderState extends State<AppHeader> {
 
   Widget _buildShimmerAvatar() {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[800]!,
-      highlightColor: Colors.grey[600]!,
+      baseColor: Colors.grey[900]!,
+      highlightColor: Colors.grey[700]!,
       child: const CircleAvatar(radius: 22, backgroundColor: Colors.grey),
     );
   }
@@ -133,7 +174,7 @@ class _AppHeaderState extends State<AppHeader> {
 
     return CircleAvatar(
       radius: 22,
-      backgroundColor: Colors.blueAccent,
+      backgroundColor: Colors.blueGrey[800],
       child: Text(
         displayName,
         style: const TextStyle(

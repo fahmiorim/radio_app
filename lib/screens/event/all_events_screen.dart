@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/event_model.dart';
-import '../../services/event_service.dart';
-import '../../config/app_colors.dart';
-import '../../widgets/skeleton/event_skeleton.dart';
+import 'package:provider/provider.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/models/event_model.dart';
+import 'package:radio_odan_app/providers/event_provider.dart';
+import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
 
 class AllEventsScreen extends StatefulWidget {
   const AllEventsScreen({super.key});
@@ -12,20 +14,23 @@ class AllEventsScreen extends StatefulWidget {
 }
 
 class _AllEventsScreenState extends State<AllEventsScreen> {
-  bool isLoading = true;
-  List<Event> eventList = [];
-  final EventService _eventService = EventService();
   final ScrollController _scrollController = ScrollController();
-  bool _hasMore = true;
-  int _page = 1;
-  final int _perPage = 10;
-  bool _isLoadingMore = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _loadEvents();
     _scrollController.addListener(_onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<EventProvider>();
+      if (!_isInitialized) {
+        _isInitialized = true;
+        if (provider.events.isEmpty) {
+          provider.fetchEvents();
+        }
+      }
+    });
   }
 
   @override
@@ -35,159 +40,204 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
   }
 
   void _onScroll() {
+    final provider = context.read<EventProvider>();
     if (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent &&
-        !_isLoadingMore) {
-      _loadMoreEvents();
+        _scrollController.position.maxScrollExtent) {
+      provider.loadMoreEvents();
     }
   }
 
-  Future<void> _loadEvents() async {
-    try {
-      final data = await _eventService.fetchAllEvents(page: _page, perPage: _perPage);
-      if (mounted) {
-        setState(() {
-          eventList = data;
-          isLoading = false;
-          _hasMore = data.length == _perPage;
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal memuat event: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat daftar event')),
-        );
-      }
-    }
-  }
-
-  Future<void> _loadMoreEvents() async {
-    if (_isLoadingMore) return;
-
-    try {
-      setState(() => _isLoadingMore = true);
-      _page++;
-
-      final newEvents = await _eventService.fetchAllEvents(page: _page, perPage: _perPage);
-
-      if (mounted) {
-        setState(() {
-          eventList.addAll(newEvents);
-          _hasMore = newEvents.length == _perPage;
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal memuat event tambahan: $e");
-      if (mounted) {
-        setState(() {
-          _isLoadingMore = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal memuat event tambahan')),
-          );
-        }
-      }
-    }
-  }
-
-  Widget _buildEventItem(Event event) {
+  Widget _buildEventItem(Event event, BuildContext context) {
     return Card(
+      key: Key('event_${event.id}'),
       margin: const EdgeInsets.only(bottom: 16),
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      color: AppColors.surface.withOpacity(0.9),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: event.gambar.isNotEmpty
-                  ? Image.network(
-                      event.gambarUrl,
-                      width: double.infinity,
-                      height: 180,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
+      child: InkWell(
+        onTap: () {
+          final provider = context.read<EventProvider>();
+          provider.selectEvent(event, context);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: event.gambar.isNotEmpty
+                    ? Image.network(
+                        event.gambarUrl,
+                        width: double.infinity,
+                        height: 180,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          height: 180,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image_not_supported, size: 40),
+                        ),
+                      )
+                    : Container(
                         width: double.infinity,
                         height: 180,
                         color: Colors.grey[300],
-                        child: const Icon(Icons.image_not_supported),
+                        child: const Icon(Icons.event, size: 40),
                       ),
-                    )
-                  : Container(
-                      width: double.infinity,
-                      height: 180,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.event),
-                    ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              event.judul,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              event.formattedTanggal,
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            ),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                event.judul,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                event.formattedTanggal,
+                style: TextStyle(
+                  fontSize: 14, 
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildBody() {
-    if (isLoading) {
-      return const EventSkeleton();
-    }
+    return Consumer<EventProvider>(
+      builder: (context, provider, _) {
+        if (provider.isLoading) {
+          return const EventSkeleton();
+        }
 
-    if (eventList.isEmpty) {
-      return const Center(child: Text('Tidak ada event yang tersedia'));
-    }
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: eventList.length + (_hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index >= eventList.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
+        if (provider.error != null) {
+          return Center(
+            child: Text(
+              'Gagal memuat event: ${provider.error}',
+              style: const TextStyle(color: Colors.white70),
             ),
           );
         }
-        return _buildEventItem(eventList[index]);
+
+        if (provider.events.isEmpty) {
+          return const Center(
+            child: Text(
+              'Tidak ada event yang tersedia',
+              style: TextStyle(color: Colors.white70),
+            ),
+          );
+        }
+
+        return Stack(
+          children: [
+            // Bubble/Wave Background
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [AppColors.primary, AppColors.backgroundDark],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Bubble 1 - Top Right
+                    Positioned(
+                      top: 50,
+                      right: -50,
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.05),
+                        ),
+                      ),
+                    ),
+                    // Bubble 2 - Bottom Left
+                    Positioned(
+                      bottom: -50,
+                      left: -50,
+                      child: Container(
+                        width: 250,
+                        height: 250,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.03),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Content
+            ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: provider.events.length + (provider.hasMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index >= provider.events.length) {
+                  return provider.isLoadingMore
+                      ? _buildLoadingIndicator()
+                      : const SizedBox.shrink();
+                }
+                return _buildEventItem(provider.events[index], context);
+              },
+            ),
+          ],
+        );
       },
+    );
+  }
+
+  Widget _buildLoadingIndicator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.0),
+      child: Center(
+        child: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(strokeWidth: 2.0),
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Semua Event'),
-        backgroundColor: AppColors.backgroundDark,
-        foregroundColor: Colors.white,
-      ),
+      key: const Key('all_events_screen'),
+      appBar: CustomAppBar.transparent(title: 'Semua Event'),
       backgroundColor: AppColors.backgroundDark,
-      body: _buildBody(),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return _buildBody();
+        },
+      ),
     );
   }
 }
