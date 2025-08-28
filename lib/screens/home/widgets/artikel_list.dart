@@ -52,6 +52,7 @@ class _ArtikelListState extends State<ArtikelList>
       );
     }
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(

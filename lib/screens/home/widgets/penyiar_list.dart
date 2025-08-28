@@ -51,6 +51,7 @@ class _PenyiarListState extends State<PenyiarList>
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionTitle(title: 'Penyiar'),

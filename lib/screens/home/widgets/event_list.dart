@@ -51,6 +51,7 @@ class _EventListState extends State<EventList>
       );
     }
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionTitle(
