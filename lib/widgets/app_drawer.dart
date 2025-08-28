@@ -1,66 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:radio_odan_app/services/user_service.dart';
-import 'package:radio_odan_app/models/user_model.dart';
-import 'package:radio_odan_app/config/logger.dart';
-import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:provider/provider.dart';
 
-class AppDrawer extends StatefulWidget {
+import '../models/user_model.dart';
+import '../providers/user_provider.dart';
+import '../config/app_routes.dart';
+import '../services/user_service.dart';
+
+class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
 
-  @override
-  State<AppDrawer> createState() => _AppDrawerState();
-}
-
-class _AppDrawerState extends State<AppDrawer> {
-  UserModel? _user;
-  bool _isLoading = true;
-  bool _isMounted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isMounted = true;
-    _loadUserProfile();
-  }
-
-  @override
-  void dispose() {
-    _isMounted = false;
-    super.dispose();
-  }
-
-  Future<void> _loadUserProfile() async {
-    if (!_isMounted) return;
-
-    try {
-      final user = await UserService.getProfile(forceRefresh: false);
-      if (!_isMounted) return;
-      
-      setState(() {
-        _user = user;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!_isMounted) return;
-      logger.e('Error loading user profile in drawer: $e');
-      setState(() => _isLoading = false);
-    }
-  }
-
-  void _navigateToEditProfile() {
-    if (_user != null) {
+  void _navigateToEditProfile(BuildContext context, UserModel? user) {
+    if (user != null) {
       Navigator.pop(context);
       Navigator.pushNamed(
         context,
         '/edit-profile',
-        arguments: {'user': _user!},
+        arguments: {'user': user},
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final user = userProvider.user;
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final size = MediaQuery.of(context).size;
@@ -79,7 +43,6 @@ class _AppDrawerState extends State<AppDrawer> {
           ),
           child: Stack(
             children: [
-              // Bubble Effects
               Positioned(
                 top: -50,
                 right: -50,
@@ -104,11 +67,9 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                 ),
               ),
-              // Main Content
               SafeArea(
                 child: Column(
                   children: [
-                    // HEADER
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -124,14 +85,14 @@ class _AppDrawerState extends State<AppDrawer> {
                       ),
                       child: Row(
                         children: [
-                          _buildProfileAvatar(),
+                          _buildProfileAvatar(userProvider),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _user?.name ?? 'Nama Pengguna',
+                                  user?.name ?? 'Nama Pengguna',
                                   style: textTheme.titleMedium?.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -140,7 +101,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  _user?.email ?? 'email@example.com',
+                                  user?.email ?? 'email@example.com',
                                   style: textTheme.bodySmall?.copyWith(
                                     color: Colors.white70,
                                   ),
@@ -152,7 +113,6 @@ class _AppDrawerState extends State<AppDrawer> {
                         ],
                       ),
                     ),
-                    // MENU LIST
                     Expanded(
                       child: Column(
                         children: [
@@ -163,7 +123,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                 _buildMenuItem(
                                   icon: Icons.edit,
                                   title: "Edit Profile",
-                                  onTap: _navigateToEditProfile,
+                                  onTap: () => _navigateToEditProfile(context, user),
                                 ),
                                 _buildMenuItem(
                                   icon: Icons.star,
@@ -176,7 +136,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                   iconColor: Colors.redAccent,
                                   onTap: () async {
                                     await UserService.logout();
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       Navigator.pushNamedAndRemoveUntil(
                                         context,
                                         AppRoutes.login,
@@ -188,7 +148,6 @@ class _AppDrawerState extends State<AppDrawer> {
                               ],
                             ),
                           ),
-                          // FOOTER
                           Container(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 72),
                             child: Column(
@@ -238,18 +197,19 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-  Widget _buildProfileAvatar() {
+  Widget _buildProfileAvatar(UserProvider userProvider) {
     const size = 58.0;
-    if (_isLoading) {
+    final user = userProvider.user;
+    if (userProvider.isLoading) {
       return CircleAvatar(
         radius: size / 2,
         backgroundColor: Colors.white24,
         child: const CircularProgressIndicator(strokeWidth: 2),
       );
     }
-    if (_user?.avatar?.isNotEmpty == true) {
+    if (user?.avatar?.isNotEmpty == true) {
       return CachedNetworkImage(
-        imageUrl: _user!.avatar!,
+        imageUrl: user!.avatar!,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: size / 2,
           backgroundColor: Colors.white,
@@ -264,15 +224,15 @@ class _AppDrawerState extends State<AppDrawer> {
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
         errorWidget: (context, url, error) =>
-            _buildInitialsAvatar(size, Colors.blueGrey),
+            _buildInitialsAvatar(size, Colors.blueGrey, user),
       );
     }
-    return _buildInitialsAvatar(size, Colors.blueGrey);
+    return _buildInitialsAvatar(size, Colors.blueGrey, user);
   }
 
-  Widget _buildInitialsAvatar(double size, Color color) {
-    final displayName = _user?.name?.trim().isNotEmpty == true
-        ? _user!.name![0].toUpperCase()
+  Widget _buildInitialsAvatar(double size, Color color, UserModel? user) {
+    final displayName = user?.name?.trim().isNotEmpty == true
+        ? user!.name![0].toUpperCase()
         : 'U';
 
     return CircleAvatar(
@@ -314,7 +274,7 @@ class _AppDrawerState extends State<AppDrawer> {
         ),
         title: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w500,
