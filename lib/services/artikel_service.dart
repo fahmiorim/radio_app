@@ -76,17 +76,13 @@ class ArtikelService {
       print('Response data: ${response.data}');
       
       if (response.statusCode == 200) {
-        if (response.data['status'] == true) {
-          if (response.data['data'] != null) {
-            return Artikel.fromJson(response.data['data']);
-          } else {
-            throw Exception('Data artikel tidak ditemukan dalam respons');
-          }
+        if (response.data['status'] == true && response.data['data'] != null) {
+          return Artikel.fromJson(response.data['data']);
         } else {
-          throw Exception(response.data['message'] ?? 'Gagal mengambil detail artikel: Status false');
+          throw Exception(response.data['message'] ?? 'Artikel tidak ada');
         }
       } else if (response.statusCode == 404) {
-        throw Exception('Artikel tidak ditemukan (404)');
+        throw Exception('Artikel tidak ada');
       } else {
         throw Exception('Gagal mengambil detail artikel. Kode status: ${response.statusCode}');
       }
