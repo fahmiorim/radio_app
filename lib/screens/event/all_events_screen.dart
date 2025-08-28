@@ -4,6 +4,7 @@ import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/event_model.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/widgets/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
 
 class AllEventsScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                             child: CircularProgressIndicator(
                               value: totalBytes != null
                                   ? loadingProgress.cumulativeBytesLoaded /
-                                      totalBytes
+                                        totalBytes
                                   : null,
                             ),
                           );
@@ -89,7 +90,10 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
                           width: double.infinity,
                           height: 180,
                           color: Colors.grey[300],
-                          child: const Icon(Icons.image_not_supported, size: 40),
+                          child: const Icon(
+                            Icons.image_not_supported,
+                            size: 40,
+                          ),
                         ),
                       )
                     : Container(
@@ -114,7 +118,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
               Text(
                 event.formattedTanggal,
                 style: TextStyle(
-                  fontSize: 14, 
+                  fontSize: 14,
                   color: Colors.white.withOpacity(0.8),
                 ),
               ),
@@ -195,10 +199,15 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
               ),
             ),
 
-            // Content
+            // Content with bottom padding for mini player
             ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 16,
+                bottom: 100, // Extra space for mini player
+              ),
               itemCount: provider.events.length + (provider.hasMore ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= provider.events.length) {
@@ -215,6 +224,31 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const Key('all_events_screen'),
+      appBar: CustomAppBar.transparent(title: 'Semua Event'),
+      backgroundColor: AppColors.backgroundDark,
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return _buildBody();
+            },
+          ),
+          // Mini Player
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: MiniPlayer(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLoadingIndicator() {
     return const Padding(
       padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -228,17 +262,4 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: const Key('all_events_screen'),
-      appBar: CustomAppBar.transparent(title: 'Semua Event'),
-      backgroundColor: AppColors.backgroundDark,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return _buildBody();
-        },
-      ),
-    );
-  }
 }

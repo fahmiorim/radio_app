@@ -12,6 +12,8 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/program/all_programs_screen.dart';
 import '../screens/program/program_detail_screen.dart';
+import '../screens/artikel/artikel_detail_screen.dart';
+import '../models/artikel_model.dart';
 
 class AppRoutes {
   // --- Route Names ---
@@ -121,6 +123,12 @@ class AppRoutes {
       case programDetail:
         // The ProgramProvider will handle the selected program state
         return const ProgramDetailScreen();
+      case artikelDetail:
+        final artikel = settings.arguments as Artikel?;
+        if (artikel != null) {
+          return ArtikelDetailScreen(artikelSlug: artikel.slug);
+        }
+        return const BottomNav();
       default:
         // If route is not found, go to home
         return const BottomNav();

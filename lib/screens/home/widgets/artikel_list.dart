@@ -3,9 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
-import '../../../config/app_routes.dart';
 import '../../../providers/artikel_provider.dart';
-import '../../../screens/artikel/artikel_screen.dart';
+import '../../../screens/artikel/artikel_detail_screen.dart';
+import '../../../navigation/bottom_nav.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -34,11 +34,11 @@ class _ArtikelListState extends State<ArtikelList>
   @override
   Widget build(BuildContext context) {
     super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
-    
+
     final isLoading = context.watch<ArtikelProvider>().isLoading;
     final artikelList = context.watch<ArtikelProvider>().artikels;
     final error = context.watch<ArtikelProvider>().error;
-    
+
     // Handle error
     if (error != null) {
       return Center(
@@ -55,31 +55,16 @@ class _ArtikelListState extends State<ArtikelList>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SectionTitle(title: "Artikel"),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ArtikelScreen(),
-                    ),
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(50, 30),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('Lihat Semua'),
+        SectionTitle(
+          title: "Artikel",
+          onSeeAll: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BottomNav(initialIndex: 1),
               ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 8),
         isLoading
@@ -96,10 +81,10 @@ class _ArtikelListState extends State<ArtikelList>
                     final artikel = artikelList[index];
                     return GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.artikelDetail,
-                          arguments: artikel,
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ArtikelDetailScreen(artikelSlug: artikel.slug),
+                          ),
                         );
                       },
                       child: Container(
@@ -127,13 +112,14 @@ class _ArtikelListState extends State<ArtikelList>
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                             ),
                             Text(
                               artikel.formattedDate,
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: Colors.white,
                               ),
                             ),
                           ],

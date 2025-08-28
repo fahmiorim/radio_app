@@ -7,14 +7,22 @@ import '../widgets/mini_player.dart';
 import '../widgets/app_drawer.dart';
 
 class BottomNav extends StatefulWidget {
-  const BottomNav({super.key});
+  final int initialIndex;
+  
+  const BottomNav({super.key, this.initialIndex = 0});
 
   @override
   State<BottomNav> createState() => _BottomNavState();
 }
 
 class _BottomNavState extends State<BottomNav> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+  
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),

@@ -66,7 +66,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary, Colors.transparent],
+            colors: [Colors.transparent, AppColors.primary],
           ),
         ),
       ),
