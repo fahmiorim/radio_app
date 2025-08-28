@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 class SectionTitle extends StatelessWidget {
   final String title;
   final VoidCallback? onSeeAll; // opsional, kalau mau ada tombol "Lihat Semua"
+  final TextStyle? titleStyle;
 
-  const SectionTitle({super.key, required this.title, this.onSeeAll});
+  const SectionTitle({
+    super.key,
+    required this.title,
+    this.onSeeAll,
+    this.titleStyle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +21,14 @@ class SectionTitle extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style:
+                titleStyle ??
+                const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
           ),
           if (onSeeAll != null)
             GestureDetector(
@@ -24,7 +37,8 @@ class SectionTitle extends StatelessWidget {
                 "Lihat Semua",
                 style: TextStyle(
                   fontSize: 14,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Colors.amber[300],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:radio_odan_app/config/api_client.dart';
@@ -6,7 +7,9 @@ import 'package:radio_odan_app/config/logger.dart';
 
 class UserService {
   static const String _userKey = 'user_token';
+  static const String _userDataKey = 'user_data';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  static UserModel? _cachedUser;
 
   /// Ambil token dari secure storage
   static Future<String?> getToken() async {
@@ -18,13 +21,20 @@ class UserService {
     await _storage.write(key: _userKey, value: token);
   }
 
-  /// Hapus token saat logout
+  /// Hapus token dan cache saat logout
   static Future<void> clearToken() async {
+    _cachedUser = null;
     await _storage.delete(key: _userKey);
+    await _storage.delete(key: _userDataKey);
   }
 
-  /// Ambil data profil user
-  static Future<UserModel?> getProfile() async {
+  /// Ambil data profil user dengan caching
+  static Future<UserModel?> getProfile({bool forceRefresh = false}) async {
+    // Return cached user if available and not forcing refresh
+    if (_cachedUser != null && !forceRefresh) {
+      return _cachedUser;
+    }
+
     try {
       final token = await getToken();
       if (token == null) {
@@ -45,20 +55,31 @@ class UserService {
       if (response.statusCode == 200) {
         final body = response.data;
         if (body['status'] == true && body['data'] != null) {
-          return UserModel.fromJson(body['data']);
+          _cachedUser = UserModel.fromJson(body['data']);
+          // Save to secure storage for persistence
+          await _storage.write(
+            key: _userDataKey,
+            value: jsonEncode(_cachedUser?.toJson()),
+          );
+          return _cachedUser;
         }
       }
       return null;
     } on DioException catch (e) {
-      final data = e.response?.data;
-      String msg = 'Gagal mengambil profil';
-      if (data is Map<String, dynamic>) {
-        msg = data['message'] ?? msg;
+      logger.e("Error getProfile: ${e.message}");
+      // Try to load from cache if available
+      final cachedData = await _storage.read(key: _userDataKey);
+      if (cachedData != null) {
+        try {
+          _cachedUser = UserModel.fromJson(jsonDecode(cachedData));
+          return _cachedUser;
+        } catch (e) {
+          logger.e("Error parsing cached user data: $e");
+        }
       }
-      logger.e("Error getProfile: $msg");
       return null;
     } catch (e) {
-      logger.e("Error getProfile: $e");
+      logger.e("Unexpected error in getProfile: $e");
       return null;
     }
   }
