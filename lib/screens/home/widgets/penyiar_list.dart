@@ -49,6 +49,7 @@ class _PenyiarListState extends State<PenyiarList>
     super.build(context);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(

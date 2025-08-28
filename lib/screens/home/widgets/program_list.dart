@@ -47,6 +47,7 @@ class _ProgramListState extends State<ProgramList>
   Widget build(BuildContext context) {
     super.build(context); // WAJIB kalau pakai AutomaticKeepAlive
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(

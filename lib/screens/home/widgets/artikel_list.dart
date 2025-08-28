@@ -50,6 +50,7 @@ class _ArtikelListState extends State<ArtikelList>
   Widget build(BuildContext context) {
     super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(

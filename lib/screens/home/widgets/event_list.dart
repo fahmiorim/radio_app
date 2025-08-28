@@ -49,6 +49,7 @@ class _EventListState extends State<EventList>
   Widget build(BuildContext context) {
     super.build(context); // wajib kalau pakai AutomaticKeepAliveClientMixin
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
