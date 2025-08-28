@@ -31,17 +31,13 @@ class _AllProgramsScreenState extends State<AllProgramsScreen> {
 
   Future<void> _loadInitialData() async {
     final provider = context.read<ProgramProvider>();
-    
-    // Only fetch if we don't have any data and not already loading
-    if (provider.allPrograms.isEmpty && !provider.isLoadingAll) {
-      try {
-        await provider.fetchAllPrograms();
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal memuat daftar program')),
-          );
-        }
+    try {
+      await provider.fetchAllPrograms();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memuat daftar program')),
+        );
       }
     }
   }

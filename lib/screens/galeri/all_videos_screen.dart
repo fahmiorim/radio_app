@@ -34,9 +34,7 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
 
   Future<void> _loadInitialVideos() async {
     final videoProvider = context.read<VideoProvider>();
-    if (videoProvider.allVideos.isEmpty) {
-      await videoProvider.fetchAllVideos();
-    }
+    await videoProvider.fetchAllVideos();
   }
 
   Future<void> _onRefresh() async {

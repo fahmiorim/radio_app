@@ -22,12 +22,10 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
 
-    // Fetch initial data
+    // Fetch initial data every time screen is opened
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<ArtikelProvider>();
-      if (provider.artikels.isEmpty) {
-        provider.fetchArtikels();
-      }
+      provider.fetchArtikels();
     });
   }
 
@@ -134,7 +132,7 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => provider.fetchArtikels(forceRefresh: true),
+      onRefresh: () => provider.fetchArtikels(),
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),

@@ -22,10 +22,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
     _scrollController.addListener(_onScroll);
     // Fetch initial data with a slight delay to allow build to complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<AlbumProvider>();
-      if (provider.allAlbums.isEmpty) {
-        provider.fetchAllAlbums();
-      }
+      context.read<AlbumProvider>().fetchAllAlbums();
     });
   }
 

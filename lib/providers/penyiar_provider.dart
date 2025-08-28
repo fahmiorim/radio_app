@@ -12,11 +12,8 @@ class PenyiarProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchPenyiars({bool forceRefresh = false}) async {
-    // Jika sudah ada data dan bukan force refresh, tidak perlu fetch ulang
-    if (_penyiars.isNotEmpty && !forceRefresh) {
-      return;
-    }
+  Future<void> fetchPenyiars() async {
+    if (_isLoading) return;
 
     _isLoading = true;
     _error = null;

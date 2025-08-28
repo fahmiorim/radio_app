@@ -20,10 +20,7 @@ class _VideoListState extends State<VideoList> {
     super.initState();
     // Fetch videos when the widget is first created
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final videoProvider = context.read<VideoProvider>();
-      if (videoProvider.recentVideos.isEmpty) {
-        videoProvider.fetchRecentVideos();
-      }
+      context.read<VideoProvider>().fetchRecentVideos();
     });
   }
 

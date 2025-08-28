@@ -22,12 +22,10 @@ class _ArtikelListState extends State<ArtikelList>
   @override
   void initState() {
     super.initState();
-    // Load recent articles
+    // Always load recent articles when the widget is created
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<ArtikelProvider>(context, listen: false);
-      if (provider.recentArtikels.isEmpty) {
-        provider.fetchRecentArtikels();
-      }
+      provider.fetchRecentArtikels();
     });
   }
 
