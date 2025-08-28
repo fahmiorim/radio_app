@@ -16,7 +16,6 @@ class AllEventsScreen extends StatefulWidget {
 
 class _AllEventsScreenState extends State<AllEventsScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -25,12 +24,7 @@ class _AllEventsScreenState extends State<AllEventsScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<EventProvider>();
-      if (!_isInitialized) {
-        _isInitialized = true;
-        if (provider.events.isEmpty) {
-          provider.fetchEvents();
-        }
-      }
+      provider.fetchEvents();
     });
   }
 

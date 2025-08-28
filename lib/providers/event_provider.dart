@@ -20,13 +20,8 @@ class EventProvider with ChangeNotifier {
   bool get hasMore => _hasMore;
   String? get error => _error;
 
-  Future<void> fetchEvents({bool forceRefresh = false}) async {
-    if (_isLoadingMore) return;
-
-    // Jika sudah ada data dan bukan force refresh, tidak perlu fetch ulang
-    if (_events.isNotEmpty && !forceRefresh) {
-      return;
-    }
+  Future<void> fetchEvents() async {
+    if (_isLoading || _isLoadingMore) return;
 
     _isLoading = true;
     _page = 1;

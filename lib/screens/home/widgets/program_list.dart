@@ -23,10 +23,7 @@ class _ProgramListState extends State<ProgramList>
     super.initState();
     // Fetch program only once when first initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ProgramProvider>();
-      if (provider.todaysPrograms.isEmpty) {
-        provider.fetchTodaysPrograms();
-      }
+      context.read<ProgramProvider>().fetchTodaysPrograms();
     });
   }
 

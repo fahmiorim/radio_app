@@ -20,12 +20,10 @@ class _PenyiarListState extends State<PenyiarList>
   @override
   void initState() {
     super.initState();
-    // Load data hanya jika belum dimuat
+    // Always fetch presenters when the widget is created
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<PenyiarProvider>(context, listen: false);
-      if (provider.penyiars.isEmpty) {
-        provider.fetchPenyiars();
-      }
+      provider.fetchPenyiars();
     });
   }
 

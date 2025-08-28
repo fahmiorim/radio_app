@@ -21,12 +21,10 @@ class _EventListState extends State<EventList>
   @override
   void initState() {
     super.initState();
-    // Load data hanya jika belum dimuat
+    // Always fetch events when the widget is created
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<EventProvider>(context, listen: false);
-      if (provider.events.isEmpty) {
-        provider.fetchEvents();
-      }
+      provider.fetchEvents();
     });
   }
 

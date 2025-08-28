@@ -52,8 +52,8 @@ class ArtikelProvider with ChangeNotifier {
   }
 
   // Fetch initial list of articles with pagination
-  Future<void> fetchArtikels({bool forceRefresh = false}) async {
-    if ((_artikels.isNotEmpty && !forceRefresh) || _isLoading) return;
+  Future<void> fetchArtikels() async {
+    if (_isLoading) return;
 
     _isLoading = true;
     _error = null;

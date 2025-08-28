@@ -19,10 +19,7 @@ class _AlbumListState extends State<AlbumList> {
     super.initState();
     // Fetch albums when the widget is first created
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final albumProvider = context.read<AlbumProvider>();
-      if (!albumProvider.hasFeaturedAlbums) {
-        albumProvider.fetchFeaturedAlbums();
-      }
+      context.read<AlbumProvider>().fetchFeaturedAlbums();
     });
   }
 
