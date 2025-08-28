@@ -35,11 +35,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   ImageProvider _getProfileImage() {
-    if (_imageFile != null) {
-      return FileImage(_imageFile!);
-    } else if (widget.user.avatar != null && widget.user.avatar!.isNotEmpty) {
-      // Ensure the URL is properly formatted
-      String avatarUrl = widget.user.avatar!;
+    final imageFile = _imageFile;
+    if (imageFile != null) {
+      return FileImage(imageFile);
+    } else {
+      final avatar = widget.user.avatar;
+      if (avatar != null && avatar.isNotEmpty) {
+        // Ensure the URL is properly formatted
+        String avatarUrl = avatar;
 
       // If it's already a full URL, use it as is
       if (avatarUrl.startsWith('http')) {
@@ -58,6 +61,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else {
         // If it's just a filename, prepend the storage path
         return NetworkImage('$baseUrl/storage/$avatarUrl');
+      }
       }
     }
     return const AssetImage("assets/user1.jpg");
@@ -161,16 +165,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       logger.e('Error updating profile: $e');
       if (mounted) {
+        String errorText = 'Terjadi kesalahan: ${e.toString()}';
+        if (e is DioException) {
+          final data = e.response?.data;
+          if (data is Map && data['message'] != null) {
+            errorText = data['message'];
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              (e is DioException &&
-                      e.response?.data != null &&
-                      e.response!.data is Map &&
-                      e.response!.data['message'] != null)
-                  ? e.response!.data['message']
-                  : 'Terjadi kesalahan: ${e.toString()}',
-            ),
+            content: Text(errorText),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
@@ -204,10 +208,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     },
                     child:
                         _imageFile == null &&
-                            (widget.user.avatar == null ||
-                                widget.user.avatar!.isEmpty)
-                        ? const Icon(Icons.person, size: 40)
-                        : null,
+                                (widget.user.avatar == null ||
+                                    widget.user.avatar?.isEmpty == true)
+                            ? const Icon(Icons.person, size: 40)
+                            : null,
                   ),
                   Positioned(
                     bottom: 0,

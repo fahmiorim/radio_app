@@ -25,8 +25,8 @@ class AppHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: const [
+        gradient: const LinearGradient(
+          colors: [
             Color.fromARGB(255, 2, 45, 155),
             Color.fromARGB(255, 2, 42, 128),
           ],
@@ -87,11 +87,12 @@ class AppHeader extends StatelessWidget {
           ),
           InkWell(
             borderRadius: BorderRadius.circular(30),
-            onTap: onMenuTap ?? () {
-              if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
-                Scaffold.of(context).openDrawer();
-              }
-            },
+            onTap: onMenuTap ??
+                () {
+                  if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
+                    Scaffold.of(context).openDrawer();
+                  }
+                },
             child: _buildProfileAvatar(context, user),
           ),
         ],
@@ -127,15 +128,16 @@ class AppHeader extends StatelessWidget {
   }
 
   Widget _buildInitialsAvatar(ThemeData theme, UserModel? user) {
-    final displayName = user?.name?.trim().isNotEmpty == true
-        ? user!.name![0].toUpperCase()
+    // Jika UserModel.name non-nullable, akses via user?.name aman setelah null-check user.
+    final initial = (user != null && user.name.trim().isNotEmpty)
+        ? user.name[0].toUpperCase()
         : 'U';
 
     return CircleAvatar(
       radius: 22,
       backgroundColor: Colors.blueGrey[800],
       child: Text(
-        displayName,
+        initial,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,

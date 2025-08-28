@@ -15,6 +15,7 @@ class AppDrawer extends StatelessWidget {
       Navigator.pop(context);
       Navigator.pushNamed(
         context,
+        // Pakai route yang sudah kamu daftarkan. Ganti ke AppRoutes.editProfile jika ada.
         '/edit-profile',
         arguments: {'user': user},
       );
@@ -24,7 +25,7 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
-    final user = userProvider.user;
+    final user = userProvider.user; // UserModel?
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final size = MediaQuery.of(context).size;
@@ -70,6 +71,7 @@ class AppDrawer extends StatelessWidget {
               SafeArea(
                 child: Column(
                   children: [
+                    // Header user
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
@@ -113,6 +115,8 @@ class AppDrawer extends StatelessWidget {
                         ],
                       ),
                     ),
+
+                    // Menu
                     Expanded(
                       child: Column(
                         children: [
@@ -148,6 +152,8 @@ class AppDrawer extends StatelessWidget {
                               ],
                             ),
                           ),
+
+                          // Footer versi
                           Container(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 72),
                             child: Column(
@@ -200,6 +206,7 @@ class AppDrawer extends StatelessWidget {
   Widget _buildProfileAvatar(UserProvider userProvider) {
     const size = 58.0;
     final user = userProvider.user;
+
     if (userProvider.isLoading) {
       return CircleAvatar(
         radius: size / 2,
@@ -207,6 +214,8 @@ class AppDrawer extends StatelessWidget {
         child: const CircularProgressIndicator(strokeWidth: 2),
       );
     }
+
+    // Tampilkan avatar dari URL jika tersedia & tidak kosong
     if (user?.avatar?.isNotEmpty == true) {
       return CachedNetworkImage(
         imageUrl: user!.avatar!,
@@ -227,19 +236,22 @@ class AppDrawer extends StatelessWidget {
             _buildInitialsAvatar(size, Colors.blueGrey, user),
       );
     }
+
+    // Fallback ke inisial
     return _buildInitialsAvatar(size, Colors.blueGrey, user);
   }
 
   Widget _buildInitialsAvatar(double size, Color color, UserModel? user) {
-    final displayName = user?.name?.trim().isNotEmpty == true
-        ? user!.name![0].toUpperCase()
+    // Catatan: jika `name` di UserModel non-nullable (String), akses pakai user?.name aman dengan null-check di user.
+    final initial = (user != null && user.name.trim().isNotEmpty)
+        ? user.name[0].toUpperCase()
         : 'U';
 
     return CircleAvatar(
       radius: size / 2,
       backgroundColor: color,
       child: Text(
-        displayName,
+        initial,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
