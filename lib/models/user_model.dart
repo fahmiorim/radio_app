@@ -22,7 +22,9 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
+    print('🐛 Raw avatar from API: ${json['avatar']}');
+    
+    final user = UserModel(
       id: json['id'] ?? 0,
       name: json['name'] ?? 'Tidak ada nama',
       email: json['email'] ?? 'Tidak ada email',
@@ -37,6 +39,9 @@ class UserModel {
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
     );
+    
+    print('🐛 Processed user avatar: ${user.avatar}');
+    return user;
   }
 
   Map<String, dynamic> toJson() {

@@ -104,16 +104,29 @@ class AppHeader extends StatelessWidget {
   Widget _buildProfileAvatar(BuildContext context, UserModel? user) {
     final theme = Theme.of(context);
 
-    if (user?.avatar?.isNotEmpty == true) {
+    final avatar = user?.avatar?.trim();
+    if (avatar?.isNotEmpty == true) {
+      String imageUrl = avatar!;
+      
+      // Handle relative paths
+      if (!imageUrl.startsWith('http') && imageUrl.startsWith('/')) {
+        imageUrl = 'http://192.168.89.99:8000$imageUrl';
+      } else if (!imageUrl.startsWith('http')) {
+        imageUrl = 'http://192.168.89.99:8000/storage/$imageUrl';
+      }
+      
       return CachedNetworkImage(
-        imageUrl: user!.avatar!,
+        imageUrl: imageUrl,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: 22,
           backgroundColor: Colors.white,
           child: CircleAvatar(radius: 20, backgroundImage: imageProvider),
         ),
         placeholder: (context, url) => _buildShimmerAvatar(),
-        errorWidget: (context, url, error) => _buildInitialsAvatar(theme, user),
+        errorWidget: (context, url, error) {
+          print('Error loading avatar: $error');
+          return _buildInitialsAvatar(theme, user);
+        },
       );
     }
 

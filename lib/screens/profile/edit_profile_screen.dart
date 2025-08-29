@@ -6,8 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/services/user_service.dart';
-import 'package:radio_odan_app/config/logger.dart';
-import 'package:radio_odan_app/config/app_api_config.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -42,16 +40,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (imageFile != null) {
       return FileImage(imageFile);
     } else {
-      final avatar = widget.user.avatar;
-      if (avatar != null && avatar.isNotEmpty) {
-        // If it's already a full URL, use it as is
-        if (avatar.startsWith('http')) {
-          return NetworkImage(avatar);
-        }
-
-        return NetworkImage('$avatar');
+      final avatar = widget.user.avatar?.trim();
+      if (avatar == null || avatar.isEmpty) {
+        return const AssetImage("assets/user1.jpg");
       }
-      return const AssetImage("assets/user1.jpg");
+      // Jika format tidak dikenali, coba tambahkan base URL
+      return NetworkImage(avatar);
     }
   }
 
