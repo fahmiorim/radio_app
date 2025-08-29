@@ -77,7 +77,6 @@ class AppHeader extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.2,
                         fontFamily: 'Poppins',
-                        fontStyle: FontStyle.normal,
                       ),
                     ),
                   ],
@@ -103,28 +102,20 @@ class AppHeader extends StatelessWidget {
 
   Widget _buildProfileAvatar(BuildContext context, UserModel? user) {
     final theme = Theme.of(context);
+    final url = user?.avatarUrl ?? ''; // <- gunakan getter dari model
 
-    final avatar = user?.avatar?.trim();
-    if (avatar?.isNotEmpty == true) {
-      String imageUrl = avatar!;
-      
-      // Handle relative paths
-      if (!imageUrl.startsWith('http') && imageUrl.startsWith('/')) {
-        imageUrl = 'http://192.168.89.99:8000$imageUrl';
-      } else if (!imageUrl.startsWith('http')) {
-        imageUrl = 'http://192.168.89.99:8000/storage/$imageUrl';
-      }
-      
+    if (url.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: imageUrl,
+        imageUrl: url,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: 22,
           backgroundColor: Colors.white,
           child: CircleAvatar(radius: 20, backgroundImage: imageProvider),
         ),
-        placeholder: (context, url) => _buildShimmerAvatar(),
-        errorWidget: (context, url, error) {
-          print('Error loading avatar: $error');
+        placeholder: (_, __) => _buildShimmerAvatar(),
+        errorWidget: (_, __, error) {
+          // log error kalau perlu
+          // debugPrint('Error loading avatar: $error');
           return _buildInitialsAvatar(theme, user);
         },
       );
@@ -142,7 +133,6 @@ class AppHeader extends StatelessWidget {
   }
 
   Widget _buildInitialsAvatar(ThemeData theme, UserModel? user) {
-    // Jika UserModel.name non-nullable, akses via user?.name aman setelah null-check user.
     final initial = (user != null && user.name.trim().isNotEmpty)
         ? user.name[0].toUpperCase()
         : 'U';

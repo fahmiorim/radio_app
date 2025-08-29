@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../config/app_colors.dart';
 import '../../providers/album_provider.dart';
 import '../../models/album_model.dart';
@@ -15,12 +17,14 @@ class AllAlbumsScreen extends StatefulWidget {
 
 class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
   final ScrollController _scrollController = ScrollController();
+  static const double _infiniteScrollThreshold = 300; // px sebelum mentok
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    // Fetch initial data with a slight delay to allow build to complete
+
+    // Fetch initial data after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AlbumProvider>().fetchAllAlbums();
     });
@@ -28,15 +32,18 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      final albumProvider = Provider.of<AlbumProvider>(context, listen: false);
-      if (!albumProvider.isLoadingAll && albumProvider.hasMore) {
+    final albumProvider = Provider.of<AlbumProvider>(context, listen: false);
+    if (!albumProvider.isLoadingAll && albumProvider.hasMore) {
+      final position = _scrollController.position;
+      if (position.pixels + _infiniteScrollThreshold >=
+          position.maxScrollExtent) {
         albumProvider.loadMoreAlbums();
       }
     }
@@ -54,7 +61,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
   Widget _buildBody() {
     return Stack(
       children: [
-        // Background with gradient and bubbles
+        // Background
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
@@ -66,40 +73,16 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
             ),
             child: Stack(
               children: [
-                // Large bubble top right
-                Positioned(
-                  top: -50,
-                  right: -50,
-                  child: Container(
-                    width: 200,
-                    height: 200,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.05),
-                    ),
-                  ),
-                ),
-                // Medium bubble bottom left
-                Positioned(
-                  bottom: -30,
-                  left: -30,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.05),
-                    ),
-                  ),
-                ),
+                Positioned(top: -50, right: -50, child: _bubble(200)),
+                Positioned(bottom: -30, left: -30, child: _bubble(150)),
               ],
             ),
           ),
         ),
-        // Content
+
         Consumer<AlbumProvider>(
           builder: (context, albumProvider, _) {
-            // Show loading indicator on initial load
+            // Initial loading
             if (albumProvider.isLoadingAll && albumProvider.allAlbums.isEmpty) {
               return const Center(
                 child: CircularProgressIndicator(
@@ -108,7 +91,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
               );
             }
 
-            // Show error message if there's an error
+            // Error state
             if (albumProvider.hasErrorAll) {
               return Center(
                 child: Column(
@@ -121,7 +104,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => albumProvider.fetchAllAlbums(),
+                      onPressed: albumProvider.fetchAllAlbums,
                       child: const Text('Coba Lagi'),
                     ),
                   ],
@@ -129,7 +112,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
               );
             }
 
-            // Show empty state if no albums
+            // Empty state
             if (albumProvider.allAlbums.isEmpty) {
               return const Center(
                 child: Text(
@@ -139,26 +122,28 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
               );
             }
 
+            final itemCount =
+                albumProvider.allAlbums.length +
+                (albumProvider.hasMore ? 1 : 0);
+
             return RefreshIndicator(
-              onRefresh: () => albumProvider.refreshAlbums(),
+              onRefresh: albumProvider.refreshAlbums,
+              color: AppColors.primary,
               child: GridView.builder(
                 controller: _scrollController,
-                padding: const EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 8,
-                  bottom: 16,
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
                 ),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.72, // kartu sedikit tinggi
                 ),
-                itemCount:
-                    albumProvider.allAlbums.length +
-                    (albumProvider.hasMore ? 1 : 0),
+                itemCount: itemCount,
                 itemBuilder: (context, index) {
+                  // Footer loader
                   if (index >= albumProvider.allAlbums.length) {
                     return const Center(
                       child: Padding(
@@ -173,7 +158,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
                   }
 
                   final album = albumProvider.allAlbums[index];
-                  return _buildAlbumItem(album);
+                  return _AlbumCard(album: album);
                 },
               ),
             );
@@ -183,13 +168,30 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
     );
   }
 
-  Widget _buildAlbumItem(AlbumModel album) {
+  Widget _bubble(double size) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(0.05),
+    ),
+  );
+}
+
+class _AlbumCard extends StatelessWidget {
+  final AlbumModel album;
+  const _AlbumCard({required this.album});
+
+  @override
+  Widget build(BuildContext context) {
+    final coverUrl = album.coverUrl; // gunakan URL yang sudah di-resolve
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => AlbumDetailScreen(slug: album.slug),
+            builder: (_) => AlbumDetailScreen(slug: album.slug),
           ),
         );
       },
@@ -199,7 +201,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withOpacity(0.18),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -208,7 +210,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Album Cover with Gradient Overlay
+            // Cover
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
@@ -217,35 +219,40 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Album Image
-                    Image.network(
-                      album.coverImage,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
+                    Hero(
+                      tag: 'album-${album.slug}',
+                      child: CachedNetworkImage(
+                        imageUrl: coverUrl.isNotEmpty ? coverUrl : '',
+                        fit: BoxFit.cover,
+                        placeholder: (context, _) =>
+                            Container(color: AppColors.surfaceLight),
+                        errorWidget: (context, _, __) => Container(
                           color: AppColors.surfaceLight,
+                          alignment: Alignment.center,
                           child: const Icon(
                             Icons.photo_album,
                             color: Colors.white54,
                             size: 40,
                           ),
-                        );
-                      },
-                    ),
-                    // Gradient Overlay
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.7),
-                          ],
                         ),
                       ),
                     ),
-                    // Album Info on Image
+                    // Gradient overlay
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.75),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Title & meta
                     Positioned(
                       left: 12,
                       right: 12,
@@ -258,7 +265,8 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                              fontSize: 15,
+                              height: 1.2,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -288,6 +296,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
                 ),
               ),
             ),
+            // (opsional) bisa tambah footer info lain di sini
           ],
         ),
       ),

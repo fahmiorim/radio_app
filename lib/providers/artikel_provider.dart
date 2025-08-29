@@ -3,130 +3,164 @@ import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/services/artikel_service.dart';
 
 class ArtikelProvider with ChangeNotifier {
-  final ArtikelService _artikelService = ArtikelService();
-  List<Artikel> _artikels = [];
-  List<Artikel> _recentArtikels = [];
-  Artikel? _selectedArtikel;
-  bool _isLoading = false;
-  bool _isLoadingMore = false;
-  bool _isLoadingDetail = false;
-  String? _error;
-  int _currentPage = 1;
+  final ArtikelService _svc = ArtikelService.I;
+
+  List<Artikel> _recent = [];
+  bool _loadingRecent = false;
+  String? _errorRecent;
+
+  List<Artikel> _list = [];
+  bool _loadingList = false;
+  bool _loadingMore = false;
+  String? _errorList;
+  int _page = 1;
   int _lastPage = 1;
   bool _hasMore = true;
 
-  // Getters
-  List<Artikel> get artikels => _artikels;
-  List<Artikel> get recentArtikels => _recentArtikels;
-  Artikel? get selectedArtikel => _selectedArtikel;
-  bool get isLoading => _isLoading;
-  bool get isLoadingMore => _isLoadingMore;
-  bool get isLoadingDetail => _isLoadingDetail;
-  String? get error => _error;
+  Artikel? _selected;
+  bool _loadingDetail = false;
+  String? _errorDetail;
+
+  bool _initialized = false;
+
+  List<Artikel> get recentArtikels => _recent;
+  List<Artikel> get artikels => _list;
+
+  Artikel? get selectedArtikel => _selected;
+
+  bool get isLoading => _loadingList;
+  bool get isLoadingMore => _loadingMore;
+  bool get isLoadingDetail => _loadingDetail;
   bool get hasMore => _hasMore;
 
-  // Clear error message
+  // tambahan kalau butuh loader untuk komponen "recent"
+  bool get isLoadingRecent => _loadingRecent;
+
+  // error “utama” (kompatibel), default pakai error list
+  String? get error => _errorList;
+  String? get recentError => _errorRecent;
+  String? get detailError => _errorDetail;
+
   void clearError() {
-    _error = null;
+    _errorDetail = null;
+    _errorList = null;
+    _errorRecent = null;
     notifyListeners();
   }
 
-  // Fetch recent articles (for home screen)
-  Future<void> fetchRecentArtikels() async {
-    if (_isLoading) return;
+  // ===== Lifecycle =====
+  /// panggil sekali di main.dart: ArtikelProvider()..init()
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
 
-    _isLoading = true;
-    _error = null;
+    await Future.wait([
+      loadRecent(cacheFirst: true),
+      loadList(cacheFirst: true),
+    ]);
+  }
+
+  Future<void> loadRecent({bool cacheFirst = true}) async {
+    if (_loadingRecent) return;
+    _loadingRecent = true;
+    _errorRecent = null;
     notifyListeners();
 
     try {
-      _recentArtikels = await _artikelService.fetchRecentArtikel();
-      _error = null;
+      _recent = await _svc.fetchRecentArtikel(forceRefresh: !cacheFirst);
     } catch (e) {
-      _error = 'Gagal memuat artikel terbaru. Silakan coba lagi.';
-      debugPrint('Error fetching recent artikels: $e');
+      _errorRecent = 'Gagal memuat artikel terbaru. Silakan coba lagi.';
+      debugPrint('Error recent artikel: $e');
     } finally {
-      _isLoading = false;
+      _loadingRecent = false;
       notifyListeners();
     }
   }
 
-  // Fetch initial list of articles with pagination
-  Future<void> fetchArtikels() async {
-    if (_isLoading) return;
+  Future<void> fetchRecentArtikels() => loadRecent(cacheFirst: false);
+  Future<void> refreshRecent() => loadRecent(cacheFirst: false);
 
-    _isLoading = true;
-    _error = null;
-    _currentPage = 1;
+  // ===== List (all + paging) =====
+  Future<void> loadList({bool cacheFirst = true}) async {
+    if (_loadingList) return;
+    _loadingList = true;
+    _errorList = null;
+    _page = 1;
     _hasMore = true;
     notifyListeners();
 
     try {
-      final response = await _artikelService.fetchAllArtikel(
-        page: _currentPage,
+      final res = await _svc.fetchAllArtikel(
+        page: _page,
+        perPage: 10,
+        forceRefresh: !cacheFirst,
       );
-      _artikels = response['data'];
-      _currentPage = response['currentPage'];
-      _lastPage = response['lastPage'];
-      _hasMore = _currentPage < _lastPage;
-      _error = null;
+      _list = (res['data'] as List<Artikel>);
+      _page = res['currentPage'] as int;
+      _lastPage = res['lastPage'] as int;
+      _hasMore = _page < _lastPage;
     } catch (e) {
-      _error = 'Gagal memuat artikel. Silakan coba lagi.';
-      debugPrint('Error fetching artikels: $e');
+      _errorList = 'Gagal memuat artikel. Silakan coba lagi.';
+      debugPrint('Error list artikel: $e');
     } finally {
-      _isLoading = false;
+      _loadingList = false;
       notifyListeners();
     }
   }
 
-  // Load more articles for pagination
+  /// KOMPA: tetap sediakan nama lama
+  Future<void> fetchArtikels() => loadList(cacheFirst: false);
+  Future<void> refresh() => loadList(cacheFirst: false);
+
   Future<void> loadMoreArtikels() async {
-    if (_isLoadingMore || !_hasMore) return;
-
-    _isLoadingMore = true;
-    _error = null;
+    if (_loadingMore || !_hasMore) return;
+    _loadingMore = true;
     notifyListeners();
 
     try {
-      final nextPage = _currentPage + 1;
-      final response = await _artikelService.fetchAllArtikel(page: nextPage);
-
-      _artikels.addAll(response['data']);
-      _currentPage = response['currentPage'];
-      _lastPage = response['lastPage'];
-      _hasMore = _currentPage < _lastPage;
-      _error = null;
+      final next = _page + 1;
+      final res = await _svc.fetchAllArtikel(page: next, perPage: 10);
+      final newItems = (res['data'] as List<Artikel>);
+      _list.addAll(newItems);
+      _page = res['currentPage'] as int;
+      _lastPage = res['lastPage'] as int;
+      _hasMore = _page < _lastPage;
     } catch (e) {
-      _error = 'Gagal memuat artikel tambahan. Silakan coba lagi.';
-      debugPrint('Error loading more artikels: $e');
+      _errorList = 'Gagal memuat artikel tambahan. Silakan coba lagi.';
+      debugPrint('Error load more artikel: $e');
     } finally {
-      _isLoadingMore = false;
+      _loadingMore = false;
       notifyListeners();
     }
   }
 
-  // Fetch single article by slug
   Future<void> fetchArtikelBySlug(String slug) async {
-    _isLoadingDetail = true;
-    _error = null;
-    _selectedArtikel = null;
+    _loadingDetail = true;
+    _errorDetail = null;
+    _selected = null;
     notifyListeners();
 
     try {
-      _selectedArtikel = await _artikelService.fetchArtikelBySlug(slug);
-      _error = null;
+      _selected = await _svc.fetchArtikelBySlug(slug);
     } catch (e) {
-      _error = e.toString();
-      debugPrint('Error fetching artikel detail: $e');
+      _errorDetail = e.toString();
+      debugPrint('Error detail artikel: $e');
     } finally {
-      _isLoadingDetail = false;
+      _loadingDetail = false;
       notifyListeners();
     }
   }
 
-  // Clear selected article
   void clearSelectedArtikel() {
-    _selectedArtikel = null;
+    _selected = null;
+    _errorDetail = null;
+    notifyListeners();
+  }
+
+  void clearErrors() {
+    _errorRecent = null;
+    _errorList = null;
+    _errorDetail = null;
     notifyListeners();
   }
 }

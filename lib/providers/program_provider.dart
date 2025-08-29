@@ -4,52 +4,57 @@ import 'package:radio_odan_app/models/program_model.dart';
 import 'package:radio_odan_app/services/program_service.dart';
 
 class ProgramProvider with ChangeNotifier {
-  final ProgramService _programService = ProgramService();
-  
-  // State for today's programs
+  final ProgramService _svc = ProgramService.I;
+
   List<Program> _todaysPrograms = [];
   bool _isLoadingTodays = false;
   String? _todaysError;
-  
-  // State for all programs with pagination
+
   List<Program> _allPrograms = [];
   bool _isLoadingAll = false;
   bool _isLoadingMore = false;
-  bool _hasMore = true;
+  bool _hasMore = false;
   int _currentPage = 1;
   final int _perPage = 10;
   String? _allProgramsError;
-  
-  // Selected program state
+
   Program? _selectedProgram;
   bool _isLoadingDetail = false;
   String? _detailError;
 
-  // Getters
+  bool _initialized = false;
+
   List<Program> get todaysPrograms => _todaysPrograms;
   List<Program> get allPrograms => _allPrograms;
   Program? get selectedProgram => _selectedProgram;
-  
+
   bool get isLoadingTodays => _isLoadingTodays;
   bool get isLoadingAll => _isLoadingAll;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMore => _hasMore;
   bool get isLoadingDetail => _isLoadingDetail;
-  
+
   String? get todaysError => _todaysError;
   String? get allProgramsError => _allProgramsError;
   String? get detailError => _detailError;
 
-  /// Fetch today's programs
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+    await refreshAll();
+  }
+
   Future<void> fetchTodaysPrograms({bool forceRefresh = false}) async {
     if (_isLoadingTodays && !forceRefresh) return;
-    
+
     _isLoadingTodays = true;
     _todaysError = null;
     notifyListeners();
 
     try {
-      final programs = await _programService.fetchTodaysPrograms();
+      final programs = await _svc.fetchTodaysPrograms(
+        forceRefresh: forceRefresh,
+      );
       _todaysPrograms = programs;
       _todaysError = null;
     } catch (e) {
@@ -61,41 +66,47 @@ class ProgramProvider with ChangeNotifier {
     }
   }
 
-  /// Fetch all programs with pagination
-  Future<void> fetchAllPrograms({bool loadMore = false}) async {
-    if ((_isLoadingAll && !loadMore) || (_isLoadingMore && loadMore)) return;
-    
+  Future<void> fetchAllPrograms({
+    bool loadMore = false,
+    bool forceRefresh = false,
+  }) async {
+    if ((!loadMore && _isLoadingAll) || (loadMore && _isLoadingMore)) return;
+
     if (loadMore) {
+      if (!_hasMore) return;
       _isLoadingMore = true;
     } else {
       _isLoadingAll = true;
       _currentPage = 1;
       _allProgramsError = null;
     }
-    
     notifyListeners();
 
     try {
-      final result = await _programService.fetchAllPrograms(
+      final result = await _svc.fetchAllPrograms(
         page: _currentPage,
         perPage: _perPage,
+        forceRefresh: forceRefresh,
       );
-      
+
+      final List<Program> fetched = (result['programs'] as List<Program>);
+      final bool hasMore = (result['hasMore'] as bool?) ?? false;
+      final int currentPage = (result['currentPage'] as int?) ?? 1;
+
       if (loadMore) {
-        _allPrograms.addAll(result['programs'] as List<Program>);
+        _allPrograms.addAll(fetched);
       } else {
-        _allPrograms = result['programs'] as List<Program>;
+        _allPrograms = fetched;
       }
-      
-      _hasMore = result['hasMore'] as bool;
-      _currentPage = result['currentPage'] as int;
+
+      _hasMore = hasMore;
+      _currentPage = currentPage;
       _allProgramsError = null;
     } catch (e) {
       _allProgramsError = e.toString();
       debugPrint('Error fetching all programs: $e');
-      
       if (loadMore) {
-        _currentPage--; // Rollback page on error
+        _currentPage = (_currentPage > 1) ? _currentPage - 1 : 1;
       }
     } finally {
       _isLoadingAll = false;
@@ -104,21 +115,22 @@ class ProgramProvider with ChangeNotifier {
     }
   }
 
-  /// Load more programs (pagination)
   Future<void> loadMorePrograms() async {
     if (_isLoadingMore || !_hasMore) return;
     _currentPage++;
     await fetchAllPrograms(loadMore: true);
   }
 
-  /// Fetch program by ID
-  Future<Program> fetchProgramById(int id) async {
+  Future<Program> fetchProgramById(int id, {bool forceRefresh = false}) async {
     _isLoadingDetail = true;
     _detailError = null;
     notifyListeners();
 
     try {
-      final program = await _programService.fetchProgramById(id);
+      final program = await _svc.fetchProgramById(
+        id,
+        forceRefresh: forceRefresh,
+      );
       _selectedProgram = program;
       _detailError = null;
       return program;
@@ -132,25 +144,22 @@ class ProgramProvider with ChangeNotifier {
     }
   }
 
-  /// Set selected program and navigate to detail
   void selectProgram(Program program, BuildContext context) {
     _selectedProgram = program;
     notifyListeners();
     Navigator.of(context).pushNamed(AppRoutes.programDetail);
   }
 
-  /// Clear selected program
   void clearSelectedProgram() {
     _selectedProgram = null;
     _detailError = null;
     notifyListeners();
   }
 
-  /// Refresh all data
   Future<void> refreshAll() async {
     await Future.wait([
       fetchTodaysPrograms(forceRefresh: true),
-      fetchAllPrograms(),
+      fetchAllPrograms(forceRefresh: true),
     ]);
   }
 }

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
+
 import '../../models/video_model.dart';
 import '../../providers/video_provider.dart';
 import '../../widgets/app_bar.dart';
@@ -51,52 +51,38 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
   }
 
   void _onScroll() {
+    final vp = context.read<VideoProvider>();
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoadingMore) {
-      final videoProvider = context.read<VideoProvider>();
-      if (!videoProvider.isLoadingAll && videoProvider.hasMore) {
-        _isLoadingMore = true;
-        videoProvider.fetchAllVideos(loadMore: true).whenComplete(() {
-          if (mounted) {
-            setState(() {
-              _isLoadingMore = false;
-            });
-          }
-        });
-      }
+        !_isLoadingMore &&
+        !vp.isLoadingAll &&
+        vp.hasMore) {
+      _isLoadingMore = true;
+      vp.fetchAllVideos(loadMore: true).whenComplete(() {
+        if (mounted) {
+          setState(() => _isLoadingMore = false);
+        }
+      });
     }
   }
 
-  Future<void> _openYoutubeVideo(String? url) async {
-    if (url == null || url.isEmpty) return;
-
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka video')),
-        );
-      }
+  Future<void> _openYoutube(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak dapat membuka video')),
+      );
     }
   }
 
-  String _formatDate(dynamic dateValue) {
+  String _formatDate(DateTime date) {
     try {
-      DateTime date;
-      if (dateValue is String) {
-        date = DateTime.parse(dateValue).toLocal();
-      } else if (dateValue is DateTime) {
-        date = dateValue.toLocal();
-      } else {
-        return '';
-      }
-      return DateFormat('dd MMM yyyy', 'id_ID').format(date);
-    } catch (e) {
+      return DateFormat('dd MMM yyyy', 'id_ID').format(date.toLocal());
+    } catch (_) {
       return '';
     }
   }
@@ -106,91 +92,61 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: CustomAppBar.transparent(title: 'Semua Video'),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            children: [
-              // Background with gradient and bubbles
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.primary, AppColors.backgroundDark],
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Large bubble top right
-                      Positioned(
-                        top: -50,
-                        right: -50,
-                        child: Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                        ),
-                      ),
-                      // Medium bubble bottom left
-                      Positioned(
-                        bottom: -30,
-                        left: -30,
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                        ),
-                      ),
-                      // Small bubble center
-                      Positioned(
-                        top: 100,
-                        left: 100,
-                        child: Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withOpacity(0.05),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.primary, AppColors.backgroundDark],
                 ),
               ),
-              // Content
-              Positioned.fill(
-                child: Consumer<VideoProvider>(
-                  builder: (context, videoProvider, _) {
-                    return RefreshIndicator(
-                      key: _refreshIndicatorKey,
-                      onRefresh: _onRefresh,
-                      color: AppColors.primary,
-                      child: _buildVideoList(videoProvider),
-                    );
-                  },
-                ),
+              child: Stack(
+                children: [
+                  Positioned(top: -50, right: -50, child: _bubble(200)),
+                  Positioned(bottom: -30, left: -30, child: _bubble(150)),
+                  Positioned(top: 100, left: 100, child: _bubble(80)),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+
+          Positioned.fill(
+            child: Consumer<VideoProvider>(
+              builder: (context, vp, _) {
+                return RefreshIndicator(
+                  key: _refreshIndicatorKey,
+                  onRefresh: _onRefresh,
+                  color: AppColors.primary,
+                  child: _buildVideoList(vp),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildVideoList(VideoProvider videoProvider) {
-    if (videoProvider.isLoadingAll && videoProvider.allVideos.isEmpty) {
+  Widget _bubble(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white.withOpacity(0.05),
+      ),
+    );
+  }
+
+  Widget _buildVideoList(VideoProvider vp) {
+    if (vp.isLoadingAll && vp.allVideos.isEmpty) {
       return const Center(child: CupertinoActivityIndicator());
     }
 
-    if (videoProvider.hasErrorAll && videoProvider.allVideos.isEmpty) {
+    if (vp.hasErrorAll && vp.allVideos.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -198,13 +154,13 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
             const Icon(Icons.error_outline, color: Colors.white70, size: 48),
             const SizedBox(height: 16),
             Text(
-              videoProvider.errorMessageAll,
+              vp.errorMessageAll,
               style: const TextStyle(color: Colors.white70),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => videoProvider.fetchAllVideos(),
+              onPressed: () => vp.fetchAllVideos(),
               child: const Text('Coba Lagi'),
             ),
           ],
@@ -212,20 +168,20 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
       );
     }
 
+    final itemCount = vp.allVideos.length + (vp.hasMore ? 1 : 0);
+
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount:
-          videoProvider.allVideos.length + (videoProvider.isLoadingAll ? 1 : 0),
+      itemCount: itemCount,
       itemBuilder: (context, index) {
-        if (index >= videoProvider.allVideos.length) {
+        if (index >= vp.allVideos.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0),
             child: Center(child: CupertinoActivityIndicator()),
           );
         }
-
-        final video = videoProvider.allVideos[index];
+        final video = vp.allVideos[index];
         return _buildVideoItem(video);
       },
     );
@@ -240,7 +196,7 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
-            video.thumbnailUrl ?? '',
+            video.safeThumbnailUrl,
             width: 100,
             height: 60,
             fit: BoxFit.cover,
@@ -262,7 +218,7 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
           _formatDate(video.createdAt),
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
-        onTap: () => _openYoutubeVideo(video.youtubeUrl),
+        onTap: () => _openYoutube(video.watchUrl),
         trailing: const Icon(Icons.play_circle_outline, color: Colors.white70),
       ),
     );

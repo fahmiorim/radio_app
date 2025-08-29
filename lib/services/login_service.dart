@@ -5,7 +5,7 @@ import 'package:radio_odan_app/services/user_service.dart';
 import 'package:radio_odan_app/config/logger.dart';
 
 class AuthService {
-  final Dio _dio = ApiClient.dio;
+  final Dio _dio = ApiClient.I.dio;
 
   Future<AuthResponse?> login(String email, String password) async {
     try {
@@ -64,22 +64,19 @@ class AuthService {
           logger.i('Registration successful but no token received');
           return AuthResponse(
             token: '',
-            user: UserModel(
-              id: 0,
-              name: name,
-              email: email,
-            ),
+            user: UserModel(id: 0, name: name, email: email),
           );
         }
       } else {
-        final errorMessage = response.data is Map && response.data['message'] != null
+        final errorMessage =
+            response.data is Map && response.data['message'] != null
             ? response.data['message']
             : 'Registrasi gagal';
         throw Exception(errorMessage);
       }
     } on DioException catch (e) {
       String errorMessage = 'Gagal melakukan registrasi';
-      
+
       if (e.response?.statusCode == 422) {
         final respData = e.response?.data;
         // Handle validation errors

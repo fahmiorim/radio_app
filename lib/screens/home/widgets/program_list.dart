@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/program_skeleton.dart';
 import '../../../models/program_model.dart';
@@ -15,24 +17,27 @@ class ProgramList extends StatefulWidget {
 
 class _ProgramListState extends State<ProgramList>
     with AutomaticKeepAliveClientMixin {
-  bool get isLoading => context.watch<ProgramProvider>().isLoadingTodays;
-  List<Program> get programList => context.watch<ProgramProvider>().todaysPrograms;
-
   @override
-  void initState() {
-    super.initState();
-    // Fetch program only once when first initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProgramProvider>().fetchTodaysPrograms();
-    });
-  }
+  bool get wantKeepAlive => true;
+
+  // ❌ tak perlu fetch di sini (sudah init di main.dart)
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     context.read<ProgramProvider>().fetchTodaysPrograms();
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // WAJIB kalau pakai AutomaticKeepAlive
+    super.build(context);
 
-    // Handle error
-    final error = context.select<ProgramProvider, String?>((p) => p.todaysError);
+    final prov = context.watch<ProgramProvider>();
+    final isLoading = prov.isLoadingTodays;
+    final List<Program> programList = prov.todaysPrograms;
+    final error = prov.todaysError;
+
     if (error != null) {
       return Center(
         child: Padding(
@@ -45,22 +50,19 @@ class _ProgramListState extends State<ProgramList>
       );
     }
 
-    // Show empty state if no programs for today
+    final seeAll = () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AllProgramsScreen()),
+      );
+    };
+
+    // Empty state (tidak ada program hari ini)
     if (programList.isEmpty && !isLoading) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(
-            title: "Program Hari Ini",
-            onSeeAll: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AllProgramsScreen(),
-                ),
-              );
-            },
-          ),
+          SectionTitle(title: 'Program Hari Ini', onSeeAll: seeAll),
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
@@ -76,17 +78,7 @@ class _ProgramListState extends State<ProgramList>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(
-          title: "Program Hari Ini",
-          onSeeAll: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const AllProgramsScreen(),
-              ),
-            );
-          },
-        ),
+        SectionTitle(title: 'Program Hari Ini', onSeeAll: seeAll),
         const SizedBox(height: 8),
         if (isLoading)
           const ProgramSkeleton()
@@ -100,63 +92,64 @@ class _ProgramListState extends State<ProgramList>
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               shrinkWrap: true,
-                  itemCount: programList.length,
-                  padding: const EdgeInsets.only(left: 16),
-                  itemBuilder: (context, index) {
-                    final program = programList[index];
+              itemCount: programList.length,
+              padding: const EdgeInsets.only(left: 16),
+              itemBuilder: (context, index) {
+                final program = programList[index];
+                final url = program.gambarUrl;
 
-                    return GestureDetector(
-                      onTap: () {
-                        final provider = context.read<ProgramProvider>();
-                        provider.selectProgram(program, context);
-                      },
-                      child: Container(
-                        width: 160,
-                        margin: const EdgeInsets.only(right: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(5),
-                              child: program.gambar.isNotEmpty
-                                  ? Image.network(
-                                      program.gambarUrl,
-                                      height: 225,
-                                      width: 160,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              _buildPlaceholderImage(),
-                                    )
-                                  : _buildPlaceholderImage(),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              program.namaProgram,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              program.penyiarName ?? "-",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                return GestureDetector(
+                  onTap: () => context.read<ProgramProvider>().selectProgram(
+                    program,
+                    context,
+                  ),
+                  child: Container(
+                    width: 160,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(5),
+                          child: url.isEmpty
+                              ? _buildPlaceholderImage()
+                              : CachedNetworkImage(
+                                  imageUrl: url,
+                                  height: 225,
+                                  width: 160,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => _buildLoadingThumb(),
+                                  errorWidget: (_, __, ___) =>
+                                      _buildPlaceholderImage(),
+                                ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                        const SizedBox(height: 8),
+                        Text(
+                          program.namaProgram,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          program.penyiarName ?? '-',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
       ],
     );
   }
@@ -165,11 +158,23 @@ class _ProgramListState extends State<ProgramList>
     return Container(
       height: 225,
       width: 160,
-      color: Colors.grey[300],
-      child: const Icon(Icons.image, size: 50),
+      color: Colors.grey[900],
+      alignment: Alignment.center,
+      child: const Icon(Icons.image, size: 44, color: Colors.white38),
     );
   }
 
-  @override
-  bool get wantKeepAlive => true; // ✅ biar state tetap hidup
+  Widget _buildLoadingThumb() {
+    return SizedBox(
+      height: 225,
+      width: 160,
+      child: const Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+    );
+  }
 }

@@ -126,7 +126,8 @@ class AppDrawer extends StatelessWidget {
                                 _buildMenuItem(
                                   icon: Icons.edit,
                                   title: "Edit Profile",
-                                  onTap: () => _navigateToEditProfile(context, user),
+                                  onTap: () =>
+                                      _navigateToEditProfile(context, user),
                                 ),
                                 _buildMenuItem(
                                   icon: Icons.star,
@@ -210,14 +211,20 @@ class AppDrawer extends StatelessWidget {
       return CircleAvatar(
         radius: size / 2,
         backgroundColor: Colors.white24,
-        child: const CircularProgressIndicator(strokeWidth: 2),
+        child: const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
       );
     }
 
-    // Tampilkan avatar dari URL jika tersedia & tidak kosong
-    if (user?.avatar?.isNotEmpty == true) {
+    final url =
+        user?.avatarUrl ?? ''; // ⬅️ pakai getter yang sudah dinormalisasi
+
+    if (url.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: user!.avatar!,
+        imageUrl: url,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: size / 2,
           backgroundColor: Colors.white,
@@ -226,12 +233,16 @@ class AppDrawer extends StatelessWidget {
             backgroundImage: imageProvider,
           ),
         ),
-        placeholder: (context, url) => CircleAvatar(
+        placeholder: (_, __) => CircleAvatar(
           radius: size / 2,
           backgroundColor: Colors.white24,
-          child: const CircularProgressIndicator(strokeWidth: 2),
+          child: const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
         ),
-        errorWidget: (context, url, error) =>
+        errorWidget: (_, __, ___) =>
             _buildInitialsAvatar(size, Colors.blueGrey, user),
       );
     }

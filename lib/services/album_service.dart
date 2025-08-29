@@ -1,91 +1,194 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../models/album_model.dart';
-import '../models/album_detail_model.dart';
 import '../config/api_client.dart';
 
 class AlbumService {
-  final Dio _dio = ApiClient.dio;
+  AlbumService._();
+  static final AlbumService I = AlbumService._();
 
-  // Fetch featured albums (limited number)
-  Future<List<AlbumModel>> fetchFeaturedAlbums() async {
+  final Dio _dio = ApiClient.I.dio;
+
+  static const Duration _ttl = Duration(minutes: 5);
+
+  static List<AlbumModel>? _featuredCache;
+  static DateTime? _featuredAt;
+
+  static final Map<int, List<AlbumModel>> _allCache = {};
+  static DateTime? _allAt;
+
+  static final Map<String, AlbumDetailModel> _detailCache = {};
+  static final Map<String, DateTime> _detailAt = {};
+
+  bool _isFresh(DateTime? at) =>
+      at != null && DateTime.now().difference(at) < _ttl;
+
+  int _asInt(dynamic v, {int fallback = 0}) {
+    if (v is int) return v;
+    if (v is String) return int.tryParse(v) ?? fallback;
+    return fallback;
+  }
+
+  Future<List<AlbumModel>> fetchFeaturedAlbums({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _featuredCache != null && _isFresh(_featuredAt)) {
+      return _featuredCache!;
+    }
+
     try {
-      print('Fetching featured albums...');
-      final response = await _dio.get('/galeri');
-      print('Featured albums response status: ${response.statusCode}');
-      print('Featured albums response data: ${response.data}');
+      final res = await _dio.get('/galeri');
+      if (res.statusCode == 200) {
+        final data = res.data;
+        if (data is Map && data['status'] == true && data['data'] is List) {
+          final list = (data['data'] as List)
+              .whereType<Map>()
+              .map((e) => AlbumModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        if (data['status'] == true) {
-          final albums = (data['data'] as List).map((item) {
-            print('Featured album item: $item');
-            return AlbumModel.fromJson(item);
-          }).toList();
-          print('Parsed ${albums.length} featured albums');
-          return albums;
+          _featuredCache = list;
+          _featuredAt = DateTime.now();
+          return list;
         }
       }
-      return [];
+
+      if (_featuredCache != null) return _featuredCache!;
+      throw Exception(
+        'Gagal memuat featured albums (status ${res.statusCode})',
+      );
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('AlbumService.fetchFeaturedAlbums DioError: ${e.message}');
+      }
+      if (_featuredCache != null) return _featuredCache!;
+      throw Exception('Gagal memuat album: ${e.message}');
     } catch (e) {
-      throw Exception('Gagal memuat album: $e');
+      if (_featuredCache != null) return _featuredCache!;
+      rethrow;
     }
   }
 
-  // Fetch all albums with pagination
   Future<Map<String, dynamic>> fetchAllAlbums({
     int page = 1,
     int perPage = 10,
+    bool forceRefresh = false,
   }) async {
-    try {
-      print('Fetching all albums page $page, per page $perPage');
-      final response = await _dio.get(
-        '/galeri/semua',
-        queryParameters: {'page': page, 'per_page': perPage, 'with_photos': 'true'},
-      );
-      print('All albums response status: ${response.statusCode}');
-      print('All albums response data: ${response.data}');
+    if (!forceRefresh && _allCache[page] != null && _isFresh(_allAt)) {
+      final items = _allCache[page]!;
+      return {
+        'albums': items,
+        'currentPage': page,
+        'lastPage': page,
+        'total': items.length,
+      };
+    }
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        if (data['status'] == true) {
+    try {
+      final res = await _dio.get(
+        '/galeri/semua',
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+          'with_photos': 'true',
+        },
+      );
+
+      if (res.statusCode == 200) {
+        final data = res.data;
+        if (data is Map && data['status'] == true && data['data'] is List) {
+          final items = (data['data'] as List)
+              .whereType<Map>()
+              .map((e) => AlbumModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
+
+          final pg = (data['pagination'] is Map)
+              ? Map<String, dynamic>.from(data['pagination'])
+              : const <String, dynamic>{};
+
+          final currentPage = _asInt(pg['current_page'], fallback: page);
+          final lastPage = _asInt(pg['last_page'], fallback: currentPage);
+          final total = _asInt(pg['total'], fallback: items.length);
+
+          _allCache[currentPage] = items;
+          _allAt = DateTime.now();
+
           return {
-            'albums': (data['data'] as List)
-                .map((json) => AlbumModel.fromJson(json))
-                .toList(),
-            'currentPage': data['pagination']?['current_page'] ?? 1,
-            'lastPage': data['pagination']?['last_page'] ?? 1,
-            'total': data['pagination']?['total'] ?? 0,
+            'albums': items,
+            'currentPage': currentPage,
+            'lastPage': lastPage,
+            'total': total,
           };
         }
       }
-      return {'albums': [], 'currentPage': 1, 'lastPage': 1, 'total': 0};
+
+      if (_allCache[page] != null) {
+        return {
+          'albums': _allCache[page]!,
+          'currentPage': page,
+          'lastPage': page,
+          'total': _allCache[page]!.length,
+        };
+      }
+      throw Exception('Gagal memuat daftar album (status ${res.statusCode})');
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('AlbumService.fetchAllAlbums DioError: ${e.message}');
+      }
+      if (_allCache[page] != null) {
+        return {
+          'albums': _allCache[page]!,
+          'currentPage': page,
+          'lastPage': page,
+          'total': _allCache[page]!.length,
+        };
+      }
+      throw Exception('Gagal memuat daftar album: ${e.message}');
     } catch (e) {
-      throw Exception('Gagal memuat daftar album: $e');
+      if (_allCache[page] != null) {
+        return {
+          'albums': _allCache[page]!,
+          'currentPage': page,
+          'lastPage': page,
+          'total': _allCache[page]!.length,
+        };
+      }
+      rethrow;
     }
   }
 
-  // Fetch album detail with photos
-  Future<AlbumDetailModel> fetchAlbumDetail(String slug) async {
+  Future<AlbumModel> fetchAlbumDetail(
+    String slug, {
+    bool forceRefresh = false,
+  }) async {
     try {
-      print('Fetching album detail for slug: $slug');
-      final response = await _dio.get('/galeri/$slug');
-      print('Album detail response status: ${response.statusCode}');
-      print('Album detail response data: ${response.data}');
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        if (data['status'] == true && data['data'] != null) {
-          return AlbumDetailModel.fromJson(data['data']);
-        } else {
-          print('Invalid album data format: ${data['message']}');
-          throw Exception(data['message'] ?? 'Data album tidak valid');
+      final res = await _dio.get('/galeri/$slug');
+      if (res.statusCode == 200) {
+        final data = res.data;
+        if (data is Map && data['status'] == true && data['data'] != null) {
+          return AlbumModel.fromJson(
+            Map<String, dynamic>.from(data['data']),
+          );
         }
+        throw Exception(
+          (data is Map ? data['message'] : null) ?? 'Data album tidak valid',
+        );
       }
-      throw Exception('Gagal memuat detail album: ${response.statusCode}');
-    } catch (e) {
-      print('Error in fetchAlbumDetail: $e');
-      throw Exception('Gagal memuat detail album: ${e.toString()}');
+      throw Exception('Gagal memuat detail album (status ${res.statusCode})');
+    } on DioException catch (e) {
+      if (kDebugMode) {
+        debugPrint('AlbumService.fetchAlbumDetail DioError: ${e.message}');
+      }
+      throw Exception('Gagal memuat detail album: ${e.message}');
     }
+  }
+
+  void clearCache() {
+    _featuredCache = null;
+    _featuredAt = null;
+    _allCache.clear();
+    _allAt = null;
+    _detailCache.clear();
+    _detailAt.clear();
   }
 }

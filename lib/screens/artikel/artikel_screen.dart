@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../models/artikel_model.dart';
 import '../../providers/artikel_provider.dart';
 import '../../widgets/skeleton/artikel_all_skeleton.dart';
@@ -16,16 +18,24 @@ class ArtikelScreen extends StatefulWidget {
 
 class _ArtikelScreenState extends State<ArtikelScreen> {
   final ScrollController _scrollController = ScrollController();
+  bool _inited = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+  }
 
-    // Fetch initial data every time screen is opened
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_inited) return;
+    _inited = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<ArtikelProvider>();
-      provider.fetchArtikels();
+      final p = context.read<ArtikelProvider>();
+      if (!p.isLoading && p.artikels.isEmpty) {
+        p.refresh();
+      }
     });
   }
 
@@ -36,12 +46,12 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
-      final provider = context.read<ArtikelProvider>();
-      if (!provider.isLoadingMore && provider.hasMore) {
-        provider.loadMoreArtikels();
-      }
+    final p = context.read<ArtikelProvider>();
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 48 &&
+        !p.isLoadingMore &&
+        p.hasMore) {
+      p.loadMoreArtikels();
     }
   }
 
@@ -52,7 +62,6 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
       appBar: CustomAppBar.transparent(title: 'Artikel'),
       body: Stack(
         children: [
-          // Background with gradient and bubbles
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -64,7 +73,6 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
               ),
               child: Stack(
                 children: [
-                  // Large bubble top right
                   Positioned(
                     top: -50,
                     right: -50,
@@ -77,7 +85,6 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
                       ),
                     ),
                   ),
-                  // Medium bubble bottom left
                   Positioned(
                     bottom: -30,
                     left: -30,
@@ -94,22 +101,18 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
               ),
             ),
           ),
-          Consumer<ArtikelProvider>(
-            builder: (context, provider, _) {
-              return _buildBody(provider);
-            },
-          ),
+          Consumer<ArtikelProvider>(builder: (_, p, __) => _buildBody(p)),
         ],
       ),
     );
   }
 
-  Widget _buildBody(ArtikelProvider provider) {
-    if (provider.isLoading && provider.artikels.isEmpty) {
+  Widget _buildBody(ArtikelProvider p) {
+    if (p.isLoading && p.artikels.isEmpty) {
       return const ArtikelAllSkeleton();
     }
 
-    if (provider.error != null) {
+    if (p.error != null && p.artikels.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -117,13 +120,13 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
             const Icon(Icons.error_outline, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Gagal memuat artikel: ${provider.error}',
+              'Gagal memuat artikel: ${p.error}',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => provider.fetchArtikels(),
+              onPressed: () => p.refresh(),
               child: const Text('Coba Lagi'),
             ),
           ],
@@ -132,27 +135,27 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => provider.fetchArtikels(),
+      onRefresh: () => p.refresh(),
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
-        itemCount: provider.artikels.length + (provider.hasMore ? 1 : 0),
+        itemCount: p.artikels.length + (p.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= provider.artikels.length) {
+          if (index >= p.artikels.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             );
           }
-
-          final artikel = provider.artikels[index];
-          return _buildArtikelItem(artikel);
+          final artikel = p.artikels[index];
+          return _buildArtikelItem(context, artikel);
         },
       ),
     );
   }
 
-  Widget _buildArtikelItem(Artikel artikel) {
+  Widget _buildArtikelItem(BuildContext context, Artikel artikel) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -172,8 +175,7 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
           onTap: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) =>
-                    ArtikelDetailScreen(artikelSlug: artikel.slug),
+                builder: (_) => ArtikelDetailScreen(artikelSlug: artikel.slug),
               ),
             );
           },
@@ -183,46 +185,7 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (artikel.image.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Stack(
-                      children: [
-                        Image.network(
-                          artikel.image,
-                          width: double.infinity,
-                          height: 180,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                width: double.infinity,
-                                height: 180,
-                                color: Colors.grey[800],
-                                child: const Icon(
-                                  Icons.broken_image,
-                                  size: 40,
-                                  color: Colors.white54,
-                                ),
-                              ),
-                        ),
-                        // Gradient overlay
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.3),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                _ArtikelThumb(url: artikel.gambarUrl),
                 const SizedBox(height: 12),
                 Text(
                   artikel.title,
@@ -235,10 +198,10 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if (artikel.excerpt.isNotEmpty) ...[
+                if (artikel.excerptPlain.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    artikel.excerpt,
+                    artikel.excerptPlain,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withOpacity(0.8),
@@ -282,4 +245,43 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
       ),
     );
   }
+}
+
+class _ArtikelThumb extends StatelessWidget {
+  final String url;
+  const _ArtikelThumb({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: double.infinity,
+        height: w > 400 ? 200 : 180,
+        child: url.isEmpty
+            ? _placeholder()
+            : CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => _loading(),
+                errorWidget: (_, __, ___) => _placeholder(),
+              ),
+      ),
+    );
+  }
+
+  Widget _placeholder() => Container(
+    color: Colors.grey[800],
+    alignment: Alignment.center,
+    child: const Icon(Icons.broken_image, size: 40, color: Colors.white54),
+  );
+
+  Widget _loading() => const Center(
+    child: SizedBox(
+      width: 22,
+      height: 22,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
+  );
 }

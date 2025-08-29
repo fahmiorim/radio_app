@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../providers/album_detail_provider.dart';
-import '../../models/album_detail_model.dart';
+import '../../providers/album_provider.dart';
+import '../../models/album_model.dart';
 import '../../config/app_colors.dart';
 
 class AlbumDetailScreen extends StatefulWidget {
@@ -21,16 +21,13 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-
-    // Panggil fetch sekali setelah build pertama
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlbumDetailProvider>().fetchAlbumDetail(widget.slug);
+      context.read<AlbumProvider>().fetchAlbumDetail(widget.slug);
     });
   }
 
   @override
   void dispose() {
-    // Jangan dispose provider yang dikelola Provider
     _scrollController.dispose();
     super.dispose();
   }
@@ -47,9 +44,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: () => context
-                .read<AlbumDetailProvider>()
-                .fetchAlbumDetail(widget.slug),
+            onPressed: () =>
+                context.read<AlbumProvider>().fetchAlbumDetail(widget.slug),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -67,7 +63,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
       backgroundColor: AppColors.backgroundDark,
       body: Stack(
         children: [
-          // Background
+          // Background dekoratif
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -79,38 +75,16 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               ),
               child: Stack(
                 children: [
-                  Positioned(
-                    top: -50,
-                    right: -50,
-                    child: Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -30,
-                    left: -30,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
-                  ),
+                  Positioned(top: -50, right: -50, child: _bubble(200)),
+                  Positioned(bottom: -30, left: -30, child: _bubble(150)),
                 ],
               ),
             ),
           ),
 
-          Consumer<AlbumDetailProvider>(
+          Consumer<AlbumProvider>(
             builder: (context, provider, _) {
-              if (provider.isLoading && provider.albumDetail == null) {
+              if (provider.isLoadingDetail && provider.albumDetail == null) {
                 return const Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -120,18 +94,18 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                 );
               }
 
-              if (provider.hasError) {
+              if (provider.detailError != null) {
                 return _buildErrorWidget(
-                  provider.errorMessage ?? 'Gagal memuat detail album',
+                  provider.detailError ?? 'Gagal memuat detail album',
                 );
               }
 
-              final albumDetail = provider.albumDetail;
-              if (albumDetail == null) {
+              final album = provider.albumDetail;
+              if (album == null) {
                 return _buildErrorWidget('Data album tidak valid');
               }
 
-              return _buildAlbumDetail(context, albumDetail);
+              return _buildAlbumDetail(context, album);
             },
           ),
         ],
@@ -139,21 +113,15 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
     );
   }
 
-  Widget _buildAlbumDetail(BuildContext context, AlbumDetailModel albumDetail) {
-    final album = albumDetail.album;
-    final photos = albumDetail.photos;
-    final albumName = albumDetail.name.isNotEmpty
-        ? albumDetail.name
-        : album.name;
+  Widget _buildAlbumDetail(BuildContext context, AlbumModel album) {
+    // TODO: Update this to fetch and display photos for the album
+    final photos =
+        <PhotoModel>[]; // Temporary empty list, implement photo fetching
+    final albumName = album.name;
     final hasPhotos = photos.isNotEmpty;
 
-    // Responsif: tentukan jumlah kolom berdasarkan lebar
     final width = MediaQuery.of(context).size.width;
-    final crossAxisCount = width >= 900
-        ? 4
-        : width >= 600
-        ? 3
-        : 2;
+    final crossAxisCount = width >= 900 ? 4 : (width >= 600 ? 3 : 2);
 
     return CustomScrollView(
       controller: _scrollController,
@@ -167,30 +135,50 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           iconTheme: const IconThemeData(color: Colors.white),
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
-            background: (album.coverImage.isNotEmpty)
-                ? CachedNetworkImage(
-                    imageUrl: album.coverImage,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: AppColors.surface,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
-                          ),
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // COVER — gunakan URL yang sudah di-resolve
+                if (album.coverUrl.isNotEmpty)
+                  Hero(
+                    tag: 'album-${album.slug}',
+                    child: CachedNetworkImage(
+                      imageUrl: album.coverUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) =>
+                          Container(color: AppColors.surface),
+                      errorWidget: (context, url, error) => Container(
+                        color: AppColors.surface,
+                        child: const Icon(
+                          Icons.error,
+                          color: Colors.white54,
+                          size: 40,
                         ),
                       ),
                     ),
-                    errorWidget: (context, url, error) => Container(
-                      color: AppColors.surface,
-                      child: const Icon(
-                        Icons.error,
-                        color: Colors.white54,
-                        size: 40,
+                  )
+                else
+                  Container(color: AppColors.surface),
+
+                // Overlay gradient supaya judul kebaca
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.65),
+                          Colors.black.withOpacity(0.15),
+                          Colors.transparent,
+                        ],
+                        stops: const [0, .4, 1],
                       ),
                     ),
-                  )
-                : Container(color: AppColors.surface),
+                  ),
+                ),
+              ],
+            ),
             title: Text(
               albumName,
               style: const TextStyle(
@@ -208,12 +196,16 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
             ),
           ),
         ),
+
+        // Deskripsi & meta
         SliverPadding(
           padding: const EdgeInsets.all(16.0),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               Text(
-                album.description ?? 'Tidak ada deskripsi',
+                album.description?.trim().isNotEmpty == true
+                    ? album.description!.trim()
+                    : 'Tidak ada deskripsi',
                 style: const TextStyle(color: Colors.white, fontSize: 16.0),
               ),
               const SizedBox(height: 20),
@@ -225,6 +217,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
             ]),
           ),
         ),
+
+        // Grid foto
         if (hasPhotos)
           SliverPadding(
             padding: const EdgeInsets.all(16.0),
@@ -237,53 +231,29 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
                 final photo = photos[index];
+                final photoUrl =
+                    photo.url; // <- gunakan URL yang sudah di-resolve
+
                 return GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => Scaffold(
-                          appBar: AppBar(
-                            backgroundColor: Colors.black,
-                            iconTheme: const IconThemeData(color: Colors.white),
-                          ),
-                          backgroundColor: Colors.black,
-                          body: Center(
-                            child: PhotoView(
-                              imageProvider: NetworkImage(photo.image),
-                              minScale: PhotoViewComputedScale.contained,
-                              maxScale: PhotoViewComputedScale.covered * 2,
-                            ),
-                          ),
+                        builder: (_) => _PhotoViewer(
+                          tag: 'photo-${photo.id}',
+                          imageUrl: photoUrl,
                         ),
                       ),
                     );
                   },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                  child: Hero(
+                    tag: 'photo-${photo.id}',
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: CachedNetworkImage(
-                        imageUrl: photo.image,
+                        imageUrl: photoUrl,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: AppColors.surface,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ),
+                        placeholder: (context, url) =>
+                            Container(color: AppColors.surface),
                         errorWidget: (context, url, error) => Container(
                           color: AppColors.surface,
                           child: const Icon(
@@ -315,8 +285,47 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               ),
             ),
           ),
+
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
       ],
+    );
+  }
+
+  Widget _bubble(double size) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(0.05),
+    ),
+  );
+}
+
+/// Viewer foto full-screen dengan PhotoView + Hero + cache reuse
+class _PhotoViewer extends StatelessWidget {
+  final String tag;
+  final String imageUrl;
+  const _PhotoViewer({required this.tag, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Center(
+        child: Hero(
+          tag: tag,
+          child: PhotoView(
+            imageProvider: CachedNetworkImageProvider(imageUrl),
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 2,
+            backgroundDecoration: const BoxDecoration(color: Colors.black),
+          ),
+        ),
+      ),
     );
   }
 }

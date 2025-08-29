@@ -36,17 +36,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   ImageProvider _getProfileImage() {
-    final imageFile = _imageFile;
-    if (imageFile != null) {
-      return FileImage(imageFile);
-    } else {
-      final avatar = widget.user.avatar?.trim();
-      if (avatar == null || avatar.isEmpty) {
-        return const AssetImage("assets/user1.jpg");
-      }
-      // Jika format tidak dikenali, coba tambahkan base URL
-      return NetworkImage(avatar);
+    if (_imageFile != null) {
+      return FileImage(_imageFile!);
     }
+
+    final url = widget.user.avatarUrl;
+    if (url.isEmpty) {
+      return const AssetImage("assets/user1.jpg");
+    }
+    return NetworkImage(url);
   }
 
   @override
@@ -101,10 +99,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _getImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (!mounted) return;
     if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
+      setState(() => _imageFile = File(pickedFile.path));
     }
   }
 
@@ -377,15 +374,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (result['success'] == true) {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
+
         if (result['data'] is UserModel) {
-          userProvider.updateUser(result['data']);
+          // Kita sudah menerima model user baru dari API
+          userProvider.updateUser(result['data'] as UserModel);
         } else {
-          // If no valid response data, just refresh from server
-          await userProvider.fetchUser();
+          // Kalau API tidak mengembalikan user lengkap, ambil fresh dari server
+          await userProvider
+              .refresh(); // gunakan refresh (network-first), bukan fetchUser lama
         }
+
         if (mounted) {
-          final updatedUser = userProvider.user;
-          Navigator.pop(context, updatedUser);
+          Navigator.pop(
+            context,
+            userProvider.user,
+          ); // kembalikan user terbaru ke halaman sebelumnya
         }
       } else {
         // Show error message if update failed

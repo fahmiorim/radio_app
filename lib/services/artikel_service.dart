@@ -1,90 +1,230 @@
 import 'package:dio/dio.dart';
+import 'dart:developer' as developer;
+
 import '../models/artikel_model.dart';
 import '../config/api_client.dart';
 
 class ArtikelService {
+  ArtikelService._();
+  static final ArtikelService I = ArtikelService._();
+
+  final Dio _dio = ApiClient.I.dio;
   static const String _basePath = '/news';
-  final Dio _dio = ApiClient.dio;
+  static const String _tag = 'ArtikelService';
 
-  // Fetch recent articles (without pagination)
-  Future<List<Artikel>> fetchRecentArtikel() async {
+  static List<Artikel>? _recentCache;
+  static DateTime? _recentFetchedAt;
+  static const Duration _recentTtl = Duration(minutes: 5);
+
+  static final Map<String, List<Artikel>> _allCache = {};
+  static final Map<String, Map<String, int>> _allMeta = {};
+  static final Map<String, DateTime> _allFetchedAt = {};
+  static const Duration _allTtl = Duration(minutes: 10);
+
+  bool _isFresh(DateTime? t, Duration ttl) =>
+      t != null && DateTime.now().difference(t) < ttl;
+  String _key(int page, int perPage) => 'p:$page|pp:$perPage';
+
+  Future<List<Artikel>> fetchRecentArtikel({bool forceRefresh = false}) async {
     try {
-      final response = await _dio.get(_basePath);
-
-      if (response.statusCode == 200 && response.data['status'] == true) {
-        List<dynamic> artikelList = response.data['data'];
-        return artikelList.map((json) => Artikel.fromJson(json)).toList();
-      } else {
-        throw Exception('Gagal mengambil data artikel terbaru');
+      if (!forceRefresh &&
+          _recentCache != null &&
+          _isFresh(_recentFetchedAt, _recentTtl)) {
+        developer.log('Using cached recent news', name: _tag);
+        return _recentCache!;
       }
+
+      developer.log('Fetching recent news (network)', name: _tag);
+      final res = await _dio.get(_basePath);
+
+      if (res.statusCode == 200) {
+        final list = _extractList(res.data);
+        final items = list
+            .map<Artikel>((e) => Artikel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
+        _recentCache = items;
+        _recentFetchedAt = DateTime.now();
+        return items;
+      }
+
+      if (_recentCache != null) return _recentCache!;
+      throw Exception(
+        _messageOf(res.data) ?? 'Gagal mengambil data artikel terbaru',
+      );
+    } on DioException catch (e) {
+      if (_recentCache != null) return _recentCache!;
+      throw Exception('Gagal terhubung ke server: ${e.message}');
     } catch (e) {
-      print('Error in fetchRecentArtikel: $e');
+      if (_recentCache != null) return _recentCache!;
       rethrow;
     }
   }
 
-  // Fetch all articles with pagination
   Future<Map<String, dynamic>> fetchAllArtikel({
     int page = 1,
     int perPage = 10,
+    bool forceRefresh = false,
   }) async {
+    final key = _key(page, perPage);
+
     try {
-      final response = await _dio.get(
+      if (!forceRefresh &&
+          _allCache.containsKey(key) &&
+          _isFresh(_allFetchedAt[key], _allTtl)) {
+        developer.log('Using cached news for $key', name: _tag);
+        final meta = _allMeta[key] ?? const {'currentPage': 1, 'lastPage': 1};
+        return {
+          'data': _allCache[key]!,
+          'currentPage': meta['currentPage']!,
+          'lastPage': meta['lastPage']!,
+        };
+      }
+
+      developer.log('Fetching all news (network) $key', name: _tag);
+      final res = await _dio.get(
         '$_basePath/semua',
-        queryParameters: {
-          'page': page,
-          'per_page': perPage,
-        },
+        queryParameters: {'page': page, 'per_page': perPage},
       );
 
-      if (response.statusCode == 200 && response.data['status'] == true) {
-        final data = response.data;
+      if (res.statusCode == 200) {
+        final data = res.data;
+        final list = _extractList(data);
+        final items = list
+            .map<Artikel>((e) => Artikel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+
+        int currentPage =
+            _intOf(_pick(data, ['current_page', 'currentPage'])) ?? page;
+        int lastPage = _intOf(_pick(data, ['last_page', 'lastPage'])) ?? 1;
+
+        if ((data is Map) && data['data'] is Map) {
+          final inner = data['data'];
+          currentPage =
+              _intOf(_pick(inner, ['current_page', 'currentPage'])) ??
+              currentPage;
+          lastPage =
+              _intOf(_pick(inner, ['last_page', 'lastPage'])) ?? lastPage;
+        }
+
+        _allCache[key] = items;
+        _allMeta[key] = {'currentPage': currentPage, 'lastPage': lastPage};
+        _allFetchedAt[key] = DateTime.now();
+
         return {
-          'data': (data['data'] as List)
-              .map((json) => Artikel.fromJson(json))
-              .toList(),
-          'currentPage': data['current_page'] ?? 1,
-          'lastPage': data['last_page'] ?? 1,
+          'data': items,
+          'currentPage': currentPage,
+          'lastPage': lastPage,
         };
-      } else {
-        throw Exception('Gagal mengambil data artikel');
       }
+
+      if (_allCache.containsKey(key)) {
+        final meta = _allMeta[key] ?? const {'currentPage': 1, 'lastPage': 1};
+        return {
+          'data': _allCache[key]!,
+          'currentPage': meta['currentPage']!,
+          'lastPage': meta['lastPage']!,
+        };
+      }
+      throw Exception(_messageOf(res.data) ?? 'Gagal mengambil data artikel');
+    } on DioException catch (e) {
+      if (_allCache.containsKey(key)) {
+        final meta = _allMeta[key] ?? const {'currentPage': 1, 'lastPage': 1};
+        return {
+          'data': _allCache[key]!,
+          'currentPage': meta['currentPage']!,
+          'lastPage': meta['lastPage']!,
+        };
+      }
+      throw Exception('Gagal terhubung ke server: ${e.message}');
     } catch (e) {
-      print('Error in fetchAllArtikel: $e');
+      if (_allCache.containsKey(key)) {
+        final meta = _allMeta[key] ?? const {'currentPage': 1, 'lastPage': 1};
+        return {
+          'data': _allCache[key]!,
+          'currentPage': meta['currentPage']!,
+          'lastPage': meta['lastPage']!,
+        };
+      }
       rethrow;
     }
   }
 
-  // Fetch single article by slug
   Future<Artikel> fetchArtikelBySlug(String slug) async {
     try {
-      final response = await _dio.get('$_basePath/$slug');
+      developer.log('Fetching article by slug: $slug', name: _tag);
+      final res = await _dio.get('$_basePath/$slug');
 
-      if (response.statusCode == 200 && response.data['status'] == true) {
-        return Artikel.fromJson(response.data['data']);
-      } else if (response.statusCode == 404) {
-        throw Exception('Artikel tidak ada');
-      } else {
-        throw Exception(
-            'Gagal mengambil detail artikel. Kode status: ${response.statusCode}');
+      if (res.statusCode == 200) {
+        final data = res.data;
+        final map =
+            (data is Map && data['status'] == true && data['data'] is Map)
+            ? Map<String, dynamic>.from(data['data'])
+            : (data is Map
+                  ? Map<String, dynamic>.from(data)
+                  : <String, dynamic>{});
+        if (map.isEmpty) throw Exception('Artikel tidak ada');
+        return Artikel.fromJson(map);
       }
+      if (res.statusCode == 404) throw Exception('Artikel tidak ada');
+      throw Exception(
+        _messageOf(res.data) ??
+            'Gagal mengambil detail artikel. Kode status: ${res.statusCode}',
+      );
     } on DioException catch (e) {
-      print('Dio Error:');
-      print('- Message: ${e.message}');
-      print('- Type: ${e.type}');
-      print('- Error: ${e.error}');
-      print('- Response: ${e.response?.data}');
-      
-      if (e.response != null) {
-        throw Exception(
-            'Gagal mengambil detail artikel: ${e.response?.data['message'] ?? 'Tidak ada pesan error'}');
-      } else {
-        throw Exception(
-            'Tidak dapat terhubung ke server. Pastikan koneksi internet Anda stabil.');
+      final resp = e.response;
+      if (resp?.statusCode == 404) {
+        throw Exception('Artikel tidak ada');
       }
+      if (resp?.data != null) {
+        throw Exception(
+          _messageOf(resp!.data) ?? 'Gagal mengambil detail artikel',
+        );
+      }
+      throw Exception('Tidak dapat terhubung ke server: ${e.message}');
     } catch (e) {
-      print('Unexpected error in fetchArtikelBySlug: $e');
       rethrow;
     }
+  }
+
+  void clearCache() {
+    _recentCache = null;
+    _recentFetchedAt = null;
+    _allCache.clear();
+    _allMeta.clear();
+    _allFetchedAt.clear();
+  }
+
+  List _extractList(dynamic data) {
+    if (data is List) return data;
+    if (data is Map) {
+      if (data['data'] is List) return data['data'] as List;
+      if (data['status'] == true && data['data'] is List) {
+        return data['data'] as List;
+      }
+      if (data['data'] is Map && data['data']['data'] is List) {
+        return data['data']['data'] as List;
+      }
+    }
+    return const [];
+  }
+
+  String? _messageOf(dynamic data) {
+    if (data is Map && data['message'] is String)
+      return data['message'] as String;
+    return null;
+  }
+
+  int? _intOf(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    return int.tryParse(v.toString());
+  }
+
+  dynamic _pick(Map obj, List<String> keys) {
+    for (final k in keys) {
+      if (obj[k] != null) return obj[k];
+    }
+    return null;
   }
 }

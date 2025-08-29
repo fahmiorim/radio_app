@@ -3,31 +3,48 @@ import 'package:radio_odan_app/models/penyiar_model.dart';
 import 'package:radio_odan_app/services/penyiar_service.dart';
 
 class PenyiarProvider with ChangeNotifier {
-  final PenyiarService _penyiarService = PenyiarService();
-  List<Penyiar> _penyiars = [];
-  bool _isLoading = true;
-  String? _error;
+  final PenyiarService _svc = PenyiarService.I;
 
-  List<Penyiar> get penyiars => _penyiars;
+  List<Penyiar> _items = [];
+  bool _isLoading = false;
+  String? _error;
+  bool _initialized = false; // ⬅️ tambahan
+
+  List<Penyiar> get items => _items;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get hasData => _items.isNotEmpty;
 
-  Future<void> fetchPenyiars() async {
-    if (_isLoading) return;
+  Future<void> init() async {
+    if (_initialized) return; // ⬅️ cegah init ganda
+    _initialized = true;
+    await load(cacheFirst: true);
+  }
 
+  Future<void> load({bool cacheFirst = true}) async {
+    if (_isLoading) return; // dedupe
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    notifyListeners(); // tampilkan loading di UI
 
     try {
-      _penyiars = await _penyiarService.fetchPenyiar();
-      _error = null;
+      final data = await _svc.fetchPenyiar(forceRefresh: !cacheFirst);
+      _items = data;
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error fetching penyiars: $e');
+      debugPrint('Error fetching penyiar: $e');
     } finally {
       _isLoading = false;
-      notifyListeners();
+      notifyListeners(); // selesai loading (sukses/gagal)
     }
+  }
+
+  Future<void> refresh() => load(cacheFirst: false);
+
+  void clear() {
+    _items = [];
+    _error = null;
+    _svc.clearCache();
+    notifyListeners();
   }
 }

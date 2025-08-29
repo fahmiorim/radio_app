@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/penyiar_skeleton.dart';
@@ -17,29 +18,28 @@ class _PenyiarListState extends State<PenyiarList>
   @override
   bool get wantKeepAlive => true;
 
-  @override
-  void initState() {
-    super.initState();
-    // Always fetch presenters when the widget is created
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<PenyiarProvider>(context, listen: false);
-      provider.fetchPenyiars();
-    });
-  }
+  // ❌ Tidak perlu fetch di sini, sudah di-init di main.dart
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     context.read<PenyiarProvider>().init();
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
-    final isLoading = context.watch<PenyiarProvider>().isLoading;
-    final penyiarList = context.watch<PenyiarProvider>().penyiars;
-    final error = context.watch<PenyiarProvider>().error;
-    
-    // Handle error
+
+    final prov = context.watch<PenyiarProvider>();
+    final isLoading = prov.isLoading;
+    final penyiarList = prov.items; // ⬅️ was penyiars
+    final error = prov.error;
+
     if (error != null) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16),
           child: Text(
             'Gagal memuat data penyiar. Silakan coba lagi.',
             style: Theme.of(context).textTheme.bodyMedium,
@@ -52,7 +52,7 @@ class _PenyiarListState extends State<PenyiarList>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(title: 'Penyiar'),
+        const SectionTitle(title: 'Penyiar'),
         const SizedBox(height: 12),
         SizedBox(
           height: 160,
@@ -71,35 +71,45 @@ class _PenyiarListState extends State<PenyiarList>
                         itemCount: penyiarList.length,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         itemBuilder: (context, index) {
-                          final penyiar = penyiarList[index];
+                          final p = penyiarList[index];
                           return Container(
                             width: 110,
                             margin: const EdgeInsets.only(right: 12),
                             child: Stack(
                               alignment: Alignment.bottomCenter,
                               children: [
-                                // Full image
+                                // Foto penyiar
                                 Container(
                                   width: 110,
                                   height: 160,
                                   decoration: BoxDecoration(
                                     color: Colors.grey[900],
-                                    image: penyiar.avatarUrl.isNotEmpty
-                                        ? DecorationImage(
-                                            image: NetworkImage(
-                                              penyiar.avatarUrl,
-                                            ),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : null,
                                   ),
-                                  child: penyiar.avatarUrl.isEmpty
+                                  child: p.avatarUrl.isEmpty
                                       ? const Icon(
                                           Icons.person,
                                           size: 50,
                                           color: Colors.grey,
                                         )
-                                      : null,
+                                      : CachedNetworkImage(
+                                          imageUrl: p.avatarUrl,
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) => const Center(
+                                            child: SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          ),
+                                          errorWidget: (_, __, ___) =>
+                                              const Icon(
+                                                Icons.person,
+                                                size: 50,
+                                                color: Colors.grey,
+                                              ),
+                                        ),
                                 ),
                                 // Overlay nama
                                 Container(
@@ -110,7 +120,7 @@ class _PenyiarListState extends State<PenyiarList>
                                   ),
                                   color: Colors.black.withOpacity(0.5),
                                   child: Text(
-                                    penyiar.name,
+                                    p.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.center,

@@ -1,14 +1,16 @@
+// lib/models/program_model.dart
 import '../config/app_api_config.dart';
 
 class Program {
   final int id;
   final String namaProgram;
   final String deskripsi;
-  final String gambar;
+  final String gambar; // raw dari API (bisa relatif)
   final String status;
   final String? penyiar;
   final String? jadwal;
   final String? penyiarName;
+  final DateTime? updatedAt; // opsional, untuk cache-busting kalau perlu
 
   Program({
     required this.id,
@@ -19,60 +21,80 @@ class Program {
     this.penyiar,
     this.jadwal,
     this.penyiarName,
+    this.updatedAt,
   });
 
   factory Program.fromJson(Map<String, dynamic> json) {
-    // Handle both API response formats
-    final deskripsi = json['deskripsi'] is String 
-        ? (json['deskripsi'] as String).replaceAll(RegExp(r'<[^>]*>'), '').trim() 
-        : '';
-        
+    String stripHtml(dynamic v) {
+      final s = (v ?? '').toString();
+      return s.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+    }
+
+    int parseInt(dynamic v) =>
+        v is int ? v : int.tryParse(v?.toString() ?? '') ?? 0;
+
+    DateTime? parseDT(dynamic v) {
+      if (v == null) return null;
+      if (v is String && v.isNotEmpty) {
+        try {
+          return DateTime.parse(v);
+        } catch (_) {}
+      }
+      return null;
+    }
+
     return Program(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
-      namaProgram: json['nama_program']?.toString() ?? 'Program Tanpa Nama',
-      deskripsi: deskripsi,
-      gambar: json['gambar']?.toString() ?? '',
-      status: json['status']?.toString() ?? 'aktif',
-      penyiar: json['penyiar']?.toString(),
+      id: parseInt(json['id']),
+      namaProgram:
+          (json['nama_program'] ?? json['title'] ?? 'Program Tanpa Nama')
+              .toString(),
+      deskripsi: stripHtml(json['deskripsi']),
+      gambar: (json['gambar'] ?? json['cover'] ?? json['image'] ?? '')
+          .toString(),
+      status: (json['status'] ?? 'aktif').toString(),
+      penyiar: (json['penyiar'] ?? json['host'])?.toString(),
       jadwal: json['jadwal']?.toString(),
-      penyiarName: json['penyiarName']?.toString() ?? json['penyiar']?.toString(),
+      penyiarName:
+          (json['penyiarName'] ?? json['penyiar_name'] ?? json['penyiar'])
+              ?.toString(),
+      updatedAt: parseDT(json['updated_at'] ?? json['updatedAt']),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nama_program': namaProgram,
-      'deskripsi': deskripsi,
-      'gambar': gambar,
-      'status': status,
-      'penyiar': penyiar,
-      'jadwal': jadwal,
-      'penyiarName': penyiarName,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'nama_program': namaProgram,
+    'deskripsi': deskripsi,
+    'gambar': gambar,
+    'status': status,
+    'penyiar': penyiar,
+    'jadwal': jadwal,
+    'penyiarName': penyiarName,
+    'updated_at': updatedAt?.toIso8601String(),
+  };
 
-  /// Get the image URL with fallback
+  /// Full URL siap pakai untuk UI. Jika kosong → return '' (biar UI tampilkan placeholder).
   String get gambarUrl {
-    // Return default image if no image is set
-    if (gambar.isEmpty) {
-      return 'assets/default_program.png';
+    final raw = gambar.trim();
+    if (raw.isEmpty) return '';
+
+    // Sudah full URL
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      return _appendV(raw, updatedAt);
     }
 
-    // If the image URL is already a full URL, return it as is
-    if (gambar.startsWith('http')) {
-      return gambar;
+    final base = AppApiConfig.assetBaseUrl; // <-- PAKAI ASSET_BASE_URL
+    // Relatif dengan slash depan: "/storage/..." → base + raw
+    if (raw.startsWith('/')) {
+      return _appendV('$base$raw', updatedAt);
     }
-
-    // Handle different URL formats
-    if (gambar.startsWith('/storage/')) {
-      return '${AppApiConfig.baseUrl}$gambar';
-    }
-
-    // Default case - prepend base URL
-    return '${AppApiConfig.baseUrl}/$gambar'.replaceAll(
-      RegExp(r'(?<!:)/+'),
-      '/',
-    );
+    // Relatif tanpa slash: "gambar.jpg" atau "program/cover.jpg" → asumsikan /storage/
+    return _appendV('$base/storage/$raw', updatedAt);
   }
+}
+
+String _appendV(String url, DateTime? v) {
+  if (v == null) return url;
+  final tag = v.millisecondsSinceEpoch;
+  return url.contains('?') ? '$url&v=$tag' : '$url?v=$tag';
 }

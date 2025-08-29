@@ -3,36 +3,35 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
-
 import 'config/app_theme.dart';
 import 'config/app_routes.dart';
 import 'audio/audio_player_manager.dart';
 import 'screens/auth/auth_wrapper.dart';
-import 'package:radio_odan_app/providers/program_provider.dart';
-import 'package:radio_odan_app/providers/penyiar_provider.dart';
-import 'package:radio_odan_app/providers/event_provider.dart';
-import 'package:radio_odan_app/providers/artikel_provider.dart';
-import 'package:radio_odan_app/providers/user_provider.dart';
-import 'package:radio_odan_app/providers/video_provider.dart';
-import 'package:radio_odan_app/providers/album_provider.dart';
-import 'package:radio_odan_app/providers/album_detail_provider.dart';
-import 'package:radio_odan_app/providers/radio_station_provider.dart';
+import 'providers/program_provider.dart';
+import 'providers/penyiar_provider.dart';
+import 'providers/event_provider.dart';
+import 'providers/artikel_provider.dart';
+import 'providers/user_provider.dart';
+import 'providers/video_provider.dart';
+import 'providers/album_provider.dart';
+import 'providers/radio_station_provider.dart';
+import 'config/api_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize environment variables
   await dotenv.load(fileName: '.env');
 
-  // Initialize other services
+  ApiClient.I.ensureInterceptors();
+
   await initializeDateFormatting('id_ID', null);
   await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
-    androidNotificationChannelName: 'Audio playback',
+    androidNotificationChannelId: 'id.go.batubarakab.odanfm.channel.audio',
+    androidNotificationChannelName: 'Odan FM Playback',
     androidNotificationOngoing: true,
   );
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
@@ -73,27 +72,64 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ProgramProvider()),
-        ChangeNotifierProvider(create: (_) => PenyiarProvider()),
-        ChangeNotifierProvider(create: (_) => EventProvider()),
-        ChangeNotifierProvider(create: (_) => ArtikelProvider()),
-        ChangeNotifierProvider(create: (_) => VideoProvider()),
-        ChangeNotifierProvider(create: (_) => AlbumProvider()),
-        ChangeNotifierProvider(create: (_) => AlbumDetailProvider()),
-        ChangeNotifierProvider(create: (_) => RadioStationProvider()),
         ChangeNotifierProvider(
-          create: (_) => UserProvider()..fetchUser(),
+          create: (_) {
+            final p = UserProvider();
+            p.init();
+            return p;
+          },
         ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = PenyiarProvider();
+            p.init();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = ProgramProvider();
+            p.init();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = EventProvider();
+            p.init();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = ArtikelProvider();
+            p.init();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = VideoProvider();
+            p.init();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = AlbumProvider();
+            p.init();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider(create: (_) => RadioStationProvider()),
       ],
       child: MaterialApp(
-        title: 'Radio App',
+        title: 'Radio Odan 89.3 FM',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.dark,
-        builder: (context, child) => AuthWrapper(
-          child: child!,
-        ),
+        builder: (context, child) => AuthWrapper(child: child!),
         routes: AppRoutes.routes,
         initialRoute: AppRoutes.splash,
         onGenerateRoute: AppRoutes.onGenerateRoute,

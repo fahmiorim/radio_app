@@ -3,40 +3,46 @@ import 'package:radio_odan_app/models/event_model.dart';
 import 'package:radio_odan_app/services/event_service.dart';
 
 class EventProvider with ChangeNotifier {
-  final EventService _eventService = EventService();
+  final EventService _svc = EventService.I;
+
   List<Event> _events = [];
   Event? _selectedEvent;
-  bool _isLoading = true;
+
+  bool _isLoading = false;
   bool _isLoadingMore = false;
-  bool _hasMore = true;
-  int _page = 1;
-  final int _perPage = 10;
+  bool _hasMore = false;
   String? _error;
+
+  bool _initialized = false;
 
   List<Event> get events => _events;
   Event? get selectedEvent => _selectedEvent;
+
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMore => _hasMore;
   String? get error => _error;
 
-  Future<void> fetchEvents() async {
-    if (_isLoading || _isLoadingMore) return;
+  Future<void> init() async {
+    if (_initialized) return;
+    _initialized = true;
+    await load(cacheFirst: true);
+  }
 
+  Future<void> load({bool cacheFirst = true}) async {
+    if (_isLoading) return;
     _isLoading = true;
-    _page = 1;
     _error = null;
     notifyListeners();
 
     try {
-      final data = await _eventService.fetchAllEvents(
-        page: _page,
-        perPage: _perPage,
+      final list = await _svc.fetchAllEvents(
+        page: 1,
+        perPage: 10,
+        forceRefresh: !cacheFirst,
       );
-      
-      _events = data;
-      _hasMore = data.length == _perPage;
-      _error = null;
+      _events = list;
+      _hasMore = false;
     } catch (e) {
       _error = e.toString();
       debugPrint('Error fetching events: $e');
@@ -46,23 +52,16 @@ class EventProvider with ChangeNotifier {
     }
   }
 
-  Future<void> loadMoreEvents() async {
-    if (_isLoading || _isLoadingMore || !_hasMore) return;
+  Future<void> refresh() => load(cacheFirst: false);
 
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
     _isLoadingMore = true;
     notifyListeners();
 
     try {
-      _page++;
-      final newEvents = await _eventService.fetchAllEvents(
-        page: _page,
-        perPage: _perPage,
-      );
-
-      _events.addAll(newEvents);
-      _hasMore = newEvents.length == _perPage;
+      _hasMore = false;
     } catch (e) {
-      _page--; // Rollback page on error
       _error = e.toString();
       debugPrint('Error loading more events: $e');
     } finally {
@@ -73,7 +72,19 @@ class EventProvider with ChangeNotifier {
 
   void selectEvent(Event event, BuildContext context) {
     _selectedEvent = event;
-    // Navigate to event detail or handle selection
-    // Navigator.pushNamed(context, AppRoutes.eventDetail);
+    notifyListeners();
+  }
+
+  void clearSelected() {
+    _selectedEvent = null;
+    notifyListeners();
+  }
+
+  void clearAll() {
+    _events = [];
+    _selectedEvent = null;
+    _error = null;
+    _hasMore = false;
+    notifyListeners();
   }
 }

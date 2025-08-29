@@ -1,34 +1,32 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import 'package:radio_odan_app/config/api_client.dart';
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/config/logger.dart';
 
 class UserService {
-  static const String _userKey = 'user_token';
-  static const String _userDataKey = 'user_data';
+  static const _kUserTokenKey = 'user_token';
+  static const _kUserDataKey = 'user_data';
+  static const _kUserFetchedAtKey = 'user_fetched_at';
+  static const _ttl = Duration(minutes: 5);
+
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static UserModel? _cachedUser;
 
-  /// Ambil token dari secure storage
-  static Future<String?> getToken() async {
-    return await _storage.read(key: _userKey);
-  }
+  static Future<String?> getToken() => _storage.read(key: _kUserTokenKey);
 
-  /// Simpan token setelah login
-  static Future<void> saveToken(String token) async {
-    await _storage.write(key: _userKey, value: token);
-  }
+  static Future<void> saveToken(String token) =>
+      _storage.write(key: _kUserTokenKey, value: token);
 
-  /// Hapus token dan cache saat logout
   static Future<void> clearToken() async {
     _cachedUser = null;
-    await _storage.delete(key: _userKey);
-    await _storage.delete(key: _userDataKey);
+    await _storage.delete(key: _kUserTokenKey);
+    await _storage.delete(key: _kUserDataKey);
+    await _storage.delete(key: _kUserFetchedAtKey);
   }
 
-  /// Ambil data profil user
   static Future<UserModel?> getProfile({bool forceRefresh = false}) async {
     try {
       final token = await getToken();
@@ -37,85 +35,38 @@ class UserService {
         return null;
       }
 
-      // Clear cache if force refresh is true
-      if (forceRefresh) {
-        _cachedUser = null;
-        await _storage.delete(key: _userDataKey);
-      }
-
-      final response = await ApiClient.dio.get(
-        '/user',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final body = response.data;
-        if (body['status'] == true && body['data'] != null) {
-          _cachedUser = UserModel.fromJson(body['data']);
-          // Save to secure storage for persistence
-          await _storage.write(
-            key: _userDataKey,
-            value: jsonEncode(_cachedUser?.toJson()),
-          );
-          return _cachedUser;
+      if (!forceRefresh) {
+        final cached = await _readCachedUserIfFresh();
+        if (cached != null) {
+          _refreshProfileSilently();
+          return cached;
         }
       }
-      return null;
+
+      // Hit API
+      final res = await ApiClient.I.dio.get('/user');
+      if (res.statusCode == 200) {
+        final body = res.data;
+        if (body is Map && body['status'] == true && body['data'] != null) {
+          final user = UserModel.fromJson(
+            Map<String, dynamic>.from(body['data']),
+          );
+          await _writeCachedUser(user);
+          return _cachedUser = user;
+        }
+      }
+
+      // Fallback ke cache kalau ada
+      return await _readCachedUser();
     } on DioException catch (e) {
       logger.e("Error getProfile: ${e.message}");
-      // Try to load from cache if available
-      final cachedData = await _storage.read(key: _userDataKey);
-      if (cachedData != null) {
-        try {
-          _cachedUser = UserModel.fromJson(jsonDecode(cachedData));
-          return _cachedUser;
-        } catch (e) {
-          logger.e("Error parsing cached user data: $e");
-        }
-      }
-      return null;
+      return await _readCachedUser();
     } catch (e) {
       logger.e("Unexpected error in getProfile: $e");
-      return null;
+      return await _readCachedUser();
     }
   }
 
-  /// Logout dari API dan hapus token lokal
-  static Future<void> logout() async {
-    try {
-      final token = await getToken();
-      if (token != null) {
-        await ApiClient.dio.post(
-          '/logout',
-          options: Options(
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Accept': 'application/json',
-            },
-          ),
-        );
-      }
-    } on DioException catch (e) {
-      final data = e.response?.data;
-      String msg = 'Logout gagal';
-      if (data is Map<String, dynamic>) {
-        msg = data['message'] ?? msg;
-      }
-      logger.w("Logout error: $msg");
-    } catch (e) {
-      logger.w("Logout error: $e");
-    } finally {
-      await clearToken(); // ✅ tetap hapus token biarpun API gagal
-    }
-  }
-
-  /// Update profil user
   static Future<Map<String, dynamic>> updateProfile({
     required String name,
     required String email,
@@ -129,26 +80,18 @@ class UserService {
         throw Exception('Token tidak tersedia. Silakan login kembali.');
       }
 
-      // Trim & validate
       final trimmedName = name.trim();
       final trimmedEmail = email.trim();
       if (trimmedName.isEmpty || trimmedEmail.isEmpty) {
         throw Exception('Nama dan email harus diisi');
       }
 
-      // Log values
-      logger.d('🚀 Preparing to update profile with values:');
-      logger.d('🔹 name: $trimmedName');
-      logger.d('🔹 email: $trimmedEmail');
-      logger.d('🔹 phone: $phone');
-      logger.d('🔹 address: $address');
-      logger.d('🔹 has avatar: ${avatarPath != null}');
-      logger.d('🔹 API Endpoint: /profile (POST)');
-      logger.d('🔹 Using token: ${token.substring(0, 10)}...');
+      logger.d(
+        '📤 Update profile: name=$trimmedName, email=$trimmedEmail, phone=$phone, address=$address, hasAvatar=${avatarPath != null}',
+      );
 
-      // Build form data dengan override method
       final formData = FormData.fromMap({
-        '_method': 'PUT', // 👈 trik Laravel method override
+        '_method': 'PUT',
         'name': trimmedName,
         'email': trimmedEmail,
         if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
@@ -158,105 +101,57 @@ class UserService {
           'avatar': await MultipartFile.fromFile(avatarPath.trim()),
       });
 
-      // Kirim sebagai POST
-      logger.d('📡 Sending profile update request...');
-      final startTime = DateTime.now();
-      
-      final response = await ApiClient.dio.post(
-        '/profile',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
+      final started = DateTime.now();
+      final res = await ApiClient.I.dio.post('/profile', data: formData);
+      logger.d(
+        '✅ Response ${res.statusCode} in ${DateTime.now().difference(started).inMilliseconds}ms',
       );
-      
-      final endTime = DateTime.now();
-      final duration = endTime.difference(startTime);
-      
-      logger.d('✅ Received response in ${duration.inMilliseconds}ms');
-      logger.d('📥 Response status: ${response.statusCode}');
-      logger.d('📥 Response data: ${response.data}');
 
-      // Handle response
-      final responseData = response.data;
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        if (responseData is Map<String, dynamic>) {
-          // Update the cached user data
-          if (responseData['status'] == true && responseData['data'] != null) {
-            _cachedUser = UserModel.fromJson(
-              responseData['data'] is Map<String, dynamic> 
-                  ? responseData['data'] 
-                  : responseData,
-            );
-            // Save to secure storage
-            await _storage.write(
-              key: _userDataKey,
-              value: jsonEncode(_cachedUser?.toJson()),
-            );
-            
-            return {
-              'success': true,
-              'data': _cachedUser,
-              'message': responseData['message'] ?? 'Profil berhasil diperbarui',
-            };
-          }
-        }
+      final data = res.data;
+      if ((res.statusCode == 200 || res.statusCode == 201) && data is Map) {
+        final payload = (data['status'] == true && data['data'] is Map)
+            ? Map<String, dynamic>.from(data['data'])
+            : Map<String, dynamic>.from(data);
+
+        final user = UserModel.fromJson(payload);
+        await _writeCachedUser(user);
+
         return {
           'success': true,
-          'data': responseData,
-          'message': 'Profil berhasil diperbarui',
+          'data': user,
+          'message': data['message'] ?? 'Profil berhasil diperbarui',
         };
       }
 
-      // Handle error response
       return {
         'success': false,
-        'message': (responseData is Map && responseData['message'] != null)
-            ? responseData['message']
+        'message': (data is Map && data['message'] != null)
+            ? data['message']
             : 'Gagal memperbarui profil',
-        'data': responseData,
+        'data': data,
       };
     } on DioException catch (e) {
       logger.e('❌ API Error: ${e.message}');
-      if (e.response != null) {
-        logger.e('❌ Status code: ${e.response?.statusCode}');
-        logger.e('❌ Response data: ${e.response?.data}');
-        logger.e('❌ Headers: ${e.response?.headers}');
-        
-        String message = 'Terjadi kesalahan saat memperbarui profil';
-        final responseData = e.response?.data;
-        
-        if (responseData != null) {
-          if (responseData is Map<String, dynamic>) {
-            message = responseData['message'] ?? message;
-            // Laravel validation errors
-            if (responseData['errors'] != null) {
-              final errors = responseData['errors'] as Map<String, dynamic>;
-              message = errors.values.first is List
-                  ? (errors.values.first as List).first.toString()
-                  : errors.values.join(', ');
-            }
-          } else if (responseData is String) {
-            message = responseData;
+      String message = 'Terjadi kesalahan saat memperbarui profil';
+      final rd = e.response?.data;
+      if (rd != null) {
+        if (rd is Map<String, dynamic>) {
+          message = rd['message'] ?? message;
+          if (rd['errors'] != null) {
+            final errors = rd['errors'] as Map<String, dynamic>;
+            message = errors.values.first is List
+                ? (errors.values.first as List).first.toString()
+                : errors.values.join(', ');
           }
+        } else if (rd is String) {
+          message = rd;
         }
-        
-        return {
-          'success': false, 
-          'message': message,
-          'error': e.toString(),
-          'statusCode': e.response?.statusCode,
-        };
       }
-      
       return {
         'success': false,
-        'message': 'Tidak dapat terhubung ke server: ${e.message}',
+        'message': message,
         'error': e.toString(),
+        'statusCode': e.response?.statusCode,
       };
     } catch (e) {
       logger.e('Unexpected error in updateProfile: $e');
@@ -266,5 +161,65 @@ class UserService {
         'error': e.toString(),
       };
     }
+  }
+
+  static Future<void> logout() async {
+    try {
+      await ApiClient.I.dio.post('/logout');
+    } catch (e) {
+      // kalau gagal pun, tetap bersihkan token lokal
+      logger.w("Logout warning: $e");
+    } finally {
+      await clearToken();
+    }
+  }
+
+  static Future<void> _writeCachedUser(UserModel user) async {
+    _cachedUser = user;
+    await _storage.write(key: _kUserDataKey, value: jsonEncode(user.toJson()));
+    await _storage.write(
+      key: _kUserFetchedAtKey,
+      value: DateTime.now().toIso8601String(),
+    );
+  }
+
+  static Future<UserModel?> _readCachedUser() async {
+    if (_cachedUser != null) return _cachedUser;
+    final raw = await _storage.read(key: _kUserDataKey);
+    if (raw == null) return null;
+    try {
+      final map = jsonDecode(raw);
+      return _cachedUser = UserModel.fromJson(Map<String, dynamic>.from(map));
+    } catch (e) {
+      logger.e("Error parsing cached user data: $e");
+      return null;
+    }
+  }
+
+  static Future<UserModel?> _readCachedUserIfFresh() async {
+    final fetchedAtStr = await _storage.read(key: _kUserFetchedAtKey);
+    if (fetchedAtStr == null) return null;
+    final fetchedAt = DateTime.tryParse(fetchedAtStr);
+    if (fetchedAt == null) return null;
+    if (DateTime.now().difference(fetchedAt) >= _ttl) return null;
+    return await _readCachedUser();
+  }
+
+  static Future<void> _refreshProfileSilently() async {
+    try {
+      final res = await ApiClient.I.dio.get(
+        '/user',
+        options: Options(headers: {'Cache-Control': 'no-cache'}),
+      );
+      if (res.statusCode == 200) {
+        final body = res.data;
+        if (body is Map && body['status'] == true && body['data'] != null) {
+          final user = UserModel.fromJson(
+            Map<String, dynamic>.from(body['data']),
+          );
+          await _writeCachedUser(user);
+        }
+      }
+    } catch (_) {}
   }
 }
