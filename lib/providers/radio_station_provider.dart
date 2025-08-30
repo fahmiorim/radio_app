@@ -15,6 +15,7 @@ class RadioStationProvider with ChangeNotifier {
   NowPlayingInfo? _nowPlaying;
   WebSocketChannel? _nowPlayingChannel;
   StreamSubscription? _nowPlayingSubscription;
+  Timer? _reconnectTimer;
 
   RadioStation? get currentStation => _currentStation;
   bool get isPlaying => _isPlaying;
@@ -59,6 +60,7 @@ class RadioStationProvider with ChangeNotifier {
     _playerStateSubscription?.cancel();
     _nowPlayingSubscription?.cancel();
     _nowPlayingChannel?.sink.close();
+    _reconnectTimer?.cancel();
     super.dispose();
   }
 
@@ -66,6 +68,7 @@ class RadioStationProvider with ChangeNotifier {
     final station = _currentStation;
     if (station == null) return;
 
+    _reconnectTimer?.cancel();
     _nowPlayingSubscription?.cancel();
     _nowPlayingChannel?.sink.close();
 
@@ -82,10 +85,17 @@ class RadioStationProvider with ChangeNotifier {
         }
       }, onError: (error) {
         log('WebSocket error: $error');
-      });
+        _scheduleReconnect();
+      }, onDone: _scheduleReconnect);
     } catch (e) {
       log('Error connecting WebSocket: $e');
+      _scheduleReconnect();
     }
+  }
+
+  void _scheduleReconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 5), _connectNowPlaying);
   }
 
   Future<void> togglePlayPause() async {
