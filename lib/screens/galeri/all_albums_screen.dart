@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 
 import '../../config/app_colors.dart';
 import '../../providers/album_provider.dart';
@@ -15,27 +16,82 @@ class AllAlbumsScreen extends StatefulWidget {
   State<AllAlbumsScreen> createState() => _AllAlbumsScreenState();
 }
 
-class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
+class _AllAlbumsScreenState extends State<AllAlbumsScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   static const double _infiniteScrollThreshold = 300; // px sebelum mentok
+
+  bool _isMounted = false;
+  List<AlbumModel>? _lastAlbums;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _scrollController.addListener(_onScroll);
 
     // Fetch initial data after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlbumProvider>().fetchAllAlbums();
+      _loadInitialAlbums();
     });
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadInitialAlbums() async {
+    final provider = context.read<AlbumProvider>();
+    await provider.fetchAllAlbums();
+    _lastAlbums = List<AlbumModel>.from(provider.allAlbums);
+  }
+
+  Future<void> _refreshAlbums() async {
+    final provider = context.read<AlbumProvider>();
+    await provider.refreshAlbums();
+    _lastAlbums = List<AlbumModel>.from(provider.allAlbums);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<AlbumProvider>();
+    final currentAlbums = provider.allAlbums;
+    final shouldRefresh = _lastAlbums == null ||
+        !const DeepCollectionEquality().equals(_lastAlbums, currentAlbums);
+
+    if (shouldRefresh) {
+      await provider.refreshAlbums();
+      if (mounted) {
+        setState(() {
+          _lastAlbums = List<AlbumModel>.from(provider.allAlbums);
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
   }
 
   void _onScroll() {
@@ -127,7 +183,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen> {
                 (albumProvider.hasMore ? 1 : 0);
 
             return RefreshIndicator(
-              onRefresh: albumProvider.refreshAlbums,
+              onRefresh: _refreshAlbums,
               color: AppColors.primary,
               child: GridView.builder(
                 controller: _scrollController,

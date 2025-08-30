@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:collection/collection.dart';
 
 import '../../../config/app_routes.dart';
 import '../../../models/video_model.dart';
@@ -15,13 +16,70 @@ class VideoList extends StatefulWidget {
   State<VideoList> createState() => _VideoListState();
 }
 
-class _VideoListState extends State<VideoList> {
+class _VideoListState extends State<VideoList>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _isMounted = false;
+  List<VideoModel>? _lastVideos;
+
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VideoProvider>().fetchRecentVideos();
+      _loadData();
     });
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    final provider = context.read<VideoProvider>();
+    await provider.fetchRecentVideos();
+    _lastVideos = List<VideoModel>.from(provider.recentVideos);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<VideoProvider>();
+    final current = provider.recentVideos;
+    final shouldRefresh = _lastVideos == null ||
+        !const DeepCollectionEquality().equals(_lastVideos, current);
+
+    if (shouldRefresh) {
+      await provider.fetchRecentVideos(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _lastVideos = List<VideoModel>.from(provider.recentVideos);
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
   }
 
   Future<void> _openYoutubeVideo(VideoModel video) async {
@@ -62,6 +120,7 @@ class _VideoListState extends State<VideoList> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<VideoProvider>(
       builder: (context, videoProvider, _) {
         final isLoading = videoProvider.isLoadingRecent;

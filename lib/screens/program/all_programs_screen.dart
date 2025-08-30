@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/program_model.dart';
@@ -16,50 +17,79 @@ class AllProgramsScreen extends StatefulWidget {
   State<AllProgramsScreen> createState() => _AllProgramsScreenState();
 }
 
-class _AllProgramsScreenState extends State<AllProgramsScreen> {
+class _AllProgramsScreenState extends State<AllProgramsScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
-  bool _isInitialized = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      _isInitialized = true;
-      _loadInitialData();
-    }
-  }
-
-  Future<void> _loadInitialData() async {
-    final provider = context.read<ProgramProvider>();
-    try {
-      // Hanya fetch kalau masih kosong (biar nggak dobel sama init() di main.dart)
-      if (provider.allPrograms.isEmpty && !provider.isLoadingAll) {
-        await provider.fetchAllPrograms();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat daftar program')),
-        );
-      }
-    }
-  }
+  bool _isMounted = false;
+  List<Program>? _lastItems;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _scrollController.addListener(_onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    final provider = context.read<ProgramProvider>();
+    await provider.fetchAllPrograms(forceRefresh: true);
+    _lastItems = List<Program>.from(provider.allPrograms);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
   }
 
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<ProgramProvider>();
+    final currentItems = provider.allPrograms;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.fetchAllPrograms(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _lastItems = List<Program>.from(provider.allPrograms);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
+  }
+
   void _onScroll() {
-    if (_scrollController.position.pixels ==
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent) {
       _loadMorePrograms();
     }
@@ -168,7 +198,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen> {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _loadInitialData,
+                    onPressed: _loadData,
                     child: const Text('Coba Lagi'),
                   ),
                 ],

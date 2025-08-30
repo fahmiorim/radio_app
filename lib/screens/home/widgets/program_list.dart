@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/program_skeleton.dart';
@@ -16,18 +17,75 @@ class ProgramList extends StatefulWidget {
 }
 
 class _ProgramListState extends State<ProgramList>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
 
-  // ❌ tak perlu fetch di sini (sudah init di main.dart)
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     context.read<ProgramProvider>().fetchTodaysPrograms();
-  //   });
-  // }
+  bool _isMounted = false;
+  List<Program>? _lastItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMounted = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    await context.read<ProgramProvider>().fetchTodaysPrograms();
+    _lastItems =
+        List<Program>.from(context.read<ProgramProvider>().todaysPrograms);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<ProgramProvider>();
+    final currentItems = provider.todaysPrograms;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.fetchTodaysPrograms(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _lastItems =
+              List<Program>.from(provider.todaysPrograms);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

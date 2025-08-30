@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
 import '../../../models/album_model.dart';
 import '../../../providers/album_provider.dart';
 import '../../../config/app_routes.dart';
@@ -13,14 +14,71 @@ class AlbumList extends StatefulWidget {
   State<AlbumList> createState() => _AlbumListState();
 }
 
-class _AlbumListState extends State<AlbumList> {
+class _AlbumListState extends State<AlbumList>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _isMounted = false;
+  List<AlbumModel>? _lastAlbums;
+
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     // Fetch albums ketika widget ready (hindari panggil di build)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlbumProvider>().fetchFeaturedAlbums();
+      _loadData();
     });
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    final provider = context.read<AlbumProvider>();
+    await provider.fetchFeaturedAlbums();
+    _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<AlbumProvider>();
+    final current = provider.featuredAlbums;
+    final shouldRefresh = _lastAlbums == null ||
+        !const DeepCollectionEquality().equals(_lastAlbums, current);
+
+    if (shouldRefresh) {
+      await provider.fetchFeaturedAlbums();
+      if (mounted) {
+        setState(() {
+          _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
   }
 
   Widget _buildAlbumItem(BuildContext context, AlbumModel album) {
@@ -157,6 +215,7 @@ class _AlbumListState extends State<AlbumList> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<AlbumProvider>(
       builder: (context, albumProvider, _) {
         if (albumProvider.isLoadingFeatured) {

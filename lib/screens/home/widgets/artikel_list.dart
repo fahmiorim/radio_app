@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
+
+import '../../../models/artikel_model.dart';
 
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
@@ -16,23 +19,74 @@ class ArtikelList extends StatefulWidget {
 }
 
 class _ArtikelListState extends State<ArtikelList>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
 
-  bool _inited = false;
+  bool _isMounted = false;
+  List<Artikel>? _lastItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMounted = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    await context.read<ArtikelProvider>().init();
+    _lastItems =
+        List<Artikel>.from(context.read<ArtikelProvider>().recentArtikels);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_inited) return;
-    _inited = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final p = context.read<ArtikelProvider>();
-      if (!p.isLoadingRecent && p.recentArtikels.isEmpty) {
-        p.refreshRecent();
+      if (mounted) {
+        _checkAndRefresh();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<ArtikelProvider>();
+    final currentItems = provider.recentArtikels;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.refreshRecent();
+      if (mounted) {
+        setState(() {
+          _lastItems =
+              List<Artikel>.from(provider.recentArtikels);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
   }
 
   @override

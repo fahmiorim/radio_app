@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'package:collection/collection.dart';
 
 import '../../models/video_model.dart';
 import '../../providers/video_provider.dart';
@@ -16,35 +17,73 @@ class AllVideosScreen extends StatefulWidget {
   State<AllVideosScreen> createState() => _AllVideosScreenState();
 }
 
-class _AllVideosScreenState extends State<AllVideosScreen> {
+class _AllVideosScreenState extends State<AllVideosScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
   bool _isLoadingMore = false;
+  bool _isMounted = false;
+  List<VideoModel>? _lastVideos;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialVideos();
     });
+    WidgetsBinding.instance.addObserver(this);
   }
 
   Future<void> _loadInitialVideos() async {
     final videoProvider = context.read<VideoProvider>();
     await videoProvider.fetchAllVideos();
+    _lastVideos = List<VideoModel>.from(videoProvider.allVideos);
   }
 
   Future<void> _onRefresh() async {
     final videoProvider = context.read<VideoProvider>();
     videoProvider.resetPagination();
     await videoProvider.fetchAllVideos();
+    _lastVideos = List<VideoModel>.from(videoProvider.allVideos);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final vp = context.read<VideoProvider>();
+    final currentVideos = vp.allVideos;
+    final shouldRefresh = _lastVideos == null ||
+        !const DeepCollectionEquality().equals(_lastVideos, currentVideos);
+
+    if (shouldRefresh) {
+      vp.resetPagination();
+      await vp.fetchAllVideos();
+      if (mounted) {
+        setState(() {
+          _lastVideos = List<VideoModel>.from(vp.allVideos);
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
@@ -63,6 +102,13 @@ class _AllVideosScreenState extends State<AllVideosScreen> {
           setState(() => _isLoadingMore = false);
         }
       });
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
     }
   }
 
