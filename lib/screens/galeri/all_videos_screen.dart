@@ -1,9 +1,11 @@
+import 'dart:async';
+
+import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:intl/intl.dart';
-import 'package:collection/collection.dart';
 
 import '../../models/video_model.dart';
 import '../../providers/video_provider.dart';
@@ -31,11 +33,32 @@ class _AllVideosScreenState extends State<AllVideosScreen>
   void initState() {
     super.initState();
     _isMounted = true;
+    WidgetsBinding.instance.addObserver(this);
+
     _scrollController.addListener(_onScroll);
+
+    // Load awal setelah frame pertama agar aman untuk akses context
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialVideos();
     });
-    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Tunda ke frame berikutnya agar aman jika memicu setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_checkAndRefresh());
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      unawaited(_checkAndRefresh());
+    }
   }
 
   Future<void> _loadInitialVideos() async {
@@ -49,16 +72,6 @@ class _AllVideosScreenState extends State<AllVideosScreen>
     videoProvider.resetPagination();
     await videoProvider.fetchAllVideos();
     _lastVideos = List<VideoModel>.from(videoProvider.allVideos);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _checkAndRefresh();
-      }
-    });
   }
 
   Future<void> _checkAndRefresh() async {
@@ -105,13 +118,6 @@ class _AllVideosScreenState extends State<AllVideosScreen>
     }
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isMounted) {
-      _checkAndRefresh();
-    }
-  }
-
   Future<void> _openYoutube(String url) async {
     if (url.isEmpty) return;
     final uri = Uri.tryParse(url);
@@ -140,6 +146,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
       appBar: CustomAppBar.transparent(title: 'Semua Video'),
       body: Stack(
         children: [
+          // Background gradient + bubble
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -159,6 +166,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
             ),
           ),
 
+          // Content
           Positioned.fill(
             child: Consumer<VideoProvider>(
               builder: (context, vp, _) {

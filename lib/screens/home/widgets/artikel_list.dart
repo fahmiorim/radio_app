@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 
 import '../../../models/artikel_model.dart';
-
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
 import '../../../providers/artikel_provider.dart';
@@ -15,10 +14,10 @@ class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
 
   @override
-  State<ArtikelList> createState() => _ArtikelListState();
+  State<ArtikelList> createState() => ArtikelListState();
 }
 
-class _ArtikelListState extends State<ArtikelList>
+class ArtikelListState extends State<ArtikelList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
@@ -31,19 +30,34 @@ class _ArtikelListState extends State<ArtikelList>
     super.initState();
     _isMounted = true;
 
+    WidgetsBinding.instance.addObserver(this);
+
+    // Jalankan setelah frame pertama agar aman akses context
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _loadData();
       }
     });
-
-    WidgetsBinding.instance.addObserver(this);
   }
 
-  Future<void> _loadData() async {
-    await context.read<ArtikelProvider>().init();
-    _lastItems =
-        List<Artikel>.from(context.read<ArtikelProvider>().recentArtikels);
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    final prov = context.read<ArtikelProvider>();
+    await prov.init();
+    if (forceRefresh) {
+      await prov.refreshRecent();
+    } else {
+      await prov.fetchRecentArtikels();
+    }
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Artikel>.from(prov.recentArtikels);
+      });
+    }
+  }
+
+  // Bisa dipanggil parent untuk hard refresh
+  Future<void> refreshData() async {
+    await _loadData(forceRefresh: true);
   }
 
   @override
@@ -75,8 +89,7 @@ class _ArtikelListState extends State<ArtikelList>
       await provider.refreshRecent();
       if (mounted) {
         setState(() {
-          _lastItems =
-              List<Artikel>.from(provider.recentArtikels);
+          _lastItems = List<Artikel>.from(provider.recentArtikels);
         });
       }
     }
@@ -112,8 +125,7 @@ class _ArtikelListState extends State<ArtikelList>
               ),
               const SizedBox(height: 8),
               ElevatedButton(
-                onPressed: () =>
-                    context.read<ArtikelProvider>().refreshRecent(),
+                onPressed: () => context.read<ArtikelProvider>().refreshRecent(),
                 child: const Text('Coba Lagi'),
               ),
             ],
@@ -155,9 +167,7 @@ class _ArtikelListState extends State<ArtikelList>
                       key: const PageStorageKey('recent_articles_scroll'),
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
-                      itemCount: artikelList.length > 5
-                          ? 5
-                          : artikelList.length,
+                      itemCount: artikelList.length > 5 ? 5 : artikelList.length,
                       padding: const EdgeInsets.only(left: 16),
                       itemBuilder: (context, index) {
                         final artikel = artikelList[index];
@@ -187,10 +197,8 @@ class _ArtikelListState extends State<ArtikelList>
                                         : CachedNetworkImage(
                                             imageUrl: artikel.gambarUrl,
                                             fit: BoxFit.cover,
-                                            placeholder: (_, __) =>
-                                                _thumbLoading(),
-                                            errorWidget: (_, __, ___) =>
-                                                _thumbPlaceholder(),
+                                            placeholder: (_, __) => _thumbLoading(),
+                                            errorWidget: (_, __, ___) => _thumbPlaceholder(),
                                           ),
                                   ),
                                 ),
@@ -228,20 +236,20 @@ class _ArtikelListState extends State<ArtikelList>
   }
 
   Widget _thumbPlaceholder() => Container(
-    color: Colors.grey[900],
-    alignment: Alignment.center,
-    child: const Icon(
-      Icons.image_not_supported,
-      size: 40,
-      color: Colors.white38,
-    ),
-  );
+        color: Colors.grey[900],
+        alignment: Alignment.center,
+        child: const Icon(
+          Icons.image_not_supported,
+          size: 40,
+          color: Colors.white38,
+        ),
+      );
 
   Widget _thumbLoading() => const Center(
-    child: SizedBox(
-      width: 22,
-      height: 22,
-      child: CircularProgressIndicator(strokeWidth: 2),
-    ),
-  );
+        child: SizedBox(
+          width: 22,
+          height: 22,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
 }

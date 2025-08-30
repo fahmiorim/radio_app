@@ -39,17 +39,14 @@ class EventProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _svc.fetchAllEvents(
-        page: _currentPage,
-        perPage: 10,
-        forceRefresh: !cacheFirst,
-      );
+      // For initial load, use fetchRecentEvents
+      final recentEvents = await _svc.fetchRecentEvents(forceRefresh: !cacheFirst);
       
-      _events = List<Event>.from(response['events']);
-      _currentPage = response['currentPage'] ?? 1;
-      _lastPage = response['lastPage'] ?? 1;
-      _totalItems = response['total'] ?? _events.length;
-      _hasMore = response['hasMore'] ?? false;
+      _events = recentEvents;
+      _currentPage = 1;
+      _lastPage = 1;
+      _totalItems = recentEvents.length;
+      _hasMore = recentEvents.length >= 10; // If we got 10 items, there might be more
       
     } catch (e) {
       _error = e.toString();
@@ -69,7 +66,7 @@ class EventProvider with ChangeNotifier {
 
     try {
       final nextPage = _currentPage + 1;
-      final response = await _svc.fetchAllEvents(
+      final response = await _svc.fetchPaginatedEvents(
         page: nextPage,
         perPage: 10,
         forceRefresh: true,

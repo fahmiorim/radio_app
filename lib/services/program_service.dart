@@ -27,8 +27,12 @@ class ProgramService {
   bool _isFresh(DateTime? t, Duration ttl) =>
       t != null && DateTime.now().difference(t) < ttl;
 
+  DateTime? _lastRequestTime;
+  static const Duration _minRequestInterval = Duration(seconds: 10);
+
   Future<List<Program>> fetchTodaysPrograms({bool forceRefresh = false}) async {
     try {
+      // Check cache first
       if (!forceRefresh &&
           _todayCache != null &&
           _isFresh(_todayFetchedAt, _todayTtl)) {
@@ -36,8 +40,38 @@ class ProgramService {
         return _todayCache!;
       }
 
+      // Rate limiting
+      final now = DateTime.now();
+      if (_lastRequestTime != null && 
+          now.difference(_lastRequestTime!) < _minRequestInterval &&
+          _todayCache != null) {
+        developer.log('Rate limited - using cached data', name: _tag);
+        return _todayCache!;
+      }
+
+      _lastRequestTime = now;
       developer.log('Fetching today\'s programs (network)', name: _tag);
-      final res = await _dio.get('/program-siaran');
+      
+      // Add a small delay to prevent request flooding
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      final res = await _dio.get(
+        '/program-siaran',
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+          validateStatus: (status) => status! < 500, // Don't throw for 4xx errors
+        ),
+      );
+      
+      // Handle rate limiting
+      if (res.statusCode == 429) {
+        developer.log('Rate limited by server', name: _tag);
+        if (_todayCache != null) {
+          return _todayCache!;
+        }
+        throw Exception('Terlalu banyak permintaan. Silakan coba lagi nanti.');
+      }
 
       if (res.statusCode == 200) {
         final data = res.data;

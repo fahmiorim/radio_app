@@ -13,10 +13,10 @@ class PenyiarList extends StatefulWidget {
   const PenyiarList({super.key});
 
   @override
-  State<PenyiarList> createState() => _PenyiarListState();
+  State<PenyiarList> createState() => PenyiarListState();
 }
 
-class _PenyiarListState extends State<PenyiarList>
+class PenyiarListState extends State<PenyiarList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
@@ -40,9 +40,23 @@ class _PenyiarListState extends State<PenyiarList>
     WidgetsBinding.instance.addObserver(this);
   }
   
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     await context.read<PenyiarProvider>().init();
-    _lastItems = List<Penyiar>.from(context.read<PenyiarProvider>().items);
+    if (forceRefresh) {
+      await context.read<PenyiarProvider>().refresh();
+    } else {
+      await context.read<PenyiarProvider>().load();
+    }
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Penyiar>.from(context.read<PenyiarProvider>().items);
+      });
+    }
+  }
+  
+  // Public method to trigger refresh from parent
+  Future<void> refreshData() async {
+    await _loadData(forceRefresh: true);
   }
 
   @override

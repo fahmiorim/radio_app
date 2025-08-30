@@ -24,7 +24,7 @@ class EventService {
 
   String _key(int page, int perPage) => 'p:$page|pp:$perPage';
 
-  Future<Map<String, dynamic>> fetchAllEvents({
+  Future<Map<String, dynamic>> fetchPaginatedEvents({
     int page = 1,
     int perPage = 10,
     bool forceRefresh = false,
@@ -35,7 +35,7 @@ class EventService {
       if (!forceRefresh &&
           _allCache.containsKey(key) &&
           _isFresh(_allFetchedAt[key], _allTtl)) {
-        developer.log('Using cached events for $key', name: _tag);
+        developer.log('Using cached paginated events for $key', name: _tag);
         return {
           'events': _allCache[key]!,
           'currentPage': 1,
@@ -45,7 +45,7 @@ class EventService {
         };
       }
 
-      developer.log('Fetching all events (network) $key', name: _tag);
+      developer.log('Fetching paginated events (network) $key', name: _tag);
       final res = await _dio.get(
         '/event/semua',
         queryParameters: {'page': page, 'per_page': perPage},

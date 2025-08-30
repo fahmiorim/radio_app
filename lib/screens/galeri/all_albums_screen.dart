@@ -28,13 +28,16 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   void initState() {
     super.initState();
     _isMounted = true;
-    _scrollController.addListener(_onScroll);
 
-    // Fetch initial data after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadInitialAlbums();
-    });
+    _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addObserver(this);
+
+    // Load awal setelah frame pertama agar aman untuk akses context
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadInitialAlbums();
+      }
+    });
   }
 
   Future<void> _loadInitialAlbums() async {
@@ -52,6 +55,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Tunda ke frame berikutnya agar aman jika memicu setState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _checkAndRefresh();
@@ -78,6 +82,13 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
+  }
+
+  @override
   void dispose() {
     _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
@@ -87,15 +98,8 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isMounted) {
-      _checkAndRefresh();
-    }
-  }
-
   void _onScroll() {
-    final albumProvider = Provider.of<AlbumProvider>(context, listen: false);
+    final albumProvider = context.read<AlbumProvider>();
     if (!albumProvider.isLoadingAll && albumProvider.hasMore) {
       final position = _scrollController.position;
       if (position.pixels + _infiniteScrollThreshold >=
@@ -148,7 +152,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
             }
 
             // Error state
-            if (albumProvider.hasErrorAll) {
+            if (albumProvider.hasErrorAll && albumProvider.allAlbums.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -160,7 +164,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: albumProvider.fetchAllAlbums,
+                      onPressed: _refreshAlbums,
                       child: const Text('Coba Lagi'),
                     ),
                   ],
@@ -225,13 +229,13 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   }
 
   Widget _bubble(double size) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withOpacity(0.05),
-    ),
-  );
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withOpacity(0.05),
+        ),
+      );
 }
 
 class _AlbumCard extends StatelessWidget {
@@ -352,7 +356,7 @@ class _AlbumCard extends StatelessWidget {
                 ),
               ),
             ),
-            // (opsional) bisa tambah footer info lain di sini
+            // (opsional) footer info lain
           ],
         ),
       ),
