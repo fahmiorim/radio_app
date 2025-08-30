@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 // Config
 import 'package:radio_odan_app/config/app_colors.dart';
+
+// Providers
+import '../../providers/program_provider.dart';
+import '../../providers/event_provider.dart';
+import '../../providers/artikel_provider.dart';
+import '../../providers/penyiar_provider.dart';
 
 // Widgets
 import '../../widgets/app_header.dart';
@@ -12,6 +19,8 @@ import 'widgets/penyiar_list.dart';
 import 'widgets/program_list.dart';
 import 'widgets/event_list.dart';
 import 'widgets/artikel_list.dart';
+
+// Refresh indicator key for the home screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,6 +44,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  
+  // Refresh all list widgets
+  Future<void> _refreshAll() async {
+    try {
+      final programProvider = Provider.of<ProgramProvider>(context, listen: false);
+      final eventProvider = Provider.of<EventProvider>(context, listen: false);
+      final artikelProvider = Provider.of<ArtikelProvider>(context, listen: false);
+      final penyiarProvider = Provider.of<PenyiarProvider>(context, listen: false);
+      
+      // Force refresh all providers in parallel using their specific refresh methods
+      await Future.wait([
+        programProvider.refreshAll(),
+        eventProvider.refresh(),
+        artikelProvider.fetchRecentArtikels(),
+        penyiarProvider.refresh(),
+      ]);
+    } catch (e) {
+      debugPrint('Error during refresh: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,9 +142,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               // Main Content
               SafeArea(
-                child: CustomScrollView(
-                  key: const Key('home_scroll_view'),
-                  physics: const BouncingScrollPhysics(),
+                child: RefreshIndicator(
+                  key: _refreshIndicatorKey,
+                  onRefresh: _refreshAll,
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.backgroundDark,
+                  child: CustomScrollView(
+                    key: const Key('home_scroll_view'),
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                   slivers: [
                     // Header
                     SliverToBoxAdapter(
@@ -142,19 +177,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           const SizedBox(key: Key('top_padding'), height: 4),
-                          const PenyiarList(key: Key('penyiar_list')),
+                          // List widgets
+                          const PenyiarList(),
                           const SizedBox(height: 16),
-                          const ProgramList(key: Key('program_list')),
+                          const ProgramList(),
                           const SizedBox(height: 8),
-                          const EventList(key: Key('event_list')),
+                          const EventList(),
                           const SizedBox(height: 8),
-                          const ArtikelList(key: Key('artikel_list')),
+                          const ArtikelList(),
                         ]),
                       ),
                     ),
                   ],
+                    ),
+                  ),
                 ),
-              ),
             ],
           );
         },

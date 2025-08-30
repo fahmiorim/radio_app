@@ -28,20 +28,22 @@ class _ProgramListState extends State<ProgramList>
   void initState() {
     super.initState();
     _isMounted = true;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadData();
-      }
-    });
-
     WidgetsBinding.instance.addObserver(this);
+    _loadData();
   }
 
-  Future<void> _loadData() async {
-    await context.read<ProgramProvider>().fetchTodaysPrograms();
-    _lastItems =
-        List<Program>.from(context.read<ProgramProvider>().todaysPrograms);
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    await context.read<ProgramProvider>().fetchTodaysPrograms(forceRefresh: forceRefresh);
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Program>.from(context.read<ProgramProvider>().todaysPrograms);
+      });
+    }
+  }
+  
+  // Public method to trigger refresh from parent
+  Future<void> refreshData() async {
+    await _loadData(forceRefresh: true);
   }
 
   @override
@@ -52,13 +54,6 @@ class _ProgramListState extends State<ProgramList>
         _checkAndRefresh();
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _isMounted = false;
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
   }
 
   Future<void> _checkAndRefresh() async {

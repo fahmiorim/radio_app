@@ -14,10 +14,10 @@ class EventList extends StatefulWidget {
   const EventList({super.key});
 
   @override
-  State<EventList> createState() => _EventListState();
+  State<EventList> createState() => EventListState();
 }
 
-class _EventListState extends State<EventList>
+class EventListState extends State<EventList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
@@ -39,9 +39,23 @@ class _EventListState extends State<EventList>
     WidgetsBinding.instance.addObserver(this);
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     await context.read<EventProvider>().init();
-    _lastItems = List<Event>.from(context.read<EventProvider>().events);
+    if (forceRefresh) {
+      await context.read<EventProvider>().refresh();
+    } else {
+      await context.read<EventProvider>().load(cacheFirst: true);
+    }
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Event>.from(context.read<EventProvider>().events);
+      });
+    }
+  }
+  
+  // Public method to trigger refresh from parent
+  Future<void> refreshData() async {
+    await _loadData(forceRefresh: true);
   }
 
   @override

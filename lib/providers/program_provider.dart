@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/models/program_model.dart';
@@ -41,12 +42,33 @@ class ProgramProvider with ChangeNotifier {
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
-    await refreshAll();
+
+    // Load cached data first
+    await fetchTodaysPrograms(forceRefresh: false);
+
+    // Then refresh in background
+    unawaited(refreshAll());
   }
 
-  Future<void> fetchTodaysPrograms({bool forceRefresh = false}) async {
-    if (_isLoadingTodays && !forceRefresh) return;
+  DateTime? _lastFetchAttempt;
+  static const Duration _minFetchInterval = Duration(seconds: 30);
 
+  Future<void> fetchTodaysPrograms({bool forceRefresh = false}) async {
+    final now = DateTime.now();
+
+    // Prevent too frequent requests
+    if (_lastFetchAttempt != null &&
+        now.difference(_lastFetchAttempt!) < _minFetchInterval &&
+        !forceRefresh) {
+      return;
+    }
+
+    if (_isLoadingTodays) {
+      if (!forceRefresh) return;
+      // If force refresh is true, we'll let it proceed even if already loading
+    }
+
+    _lastFetchAttempt = now;
     _isLoadingTodays = true;
     _todaysError = null;
     notifyListeners();
@@ -60,6 +82,11 @@ class ProgramProvider with ChangeNotifier {
     } catch (e) {
       _todaysError = e.toString();
       debugPrint('Error fetching today\'s programs: $e');
+
+      // If we have cached data, don't show the error to the user
+      if (_todaysPrograms.isNotEmpty) {
+        _todaysError = null;
+      }
     } finally {
       _isLoadingTodays = false;
       notifyListeners();

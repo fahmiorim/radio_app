@@ -15,10 +15,10 @@ class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
 
   @override
-  State<ArtikelList> createState() => _ArtikelListState();
+  State<ArtikelList> createState() => ArtikelListState();
 }
 
-class _ArtikelListState extends State<ArtikelList>
+class ArtikelListState extends State<ArtikelList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
@@ -40,10 +40,21 @@ class _ArtikelListState extends State<ArtikelList>
     WidgetsBinding.instance.addObserver(this);
   }
 
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
     await context.read<ArtikelProvider>().init();
-    _lastItems =
-        List<Artikel>.from(context.read<ArtikelProvider>().recentArtikels);
+    if (forceRefresh) {
+      await context.read<ArtikelProvider>().fetchRecentArtikels();
+    }
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Artikel>.from(context.read<ArtikelProvider>().recentArtikels);
+      });
+    }
+  }
+  
+  // Public method to trigger refresh from parent
+  Future<void> refreshData() async {
+    await _loadData(forceRefresh: true);
   }
 
   @override
