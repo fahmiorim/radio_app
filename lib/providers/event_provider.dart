@@ -40,17 +40,18 @@ class EventProvider with ChangeNotifier {
 
     try {
       // For initial load, use fetchRecentEvents
-      final recentEvents = await _svc.fetchRecentEvents(forceRefresh: !cacheFirst);
-      
+      final recentEvents = await _svc.fetchRecentEvents(
+        forceRefresh: !cacheFirst,
+      );
+
       _events = recentEvents;
       _currentPage = 1;
       _lastPage = 1;
       _totalItems = recentEvents.length;
-      _hasMore = recentEvents.length >= 10; // If we got 10 items, there might be more
-      
+      _hasMore =
+          recentEvents.length >= 10; // If we got 10 items, there might be more
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error fetching events: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -71,17 +72,15 @@ class EventProvider with ChangeNotifier {
         perPage: 10,
         forceRefresh: true,
       );
-      
+
       final newEvents = List<Event>.from(response['events']);
       _events.addAll(newEvents);
       _currentPage = response['currentPage'] ?? nextPage;
       _lastPage = response['lastPage'] ?? _lastPage;
       _totalItems = response['total'] ?? _totalItems;
       _hasMore = response['hasMore'] ?? false;
-      
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error loading more events: $e');
     } finally {
       _isLoadingMore = false;
       notifyListeners();

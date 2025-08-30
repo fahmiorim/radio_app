@@ -33,8 +33,6 @@ class _GaleriScreenState extends State<GaleriScreen> {
         ).fetchFeaturedAlbums(forceRefresh: true),
       ]);
     } catch (e) {
-      // Handle error if needed
-      debugPrint('Error refreshing data: $e');
       rethrow;
     }
   }

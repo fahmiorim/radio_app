@@ -68,7 +68,8 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
     final provider = context.read<ProgramProvider>();
     final currentItems = provider.allPrograms;
-    final shouldRefresh = _lastItems == null ||
+    final shouldRefresh =
+        _lastItems == null ||
         !const DeepCollectionEquality().equals(_lastItems, currentItems);
 
     if (shouldRefresh) {
@@ -104,7 +105,6 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     try {
       await provider.loadMorePrograms();
     } catch (e) {
-      debugPrint("Gagal memuat program tambahan: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Gagal memuat program tambahan')),

@@ -43,8 +43,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
     try {
       await programProvider.fetchProgramById(programId);
     } catch (e) {
-      // error sudah di-handle provider
-      debugPrint('Error loading program: $e');
+      rethrow;
     }
   }
 

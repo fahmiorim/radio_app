@@ -53,9 +53,7 @@ class UserProvider with ChangeNotifier {
             _error = null;
             notifyListeners();
           }
-        } catch (e) {
-          debugPrint('Error loading cached user data: $e');
-        }
+        } catch (e) {}
       }
 
       // Always try to get fresh data
@@ -78,7 +76,6 @@ class UserProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error loading user: $e');
       rethrow;
     } finally {
       _isLoading = false;

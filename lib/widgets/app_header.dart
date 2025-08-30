@@ -14,7 +14,7 @@ class AppHeader extends StatefulWidget {
   final bool isLoading;
 
   const AppHeader({
-    super.key, 
+    super.key,
     this.onMenuTap,
     this.forceRefreshOnResume = false,
     this.isLoading = false,
@@ -48,8 +48,8 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && 
-        widget.forceRefreshOnResume && 
+    if (state == AppLifecycleState.resumed &&
+        widget.forceRefreshOnResume &&
         _isMounted) {
       _loadUserData(forceRefresh: true);
     }
@@ -57,24 +57,23 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
   Future<void> _loadUserData({bool forceRefresh = false}) async {
     if (!_isMounted) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final userProvider = context.read<UserProvider>();
-      
+
       // Load data with cooldown check
       await userProvider.loadUser(cacheFirst: !forceRefresh);
-      
+
       if (!_isMounted) return;
-      
+
       // Update cached user data
       if (userProvider.user != null) {
         _cachedUser = userProvider.user;
       }
-      
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      rethrow;
     } finally {
       if (_isMounted) {
         setState(() => _isLoading = false);
@@ -86,10 +85,10 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
     if (user == null) {
       return _buildInitialsAvatar('U');
     }
-    
+
     final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U';
     final avatarUrl = user.avatarUrl;
-    
+
     if (avatarUrl.isEmpty) {
       return _buildInitialsAvatar(initial);
     }
@@ -116,11 +115,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
     return Shimmer.fromColors(
       baseColor: Colors.grey[300]!,
       highlightColor: Colors.grey[100]!,
-      child: Container(
-        width: 40,
-        height: 40,
-        color: Colors.white,
-      ),
+      child: Container(width: 40, height: 40, color: Colors.white),
     );
   }
 
@@ -157,7 +152,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
       builder: (context, user, _) {
         // Gunakan data yang di-cache jika tersedia dan tidak ada data baru
         final displayUser = user ?? _cachedUser;
-        
+
         if (_isLoading && displayUser == null) {
           return const AppHeaderSkeleton();
         }
@@ -226,11 +221,13 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
               ),
               InkWell(
                 borderRadius: BorderRadius.circular(30),
-                onTap: widget.onMenuTap ?? () {
-                  if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
-                    Scaffold.of(context).openDrawer();
-                  }
-                },
+                onTap:
+                    widget.onMenuTap ??
+                    () {
+                      if (Scaffold.maybeOf(context)?.hasDrawer ?? false) {
+                        Scaffold.of(context).openDrawer();
+                      }
+                    },
                 child: _buildProfileAvatar(context, displayUser),
               ),
             ],

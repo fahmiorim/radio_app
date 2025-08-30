@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
         penyiarProvider.refresh(),
       ]);
     } catch (e) {
-      debugPrint('Error during refresh: $e');
+      rethrow;
     }
   }
 

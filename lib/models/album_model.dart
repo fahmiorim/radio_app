@@ -1,5 +1,4 @@
 import '../config/app_api_config.dart';
-import 'package:flutter/foundation.dart';
 
 String _resolveAssetUrl(String path) {
   final p = path.trim();
@@ -183,7 +182,6 @@ class AlbumDetailModel {
 
       return AlbumDetailModel(name: name, album: album, photos: photos);
     } catch (e) {
-      debugPrint('Error parsing AlbumDetailModel: $e');
       rethrow;
     }
   }

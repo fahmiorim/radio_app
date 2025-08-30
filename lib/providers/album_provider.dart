@@ -38,7 +38,8 @@ class AlbumProvider with ChangeNotifier {
   bool _isLoadingDetail = false;
   String? _detailError;
   AlbumDetailModel? _albumDetail;
-  final Map<String, List<PhotoModel>> _albumPhotos = {}; // For future photo storage
+  final Map<String, List<PhotoModel>> _albumPhotos =
+      {}; // For future photo storage
 
   bool get isLoadingDetail => _isLoadingDetail;
   String? get detailError => _detailError;
@@ -65,7 +66,6 @@ class AlbumProvider with ChangeNotifier {
     } catch (e) {
       _hasErrorFeatured = true;
       _errorMessageFeatured = 'Gagal memuat album terbaru. Silakan coba lagi.';
-      debugPrint('fetchFeaturedAlbums error: $e');
     } finally {
       _isLoadingFeatured = false;
       notifyListeners();
@@ -80,7 +80,7 @@ class AlbumProvider with ChangeNotifier {
     _hasErrorFeatured = false;
     _errorMessageFeatured = '';
     notifyListeners();
-    
+
     // Force fetch fresh data
     await fetchFeaturedAlbums(forceRefresh: true);
   }
@@ -137,7 +137,6 @@ class AlbumProvider with ChangeNotifier {
       _errorMessageAll = loadMore
           ? 'Gagal memuat album tambahan.'
           : 'Gagal memuat daftar album. Silakan coba lagi.';
-      debugPrint('fetchAllAlbums error: $e');
     } finally {
       if (loadMore) {
         _isLoadingMore = false;
@@ -212,7 +211,6 @@ class AlbumProvider with ChangeNotifier {
       }
     } catch (e) {
       _detailError = 'Gagal memuat detail album. Silakan coba lagi.';
-      debugPrint('fetchAlbumDetail error: $e');
     } finally {
       _isLoadingDetail = false;
       notifyListeners();

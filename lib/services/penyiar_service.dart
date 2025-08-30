@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../models/penyiar_model.dart';
 import '../config/api_client.dart';
 
@@ -65,8 +64,7 @@ class PenyiarService {
             .toList();
       }
     } catch (e) {
-      // Ignore error in background fetch
-      debugPrint('Background fetch error: $e');
+      rethrow;
     }
   }
 

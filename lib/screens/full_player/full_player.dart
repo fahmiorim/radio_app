@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -25,19 +24,21 @@ class _FullPlayerState extends State<FullPlayer> {
 
   Future<void> _initializePlayer() async {
     try {
-      final radioProvider = Provider.of<RadioStationProvider>(context, listen: false);
+      final radioProvider = Provider.of<RadioStationProvider>(
+        context,
+        listen: false,
+      );
       final currentStation = radioProvider.currentStation;
-      
+
       if (currentStation != null) {
-        debugPrint('Initializing player with station: ${currentStation.title}');
         await _audioManager.playRadio(currentStation);
-        debugPrint('Player initialized successfully');
       }
     } catch (e) {
-      debugPrint('Error initializing player: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memutar radio. Coba lagi nanti.')),
+          const SnackBar(
+            content: Text('Gagal memutar radio. Coba lagi nanti.'),
+          ),
         );
       }
     }

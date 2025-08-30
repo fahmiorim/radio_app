@@ -6,7 +6,7 @@ import 'package:radio_odan_app/services/penyiar_service.dart';
 class PenyiarProvider with ChangeNotifier {
   final PenyiarService _svc = PenyiarService.I;
   static const Duration _refreshCooldown = Duration(seconds: 30);
-  
+
   List<Penyiar> _items = [];
   bool _isLoading = false;
   DateTime? _lastUpdated;
@@ -33,8 +33,8 @@ class PenyiarProvider with ChangeNotifier {
     }
 
     // Check cooldown period
-    if (!forceRefresh && 
-        _lastUpdated != null && 
+    if (!forceRefresh &&
+        _lastUpdated != null &&
         DateTime.now().difference(_lastUpdated!) < _refreshCooldown) {
       return;
     }
@@ -42,13 +42,15 @@ class PenyiarProvider with ChangeNotifier {
     _currentLoadCompleter = Completer<void>();
     _isLoading = true;
     _error = null;
-    
+
     // Only notify if we already have data to prevent unnecessary rebuilds
     if (_items.isNotEmpty) notifyListeners();
 
     try {
       try {
-        final data = await _svc.fetchPenyiar(forceRefresh: forceRefresh || _items.isEmpty);
+        final data = await _svc.fetchPenyiar(
+          forceRefresh: forceRefresh || _items.isEmpty,
+        );
         _items = List<Penyiar>.from(data);
         _error = null;
         _lastUpdated = DateTime.now();
@@ -71,7 +73,6 @@ class PenyiarProvider with ChangeNotifier {
       }
     } catch (e) {
       _error = e.toString();
-      debugPrint('Error fetching penyiar: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -83,17 +84,17 @@ class PenyiarProvider with ChangeNotifier {
   Future<void> refresh() {
     // Cancel any pending debounce
     _debounceTimer?.cancel();
-    
+
     // If already refreshing, return the current future
     if (_isLoading) {
       return _currentLoadCompleter?.future ?? Future.value();
     }
-    
+
     // Debounce refresh to prevent multiple rapid calls
     if (_debounceTimer?.isActive ?? false) {
       _debounceTimer!.cancel();
     }
-    
+
     final completer = Completer<void>();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
       try {
@@ -103,7 +104,7 @@ class PenyiarProvider with ChangeNotifier {
         completer.completeError(e);
       }
     });
-    
+
     return completer.future;
   }
 

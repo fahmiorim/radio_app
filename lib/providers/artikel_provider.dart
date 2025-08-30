@@ -70,7 +70,6 @@ class ArtikelProvider with ChangeNotifier {
       _recent = await _svc.fetchRecentArtikel(forceRefresh: !cacheFirst);
     } catch (e) {
       _errorRecent = 'Gagal memuat artikel terbaru. Silakan coba lagi.';
-      debugPrint('Error recent artikel: $e');
     } finally {
       _loadingRecent = false;
       notifyListeners();
@@ -101,7 +100,6 @@ class ArtikelProvider with ChangeNotifier {
       _hasMore = _page < _lastPage;
     } catch (e) {
       _errorList = 'Gagal memuat artikel. Silakan coba lagi.';
-      debugPrint('Error list artikel: $e');
     } finally {
       _loadingList = false;
       notifyListeners();
@@ -127,7 +125,6 @@ class ArtikelProvider with ChangeNotifier {
       _hasMore = _page < _lastPage;
     } catch (e) {
       _errorList = 'Gagal memuat artikel tambahan. Silakan coba lagi.';
-      debugPrint('Error load more artikel: $e');
     } finally {
       _loadingMore = false;
       notifyListeners();
@@ -144,7 +141,6 @@ class ArtikelProvider with ChangeNotifier {
       _selected = await _svc.fetchArtikelBySlug(slug);
     } catch (e) {
       _errorDetail = e.toString();
-      debugPrint('Error detail artikel: $e');
     } finally {
       _loadingDetail = false;
       notifyListeners();

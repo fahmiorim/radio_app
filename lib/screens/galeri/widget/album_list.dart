@@ -51,9 +51,7 @@ class _AlbumListState extends State<AlbumList>
         });
       }
     } catch (e) {
-      if (mounted) {
-        debugPrint('Error loading albums: $e');
-      }
+      if (mounted) {}
       rethrow;
     }
   }

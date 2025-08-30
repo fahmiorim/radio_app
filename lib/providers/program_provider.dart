@@ -81,7 +81,6 @@ class ProgramProvider with ChangeNotifier {
       _todaysError = null;
     } catch (e) {
       _todaysError = e.toString();
-      debugPrint('Error fetching today\'s programs: $e');
 
       // If we have cached data, don't show the error to the user
       if (_todaysPrograms.isNotEmpty) {
@@ -131,7 +130,6 @@ class ProgramProvider with ChangeNotifier {
       _allProgramsError = null;
     } catch (e) {
       _allProgramsError = e.toString();
-      debugPrint('Error fetching all programs: $e');
       if (loadMore) {
         _currentPage = (_currentPage > 1) ? _currentPage - 1 : 1;
       }
@@ -163,7 +161,6 @@ class ProgramProvider with ChangeNotifier {
       return program;
     } catch (e) {
       _detailError = e.toString();
-      debugPrint('Error fetching program $id: $e');
       rethrow;
     } finally {
       _isLoadingDetail = false;
