@@ -33,12 +33,6 @@ class _FullPlayerState extends State<FullPlayer> {
     _initializePlayer();
   }
 
-  @override
-  void dispose() {
-    _audioManager.dispose();
-    super.dispose();
-  }
-
   Future<void> _initializePlayer() async {
     try {
       final radioProvider = Provider.of<RadioStationProvider>(
