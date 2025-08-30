@@ -37,12 +37,12 @@ class AlbumProvider with ChangeNotifier {
 
   bool _isLoadingDetail = false;
   String? _detailError;
-  AlbumModel? _albumDetail;
+  AlbumDetailModel? _albumDetail;
   final Map<String, List<PhotoModel>> _albumPhotos = {}; // For future photo storage
 
   bool get isLoadingDetail => _isLoadingDetail;
   String? get detailError => _detailError;
-  AlbumModel? get albumDetail => _albumDetail;
+  AlbumDetailModel? get albumDetail => _albumDetail;
   List<PhotoModel>? getAlbumPhotos(String slug) => _albumPhotos[slug];
 
   Future<void> init() async {
@@ -168,17 +168,33 @@ class AlbumProvider with ChangeNotifier {
     try {
       // First try to find the album in the existing lists
       try {
-        _albumDetail = _featuredAlbums.firstWhere(
+        // First try to find in featured albums
+        final cachedAlbum = _featuredAlbums.firstWhere(
           (album) => album.slug == slug,
+        );
+        _albumDetail = AlbumDetailModel(
+          name: cachedAlbum.name,
+          album: cachedAlbum,
+          photos: const [],
         );
       } catch (_) {
         try {
-          _albumDetail = _allAlbums.firstWhere(
+          // Then try to find in all albums
+          final cachedAlbum = _allAlbums.firstWhere(
             (album) => album.slug == slug,
+          );
+          _albumDetail = AlbumDetailModel(
+            name: cachedAlbum.name,
+            album: cachedAlbum,
+            photos: const [],
           );
         } catch (_) {
           // If not found in cache, fetch from API
           _albumDetail = await _svc.fetchAlbumDetail(slug);
+          // Cache the album details for future use
+          if (!_allAlbums.any((a) => a.id == _albumDetail?.album.id)) {
+            _allAlbums.add(_albumDetail!.album);
+          }
         }
       }
     } catch (e) {

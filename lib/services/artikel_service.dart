@@ -94,27 +94,41 @@ class ArtikelService {
             .map<Artikel>((e) => Artikel.fromJson(Map<String, dynamic>.from(e)))
             .toList();
 
-        int currentPage =
-            _intOf(_pick(data, ['current_page', 'currentPage'])) ?? page;
-        int lastPage = _intOf(_pick(data, ['last_page', 'lastPage'])) ?? 1;
-
-        if ((data is Map) && data['data'] is Map) {
-          final inner = data['data'];
-          currentPage =
-              _intOf(_pick(inner, ['current_page', 'currentPage'])) ??
-              currentPage;
-          lastPage =
-              _intOf(_pick(inner, ['last_page', 'lastPage'])) ?? lastPage;
+        int currentPage = page;
+        int lastPage = 1;
+        int totalItems = 0;
+        
+        if (data is Map) {
+          // Handle pagination from 'pagination' object
+          if (data['pagination'] is Map) {
+            final pagination = data['pagination'] as Map;
+            currentPage = _intOf(pagination['current_page'] ?? pagination['currentPage']) ?? page;
+            lastPage = _intOf(pagination['last_page'] ?? pagination['lastPage']) ?? 1;
+            totalItems = _intOf(pagination['total']) ?? 0;
+          } 
+          // Fallback to direct fields
+          else {
+            currentPage = _intOf(_pick(data, ['current_page', 'currentPage'])) ?? page;
+            lastPage = _intOf(_pick(data, ['last_page', 'lastPage'])) ?? 1;
+            totalItems = _intOf(data['total'] ?? 0) ?? 0;
+          }
         }
 
         _allCache[key] = items;
-        _allMeta[key] = {'currentPage': currentPage, 'lastPage': lastPage};
+        _allMeta[key] = {
+          'currentPage': currentPage, 
+          'lastPage': lastPage,
+          'total': totalItems,
+          'perPage': perPage,
+        };
         _allFetchedAt[key] = DateTime.now();
 
         return {
           'data': items,
           'currentPage': currentPage,
           'lastPage': lastPage,
+          'total': totalItems,
+          'perPage': perPage,
         };
       }
 
@@ -198,12 +212,30 @@ class ArtikelService {
   List _extractList(dynamic data) {
     if (data is List) return data;
     if (data is Map) {
+      // Handle direct data array in response
       if (data['data'] is List) return data['data'] as List;
+      
+      // Handle status-based response
       if (data['status'] == true && data['data'] is List) {
         return data['data'] as List;
       }
-      if (data['data'] is Map && data['data']['data'] is List) {
-        return data['data']['data'] as List;
+      
+      // Handle nested data structure
+      if (data['data'] is Map) {
+        final inner = data['data'] as Map;
+        if (inner['data'] is List) return inner['data'] as List;
+      }
+      
+      // Handle root-level array with pagination
+      if (data['pagination'] is Map) {
+        final list = <dynamic>[];
+        // Copy all non-pagination fields that are lists
+        data.forEach((key, value) {
+          if (key != 'pagination' && key != 'status' && value is List) {
+            list.addAll(value);
+          }
+        });
+        return list;
       }
     }
     return const [];

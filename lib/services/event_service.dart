@@ -24,7 +24,7 @@ class EventService {
 
   String _key(int page, int perPage) => 'p:$page|pp:$perPage';
 
-  Future<List<Event>> fetchAllEvents({
+  Future<Map<String, dynamic>> fetchAllEvents({
     int page = 1,
     int perPage = 10,
     bool forceRefresh = false,
@@ -36,7 +36,13 @@ class EventService {
           _allCache.containsKey(key) &&
           _isFresh(_allFetchedAt[key], _allTtl)) {
         developer.log('Using cached events for $key', name: _tag);
-        return _allCache[key]!;
+        return {
+          'events': _allCache[key]!,
+          'currentPage': 1,
+          'lastPage': 1,
+          'total': _allCache[key]?.length ?? 0,
+          'hasMore': false,
+        };
       }
 
       developer.log('Fetching all events (network) $key', name: _tag);
@@ -47,11 +53,13 @@ class EventService {
 
       if (res.statusCode == 200) {
         final data = res.data;
+        
+        if (data is! Map || data['status'] != true || data['data'] is! Map) {
+          throw Exception('Format respons tidak valid');
+        }
 
-        final list =
-            (data is Map && data['status'] == true && data['data'] is List)
-            ? (data['data'] as List)
-            : (data is List ? data : const []);
+        final responseData = data['data'] as Map<String, dynamic>;
+        final list = responseData['data'] is List ? (responseData['data'] as List) : const [];
 
         final items = list
             .map((e) => Event.fromJson(Map<String, dynamic>.from(e)))
@@ -59,24 +67,60 @@ class EventService {
 
         _allCache[key] = items;
         _allFetchedAt[key] = DateTime.now();
-        developer.log('Fetched ${items.length} events for $key', name: _tag);
+        
+        developer.log(
+          'Fetched ${items.length} events (page $page of ${responseData['last_page']})',
+          name: _tag,
+        );
 
-        return items;
+        return {
+          'events': items,
+          'currentPage': (responseData['current_page'] as int?) ?? 1,
+          'lastPage': (responseData['last_page'] as int?) ?? 1,
+          'total': (responseData['total'] as int?) ?? items.length,
+          'hasMore': (responseData['next_page_url'] != null),
+        };
       }
 
-      if (_allCache.containsKey(key)) return _allCache[key]!;
+      if (_allCache.containsKey(key)) {
+        return {
+          'events': _allCache[key]!,
+          'currentPage': 1,
+          'lastPage': 1,
+          'total': _allCache[key]?.length ?? 0,
+          'hasMore': false,
+        };
+      }
+      
+      final errorData = res.data;
       throw Exception(
-        res.data is Map && res.data['message'] != null
-            ? res.data['message']
+        errorData is Map && errorData['message'] != null
+            ? errorData['message']
             : 'Gagal mengambil data semua event',
       );
     } on DioException catch (e) {
       developer.log('DioError all events: ${e.message}', name: _tag, error: e);
-      if (_allCache.containsKey(key)) return _allCache[key]!;
+      if (_allCache.containsKey(key)) {
+        return {
+          'events': _allCache[key]!,
+          'currentPage': 1,
+          'lastPage': 1,
+          'total': _allCache[key]?.length ?? 0,
+          'hasMore': false,
+        };
+      }
       throw Exception('Gagal terhubung ke server: ${e.message}');
     } catch (e) {
       developer.log('Error all events', name: _tag, error: e);
-      if (_allCache.containsKey(key)) return _allCache[key]!;
+      if (_allCache.containsKey(key)) {
+        return {
+          'events': _allCache[key]!,
+          'currentPage': 1,
+          'lastPage': 1,
+          'total': _allCache[key]?.length ?? 0,
+          'hasMore': false,
+        };
+      }
       throw Exception('Terjadi kesalahan: $e');
     }
   }

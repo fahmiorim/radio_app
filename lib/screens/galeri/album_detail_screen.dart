@@ -100,12 +100,12 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                 );
               }
 
-              final album = provider.albumDetail;
-              if (album == null) {
+              final albumDetail = provider.albumDetail;
+              if (albumDetail == null) {
                 return _buildErrorWidget('Data album tidak valid');
               }
 
-              return _buildAlbumDetail(context, album);
+              return _buildAlbumDetail(context, albumDetail);
             },
           ),
         ],
@@ -113,11 +113,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
     );
   }
 
-  Widget _buildAlbumDetail(BuildContext context, AlbumModel album) {
-    // TODO: Update this to fetch and display photos for the album
-    final photos =
-        <PhotoModel>[]; // Temporary empty list, implement photo fetching
-    final albumName = album.name;
+  Widget _buildAlbumDetail(BuildContext context, AlbumDetailModel albumDetail) {
+    final album = albumDetail.album;
+    final photos = albumDetail.photos;
     final hasPhotos = photos.isNotEmpty;
 
     final width = MediaQuery.of(context).size.width;
@@ -180,7 +178,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               ],
             ),
             title: Text(
-              albumName,
+              album.name,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16.0,

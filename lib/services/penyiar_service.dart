@@ -1,5 +1,5 @@
-// lib/services/penyiar_service.dart
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../models/penyiar_model.dart';
 import '../config/api_client.dart';
 
@@ -10,13 +10,12 @@ class PenyiarService {
   final Dio _dio = ApiClient.I.dio;
 
   static List<Penyiar>? _cache;
-  static DateTime? _fetchedAt;
-  static const Duration _ttl = Duration(minutes: 5);
 
   Future<List<Penyiar>> fetchPenyiar({bool forceRefresh = false}) async {
-    final now = DateTime.now();
-    final isFresh = _fetchedAt != null && now.difference(_fetchedAt!) < _ttl;
-    if (!forceRefresh && _cache != null && isFresh) {
+    // Selalu ambil data baru dari server
+    if (!forceRefresh && _cache != null) {
+      // Kembalikan data cache sambil tetap fetch data terbaru di background
+      _fetchInBackground();
       return _cache!;
     }
 
@@ -35,7 +34,6 @@ class PenyiarService {
             .toList();
 
         _cache = items;
-        _fetchedAt = now;
 
         return items;
       }
@@ -53,8 +51,26 @@ class PenyiarService {
     }
   }
 
+  Future<void> _fetchInBackground() async {
+    try {
+      final res = await _dio.get('/penyiar');
+      if (res.statusCode == 200) {
+        final data = res.data;
+        final list = (data is Map && data['data'] is List)
+            ? (data['data'] as List)
+            : (data as List);
+
+        _cache = list
+            .map((e) => Penyiar.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+    } catch (e) {
+      // Ignore error in background fetch
+      debugPrint('Background fetch error: $e');
+    }
+  }
+
   void clearCache() {
     _cache = null;
-    _fetchedAt = null;
   }
 }

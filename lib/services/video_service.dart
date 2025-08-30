@@ -22,17 +22,18 @@ class VideoService {
 
       if (res.statusCode == 200) {
         final data = res.data;
-        final list = (data is Map && data['data'] is List)
-            ? (data['data'] as List)
-            : (data as List? ?? const []);
+        if (data is Map && data['status'] == true && data['data'] is List) {
+          final list = data['data'] as List;
+          final items = list
+              .whereType<Map>()
+              .map((e) => VideoModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
 
-        final items = list
-            .map((e) => VideoModel.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
-
-        _cacheRecent = items;
-        _cacheAt = now;
-        return items;
+          _cacheRecent = items;
+          _cacheAt = now;
+          return items;
+        }
+        throw Exception('Format respons tidak valid');
       }
 
       if (_cacheRecent != null) return _cacheRecent!;
@@ -49,54 +50,59 @@ class VideoService {
   Future<Map<String, dynamic>> fetchAll({
     int page = 1,
     int perPage = 10,
+    bool forceRefresh = false,
   }) async {
     try {
       final res = await _dio.get(
         '/video/semua',
-        queryParameters: {'page': page, 'per_page': perPage},
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+        },
       );
 
       if (res.statusCode == 200) {
         final data = res.data;
+        if (data is Map && data['status'] == true) {
+          // Handle pagination data
+          int currentPage = page;
+          int lastPage = 1;
+          int total = 0;
+          
+          // Extract videos
+          final list = (data['data'] is List) 
+              ? (data['data'] as List) 
+              : const [];
+              
+          final items = list
+              .whereType<Map>()
+              .map((e) => VideoModel.fromJson(Map<String, dynamic>.from(e)))
+              .toList();
 
-        final list = (data is Map && data['data'] is List)
-            ? (data['data'] as List)
-            : const <dynamic>[];
+          // Extract pagination info if available
+          if (data['pagination'] is Map) {
+            final pagination = data['pagination'] as Map;
+            currentPage = int.tryParse('${pagination['current_page']}') ?? page;
+            lastPage = int.tryParse('${pagination['last_page']}') ?? 1;
+            total = int.tryParse('${pagination['total']}') ?? items.length;
+            perPage = int.tryParse('${pagination['per_page']}') ?? perPage;
+          } else {
+            // Fallback if no pagination data
+            currentPage = page;
+            lastPage = items.length >= perPage ? page + 1 : page;
+            total = items.length;
+          }
 
-        final items = list
-            .map((e) => VideoModel.fromJson(Map<String, dynamic>.from(e)))
-            .toList();
-
-        int currentPage = page;
-        int lastPage = page;
-        int total = items.length;
-        bool hasMore;
-
-        if (data is Map && data['pagination'] is Map) {
-          final p = Map<String, dynamic>.from(data['pagination']);
-          currentPage =
-              int.tryParse(
-                '${p['current_page'] ?? p['currentPage'] ?? page}',
-              ) ??
-              page;
-          lastPage =
-              int.tryParse('${p['last_page'] ?? p['lastPage'] ?? page}') ??
-              page;
-          total = int.tryParse('${p['total'] ?? items.length}') ?? items.length;
-        } else {
-          currentPage = page;
-          lastPage = items.length == perPage ? page + 1 : page;
+          return {
+            'videos': items,
+            'currentPage': currentPage,
+            'lastPage': lastPage,
+            'total': total,
+            'perPage': perPage,
+            'hasMore': currentPage < lastPage,
+          };
         }
-
-        hasMore = currentPage < lastPage;
-
-        return {
-          'videos': items,
-          'currentPage': currentPage,
-          'lastPage': lastPage,
-          'total': total,
-          'hasMore': hasMore,
-        };
+        throw Exception('Format respons tidak valid');
       }
 
       throw Exception(

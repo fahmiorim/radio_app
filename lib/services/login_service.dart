@@ -63,6 +63,7 @@ class AuthService {
           // If no token in response but registration was successful
           logger.i('Registration successful but no token received');
           return AuthResponse(
+            status: true,
             token: '',
             user: UserModel(id: 0, name: name, email: email),
           );

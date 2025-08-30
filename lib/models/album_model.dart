@@ -1,4 +1,5 @@
 import '../config/app_api_config.dart';
+import 'package:flutter/foundation.dart';
 
 String _resolveAssetUrl(String path) {
   final p = path.trim();
@@ -55,7 +56,8 @@ class AlbumModel {
       name: (json['name'] as String?)?.trim() ?? 'Untitled Album',
       slug: (json['slug'] as String?)?.trim() ?? '',
       description: json['description'] as String?,
-      coverImage: (json['cover_image'] as String?)?.trim() ?? '',
+      coverImage: (json['cover_image_url'] as String?)?.trim() ?? 
+                 (json['cover_image'] as String?)?.trim() ?? '',
       isPublic:
           (json['is_public'] == true) ||
           (json['is_public'] == 1) ||
@@ -67,7 +69,22 @@ class AlbumModel {
 
   String get title => name;
 
-  String get coverUrl => _resolveAssetUrl(coverImage);
+  String get coverUrl {
+    if (coverImage.isEmpty) return '';
+    
+    // If it's already a full URL, return as is
+    if (coverImage.startsWith('http')) {
+      return coverImage;
+    }
+    
+    // If it's a path starting with /storage, construct full URL
+    if (coverImage.startsWith('/storage/')) {
+      return 'http://192.168.1.7:8000$coverImage';
+    }
+    
+    // For any other case, use _resolveAssetUrl
+    return _resolveAssetUrl(coverImage);
+  }
 
   List<String> get photos => List.generate(photosCount ?? 0, (_) => '');
 
@@ -91,23 +108,51 @@ class PhotoModel {
     this.updatedAt,
   });
 
-  String get url => _resolveAssetUrl(image);
+  String get url {
+    if (image.isEmpty) {
+      return '';
+    }
+    
+    // Handle case where image is already a full URL
+    if (image.startsWith('http')) {
+      return image;
+    }
+    
+    // Handle case where image is a path that needs the base URL
+    if (image.startsWith('/')) {
+      return 'http://192.168.1.7:8000$image';
+    }
+    
+    // For any other case, use the _resolveAssetUrl
+    return _resolveAssetUrl(image);
+  }
 
   factory PhotoModel.fromJson(Map<String, dynamic> json) {
     int asInt(dynamic v) => (v is int) ? v : int.tryParse('$v') ?? 0;
     DateTime? asDate(dynamic v) =>
         (v == null) ? null : DateTime.tryParse(v.toString());
 
+    // Ensure we get the image URL correctly
+    String? imageUrl = (json['image'] as String?)?.trim();
+    
+    // If the URL is already complete, use it as is
+    if (imageUrl?.startsWith('http') == true) {
+      return PhotoModel(
+        id: asInt(json['id']),
+        albumId: asInt(json['album_id']),
+        image: imageUrl!,
+        order: (json['order'] is int) ? json['order'] as int : int.tryParse('${json['order']}'),
+        createdAt: asDate(json['created_at']),
+        updatedAt: asDate(json['updated_at']),
+      );
+    }
+    
+    // Otherwise, try to construct the full URL
     return PhotoModel(
       id: asInt(json['id']),
       albumId: asInt(json['album_id']),
-      image:
-          (json['image'] as String?)?.trim() ??
-          (json['gambar'] as String?)?.trim() ??
-          '',
-      order: (json['order'] is int)
-          ? json['order'] as int
-          : int.tryParse('${json['order']}'),
+      image: 'http://192.168.1.7:8000/storage/$imageUrl',
+      order: (json['order'] is int) ? json['order'] as int : int.tryParse('${json['order']}'),
       createdAt: asDate(json['created_at']),
       updatedAt: asDate(json['updated_at']),
     );
@@ -126,29 +171,37 @@ class AlbumDetailModel {
   });
 
   factory AlbumDetailModel.fromJson(Map<String, dynamic> json) {
-    final Map<String, dynamic> data = (json['data'] is Map)
-        ? Map<String, dynamic>.from(json['data'])
-        : Map<String, dynamic>.from(json);
+    try {
+      // Handle the case where the response has a 'data' field
+      final Map<String, dynamic> data = json['data'] is Map 
+          ? Map<String, dynamic>.from(json['data']) 
+          : Map<String, dynamic>.from(json);
 
-    final Map<String, dynamic> albumJson =
-        (data.containsKey('album') && data['album'] is Map)
-        ? Map<String, dynamic>.from(data['album'])
-        : data;
+      // Extract album data - prefer the nested 'album' object if available
+      final Map<String, dynamic> albumData = data['album'] is Map 
+          ? Map<String, dynamic>.from(data['album'])
+          : data;
 
-    final dynamic photosRaw = data['photos'];
-    final List<PhotoModel> photos = (photosRaw is List)
-        ? photosRaw
-              .map((e) => PhotoModel.fromJson(Map<String, dynamic>.from(e)))
-              .toList()
-        : const <PhotoModel>[];
+      // Handle photos array
+      List<PhotoModel> photos = [];
+      if (data['photos'] is List) {
+        photos = (data['photos'] as List)
+            .whereType<Map>()
+            .map((e) => PhotoModel.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
 
-    final album = AlbumModel.fromJson(albumJson);
-    final n = (data['name'] as String?)?.trim();
+      final album = AlbumModel.fromJson(albumData);
+      final name = (data['name'] as String?)?.trim() ?? album.name;
 
-    return AlbumDetailModel(
-      name: (n != null && n.isNotEmpty) ? n : album.name,
-      album: album,
-      photos: photos,
-    );
+      return AlbumDetailModel(
+        name: name,
+        album: album,
+        photos: photos,
+      );
+    } catch (e) {
+      debugPrint('Error parsing AlbumDetailModel: $e');
+      rethrow;
+    }
   }
 }

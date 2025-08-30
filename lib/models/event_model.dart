@@ -4,7 +4,8 @@ import '../config/app_api_config.dart';
 class Event {
   final int id;
   final String judul;
-  final String user;
+  final String? user;
+  final String? penyiarName;
   final DateTime tanggal;
   final String deskripsi;
   final String gambar;
@@ -15,7 +16,8 @@ class Event {
   Event({
     required this.id,
     required this.judul,
-    required this.user,
+    this.user,
+    this.penyiarName,
     required this.tanggal,
     required this.deskripsi,
     required this.gambar,
@@ -55,7 +57,7 @@ class Event {
     return Event(
       id: _parseInt(json['id']),
       judul: (json['judul'] ?? json['title'] ?? '').toString(),
-      user: (json['user'] ?? json['author'] ?? 'Tidak ada data').toString(),
+      user: json['user'] ?? json['penyiarName'] ?? json['author'] ?? 'Tidak ada data',
       tanggal: _parseDate(json['tanggal'] ?? json['date']),
       deskripsi: _stripHtml(json['deskripsi'] ?? json['content']),
       gambar: (json['gambar'] ?? json['image'] ?? json['cover'] ?? '')
