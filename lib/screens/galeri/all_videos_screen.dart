@@ -1,8 +1,11 @@
+import 'dart:async';
+
+import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/video_model.dart';
 import '../../providers/video_provider.dart';
@@ -16,35 +19,62 @@ class AllVideosScreen extends StatefulWidget {
   State<AllVideosScreen> createState() => _AllVideosScreenState();
 }
 
-class _AllVideosScreenState extends State<AllVideosScreen> {
+class _AllVideosScreenState extends State<AllVideosScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
   bool _isLoadingMore = false;
+  List<VideoModel> _lastVideos = [];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialVideos();
     });
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    unawaited(_checkAndRefresh());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_checkAndRefresh());
+    }
+  }
+
   Future<void> _loadInitialVideos() async {
     final videoProvider = context.read<VideoProvider>();
     await videoProvider.fetchAllVideos();
+    _lastVideos = List<VideoModel>.from(videoProvider.allVideos);
   }
 
   Future<void> _onRefresh() async {
     final videoProvider = context.read<VideoProvider>();
     videoProvider.resetPagination();
     await videoProvider.fetchAllVideos();
+    _lastVideos = List<VideoModel>.from(videoProvider.allVideos);
+  }
+
+  Future<void> _checkAndRefresh() async {
+    final vp = context.read<VideoProvider>();
+    const equality = DeepCollectionEquality();
+    if (!equality.equals(_lastVideos, vp.allVideos)) {
+      await _onRefresh();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
