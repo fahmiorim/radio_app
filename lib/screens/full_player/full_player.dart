@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -48,6 +49,17 @@ class _FullPlayerState extends State<FullPlayer> {
   Widget build(BuildContext context) {
     final radioProvider = Provider.of<RadioStationProvider>(context);
     final currentStation = radioProvider.currentStation;
+    final nowPlaying = radioProvider.nowPlaying;
+
+    final cover = (nowPlaying?.artUrl.isNotEmpty ?? false)
+        ? nowPlaying!.artUrl
+        : currentStation?.coverUrl ?? '';
+    final title = (nowPlaying?.title.isNotEmpty ?? false)
+        ? nowPlaying!.title
+        : currentStation?.title ?? '';
+    final artist = (nowPlaying?.artist.isNotEmpty ?? false)
+        ? nowPlaying!.artist
+        : currentStation?.host ?? '';
 
     if (currentStation == null) {
       return const Scaffold(
@@ -96,11 +108,17 @@ class _FullPlayerState extends State<FullPlayer> {
                   padding: const EdgeInsets.all(30.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      currentStation.coverUrl,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                    child: (nowPlaying?.artUrl.isNotEmpty ?? false)
+                        ? CachedNetworkImage(
+                            imageUrl: cover,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            cover,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
               ),
@@ -113,7 +131,7 @@ class _FullPlayerState extends State<FullPlayer> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    currentStation.title,
+                    title,
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -123,7 +141,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    currentStation.host,
+                    artist,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 16),

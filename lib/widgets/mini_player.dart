@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -26,6 +27,17 @@ class _MiniPlayerState extends State<MiniPlayer> {
     final radioProvider = Provider.of<RadioStationProvider>(context);
     final currentStation =
         radioProvider.currentStation ?? RadioStationProvider.defaultStation;
+    final nowPlaying = radioProvider.nowPlaying;
+
+    final cover = (nowPlaying?.artUrl.isNotEmpty ?? false)
+        ? nowPlaying!.artUrl
+        : currentStation.coverUrl;
+    final title = (nowPlaying?.title.isNotEmpty ?? false)
+        ? nowPlaying!.title
+        : currentStation.title;
+    final artist = (nowPlaying?.artist.isNotEmpty ?? false)
+        ? nowPlaying!.artist
+        : currentStation.host;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -56,12 +68,19 @@ class _MiniPlayerState extends State<MiniPlayer> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: Image.asset(
-                      currentStation.coverUrl,
-                      height: 42,
-                      width: 42,
-                      fit: BoxFit.cover,
-                    ),
+                    child: (nowPlaying?.artUrl.isNotEmpty ?? false)
+                        ? CachedNetworkImage(
+                            imageUrl: cover,
+                            height: 42,
+                            width: 42,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            cover,
+                            height: 42,
+                            width: 42,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -70,7 +89,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          currentStation.title,
+                          title,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -79,7 +98,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          currentStation.host,
+                          artist,
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
