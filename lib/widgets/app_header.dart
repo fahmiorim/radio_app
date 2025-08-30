@@ -35,7 +35,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
     super.initState();
     _isMounted = true;
     WidgetsBinding.instance.addObserver(this);
-    _loadUserData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUserData());
   }
 
   @override
