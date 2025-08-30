@@ -56,8 +56,10 @@ class AlbumModel {
       name: (json['name'] as String?)?.trim() ?? 'Untitled Album',
       slug: (json['slug'] as String?)?.trim() ?? '',
       description: json['description'] as String?,
-      coverImage: (json['cover_image_url'] as String?)?.trim() ?? 
-                 (json['cover_image'] as String?)?.trim() ?? '',
+      coverImage:
+          (json['cover_image_url'] as String?)?.trim() ??
+          (json['cover_image'] as String?)?.trim() ??
+          '',
       isPublic:
           (json['is_public'] == true) ||
           (json['is_public'] == 1) ||
@@ -71,17 +73,17 @@ class AlbumModel {
 
   String get coverUrl {
     if (coverImage.isEmpty) return '';
-    
+
     // If it's already a full URL, return as is
     if (coverImage.startsWith('http')) {
       return coverImage;
     }
-    
+
     // If it's a path starting with /storage, construct full URL
     if (coverImage.startsWith('/storage/')) {
       return 'http://192.168.1.7:8000$coverImage';
     }
-    
+
     // For any other case, use _resolveAssetUrl
     return _resolveAssetUrl(coverImage);
   }
@@ -112,12 +114,12 @@ class PhotoModel {
     if (image.isEmpty) {
       return '';
     }
-    
+
     // Handle case where image is already a full URL
     if (image.startsWith('http')) {
       return image;
     }
-    
+
     // For any other case, use the _resolveAssetUrl which will handle the base URL
     return _resolveAssetUrl(image);
   }
@@ -129,13 +131,15 @@ class PhotoModel {
 
     // Ensure we get the image URL correctly
     String? imageUrl = (json['image'] as String?)?.trim();
-    
+
     // Always use the imageUrl as is, and let the url getter handle the URL construction
     return PhotoModel(
       id: asInt(json['id']),
       albumId: asInt(json['album_id']),
       image: imageUrl ?? '',
-      order: (json['order'] is int) ? json['order'] as int : int.tryParse('${json['order']}'),
+      order: (json['order'] is int)
+          ? json['order'] as int
+          : int.tryParse('${json['order']}'),
       createdAt: asDate(json['created_at']),
       updatedAt: asDate(json['updated_at']),
     );
@@ -156,12 +160,12 @@ class AlbumDetailModel {
   factory AlbumDetailModel.fromJson(Map<String, dynamic> json) {
     try {
       // Handle the case where the response has a 'data' field
-      final Map<String, dynamic> data = json['data'] is Map 
-          ? Map<String, dynamic>.from(json['data']) 
+      final Map<String, dynamic> data = json['data'] is Map
+          ? Map<String, dynamic>.from(json['data'])
           : Map<String, dynamic>.from(json);
 
       // Extract album data - prefer the nested 'album' object if available
-      final Map<String, dynamic> albumData = data['album'] is Map 
+      final Map<String, dynamic> albumData = data['album'] is Map
           ? Map<String, dynamic>.from(data['album'])
           : data;
 
@@ -177,11 +181,7 @@ class AlbumDetailModel {
       final album = AlbumModel.fromJson(albumData);
       final name = (data['name'] as String?)?.trim() ?? album.name;
 
-      return AlbumDetailModel(
-        name: name,
-        album: album,
-        photos: photos,
-      );
+      return AlbumDetailModel(name: name, album: album, photos: photos);
     } catch (e) {
       debugPrint('Error parsing AlbumDetailModel: $e');
       rethrow;

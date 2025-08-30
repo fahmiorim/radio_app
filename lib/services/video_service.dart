@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../models/video_model.dart';
 import '../config/api_client.dart';
 
@@ -26,11 +25,6 @@ class VideoService {
 
     try {
       final res = await _dio.get('/video');
-      
-      if (kDebugMode) {
-        print('✅ ${res.statusCode} ${res.requestOptions.uri}');
-        print('Response data: ${res.data}');
-      }
 
       if (res.statusCode == 200) {
         final data = res.data;
@@ -67,10 +61,7 @@ class VideoService {
     try {
       final res = await _dio.get(
         '/video/semua',
-        queryParameters: {
-          'page': page,
-          'per_page': perPage,
-        },
+        queryParameters: {'page': page, 'per_page': perPage},
       );
 
       if (res.statusCode == 200) {
@@ -80,12 +71,12 @@ class VideoService {
           int currentPage = page;
           int lastPage = 1;
           int total = 0;
-          
+
           // Extract videos
-          final list = (data['data'] is List) 
-              ? (data['data'] as List) 
+          final list = (data['data'] is List)
+              ? (data['data'] as List)
               : const [];
-              
+
           final items = list
               .whereType<Map>()
               .map((e) => VideoModel.fromJson(Map<String, dynamic>.from(e)))
@@ -143,5 +134,4 @@ class VideoService {
       throw Exception('Error jaringan: ${e.message}');
     }
   }
-
 }

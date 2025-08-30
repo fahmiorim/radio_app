@@ -17,12 +17,14 @@ class VideoListSkeleton extends StatelessWidget {
           highlightColor: Colors.grey[700]!,
           child: SizedBox(
             width: 270,
+            height: 190, // Fixed height to match the parent constraint
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  height: 170,
+                  height: 160, // Reduced height to accommodate the text
+                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.grey[850],
                     borderRadius: BorderRadius.circular(8),

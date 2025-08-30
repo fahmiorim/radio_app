@@ -15,8 +15,6 @@ class VerificationScreen extends StatefulWidget {
 class _VerificationScreenState extends State<VerificationScreen> {
   bool _isLoading = false;
   bool _isResending = false;
-  bool _emailSent = false;
-  bool _showResend = false;
   int _countdown = 30; // 30 seconds countdown
   Timer? _timer;
 
@@ -34,9 +32,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
           _countdown--;
         });
       } else {
-        setState(() {
-          _showResend = true;
-        });
         _timer?.cancel();
       }
     });
@@ -52,12 +47,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Implement actual email sending API call
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
         setState(() {
-          _emailSent = true;
           _isLoading = false;
         });
       }
@@ -73,7 +66,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
     setState(() => _isResending = true);
 
     try {
-      // TODO: Implement resend verification email API call
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
@@ -120,7 +112,15 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.primary,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: AppColors.primary,
       body: Stack(
         children: [
           // Background with wave circles (same as login screen)
@@ -160,144 +160,174 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         shape: BoxShape.circle,
                         color: AppColors.primary.withOpacity(0.1),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Content
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Verifikasi Email',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Email Sent Confirmation
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
+                      child: Stack(
                         children: [
-                          Icon(
-                            Icons.mark_email_read_outlined,
-                            size: 64,
-                            color: AppColors.textPrimary,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Periksa Email Anda',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
+                          Positioned(
+                            top: -100,
+                            right: -100,
+                            child: Container(
+                              width: 300,
+                              height: 300,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primary.withOpacity(0.1),
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Kami telah mengirimkan link verifikasi ke:',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                          Positioned(
+                            bottom: -150,
+                            left: -50,
+                            child: Container(
+                              width: 400,
+                              height: 400,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primary.withOpacity(0.1),
+                              ),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            widget.email,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Klik link verifikasi di email Anda untuk menyelesaikan pendaftaran.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                  ),
 
-                    // Resend Email Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isResending ? null : _resendVerification,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
+                  // Content
+                  Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Verifikasi Email',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineMedium?.copyWith(
                               color: AppColors.textPrimary,
-                              width: 1.5,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: _isResending
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
+                          const SizedBox(height: 24),
+
+                          // Email Sent Confirmation
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.mark_email_read_outlined,
+                                  size: 64,
                                   color: AppColors.textPrimary,
-                                  strokeWidth: 2,
                                 ),
-                              )
-                            : const Text(
-                                'Kirim Ulang Email',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Periksa Email Anda',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Kami telah mengirimkan link verifikasi ke:',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.email,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Klik link verifikasi di email Anda untuk menyelesaikan pendaftaran.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Resend Email Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isResending
+                                  ? null
+                                  : _resendVerification,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                    color: AppColors.textPrimary,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
                                 ),
                               ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                              child: _isResending
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.textPrimary,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Kirim Ulang Email',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
 
-                    // Back to Login Button
-                    TextButton(
-                      onPressed: _navigateToLogin,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text(
-                        'Kembali ke Halaman Login',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textPrimary,
-                          decoration: TextDecoration.underline,
-                        ),
+                          // Back to Login Button
+                          TextButton(
+                            onPressed: _navigateToLogin,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: const Text(
+                              'Kembali ke Halaman Login',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textPrimary,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

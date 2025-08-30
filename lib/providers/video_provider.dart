@@ -47,21 +47,12 @@ class VideoProvider with ChangeNotifier {
 
     try {
       final items = await _svc.fetchRecent(forceRefresh: forceRefresh);
-      if (kDebugMode) {
-        print('✅ Fetched ${items.length} videos');
-      }
       _recentVideos
         ..clear()
         ..addAll(items.take(4));
-    } catch (e, stackTrace) {
+    } catch (e) {
       _hasErrorRecent = true;
       _errorMessageRecent = 'Gagal memuat video terbaru. Silakan coba lagi.';
-      if (kDebugMode) {
-        print('❌ Error in fetchRecentVideos:');
-        print('Error type: ${e.runtimeType}');
-        print('Error message: $e');
-        print('Stack trace: $stackTrace');
-      }
     } finally {
       _isLoadingRecent = false;
       notifyListeners();
@@ -76,7 +67,7 @@ class VideoProvider with ChangeNotifier {
     _hasErrorRecent = false;
     _errorMessageRecent = '';
     notifyListeners();
-    
+
     // Force fetch fresh data
     await fetchRecentVideos(forceRefresh: true);
   }
@@ -122,7 +113,6 @@ class VideoProvider with ChangeNotifier {
     } catch (e) {
       _hasErrorAll = true;
       _errorMessageAll = 'Gagal memuat daftar video. Silakan coba lagi.';
-      if (kDebugMode) print('Error fetchAllVideos: $e');
     } finally {
       _isLoadingAll = false;
       _isLoadingMore = false;

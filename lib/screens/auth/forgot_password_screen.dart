@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/services/login_service.dart' as login_service;
 
@@ -139,9 +138,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       'Masukkan email Anda untuk menerima link reset password',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withOpacity(.7),
+                        color: Theme.of(context).colorScheme.onSurface
+                            .withValues(
+                              red: 0.7,
+                              green: 0.7,
+                              blue: 0.7,
+                              alpha: 1.0,
+                            ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -150,11 +153,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.9),
+                        color: const Color(
+                          0xFFFFFFFF,
+                        ).withAlpha((0.9 * 255).round()),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: const Color(0x1A000000), // 10% opacity black (0.1 * 255 ≈ 26 = 0x1A)
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),

@@ -14,20 +14,6 @@ class MiniPlayer extends StatefulWidget {
 
 class _MiniPlayerState extends State<MiniPlayer> {
   final AudioPlayerManager _audioManager = AudioPlayerManager();
-  bool _isPlaying = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Listen to player state changes
-    _audioManager.player.playerStateStream.listen((state) {
-      if (mounted) {
-        setState(() {
-          _isPlaying = state.playing;
-        });
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -38,15 +24,14 @@ class _MiniPlayerState extends State<MiniPlayer> {
   @override
   Widget build(BuildContext context) {
     final radioProvider = Provider.of<RadioStationProvider>(context);
-    final currentStation = radioProvider.currentStation ?? RadioStationProvider.defaultStation;
+    final currentStation =
+        radioProvider.currentStation ?? RadioStationProvider.defaultStation;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        // Gunakan navigator dengan pushReplacementNamed untuk mencegah penumpukan route
-        Navigator.of(context).pushReplacementNamed(
-          AppRoutes.fullPlayer,
-        );
+        // Use pushNamed to navigate to the full player screen
+        Navigator.of(context).pushNamed(AppRoutes.fullPlayer);
       },
       child: Container(
         height: 55,
@@ -134,7 +119,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
                         stream: _audioManager.player.playerStateStream,
                         builder: (context, snapshot) {
                           final state = snapshot.data;
-                          final isBuffering = state?.processingState ==
+                          final isBuffering =
+                              state?.processingState ==
                                   ProcessingState.loading ||
                               state?.processingState ==
                                   ProcessingState.buffering;
@@ -149,18 +135,11 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
                           return IconButton(
                             icon: Icon(
-                              _isPlaying ? Icons.pause : Icons.play_arrow,
+                              radioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
                               color: Colors.white,
                             ),
                             onPressed: () async {
-                              if (_isPlaying) {
-                                await _audioManager.pause();
-                              } else {
-                                await _audioManager.playRadio(currentStation);
-                              }
-                              if (mounted) {
-                                radioProvider.setPlaying(!_isPlaying);
-                              }
+                              await radioProvider.togglePlayPause();
                             },
                           );
                         },
@@ -178,8 +157,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
                 final pos = snapshot.data ?? Duration.zero;
                 final duration =
                     _audioManager.player.duration ?? const Duration(seconds: 1);
-                double progress = duration.inMilliseconds > 0 
-                    ? pos.inMilliseconds / duration.inMilliseconds 
+                double progress = duration.inMilliseconds > 0
+                    ? pos.inMilliseconds / duration.inMilliseconds
                     : 0.0;
 
                 return SizedBox(

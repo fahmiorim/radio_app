@@ -44,16 +44,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
-  
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+
   // Refresh all list widgets
   Future<void> _refreshAll() async {
     try {
-      final programProvider = Provider.of<ProgramProvider>(context, listen: false);
+      final programProvider = Provider.of<ProgramProvider>(
+        context,
+        listen: false,
+      );
       final eventProvider = Provider.of<EventProvider>(context, listen: false);
-      final artikelProvider = Provider.of<ArtikelProvider>(context, listen: false);
-      final penyiarProvider = Provider.of<PenyiarProvider>(context, listen: false);
-      
+      final artikelProvider = Provider.of<ArtikelProvider>(
+        context,
+        listen: false,
+      );
+      final penyiarProvider = Provider.of<PenyiarProvider>(
+        context,
+        listen: false,
+      );
+
       // Force refresh all providers in parallel using their specific refresh methods
       await Future.wait([
         programProvider.refreshAll(),
@@ -72,14 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
       key: _scaffoldKey,
       backgroundColor: AppColors.backgroundDark,
       drawer: const AppDrawer(),
-      floatingActionButton: FloatingActionButton(
-        key: const Key('play_button'),
-        onPressed: () {
-          // TODO: Implement play/pause
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.music_note, color: Colors.white),
-      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return Stack(
@@ -149,49 +151,53 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: AppColors.backgroundDark,
                   child: CustomScrollView(
                     key: const Key('home_scroll_view'),
-                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                  slivers: [
-                    // Header
-                    SliverToBoxAdapter(
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 12.0,
-                        ),
-                        child: AppHeader(
-                          key: const Key('app_header'),
-                          isLoading: isLoading,
-                          onMenuTap: () {
-                            if (_scaffoldKey.currentContext != null) {
-                              Scaffold.of(_scaffoldKey.currentContext!).openDrawer();
-                            }
-                          },
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    slivers: [
+                      // Header
+                      SliverToBoxAdapter(
+                        child: Container(
+                          width: double.infinity,
+                          color: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 12.0,
+                          ),
+                          child: AppHeader(
+                            key: const Key('app_header'),
+                            isLoading: isLoading,
+                            onMenuTap: () {
+                              if (_scaffoldKey.currentContext != null) {
+                                Scaffold.of(
+                                  _scaffoldKey.currentContext!,
+                                ).openDrawer();
+                              }
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                    // Content
-                    SliverPadding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 80),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          const SizedBox(key: Key('top_padding'), height: 4),
-                          // List widgets
-                          const PenyiarList(),
-                          const SizedBox(height: 16),
-                          const ProgramList(),
-                          const SizedBox(height: 8),
-                          const EventList(),
-                          const SizedBox(height: 8),
-                          const ArtikelList(),
-                        ]),
+                      // Content
+                      SliverPadding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 80),
+                        sliver: SliverList(
+                          delegate: SliverChildListDelegate([
+                            const SizedBox(key: Key('top_padding'), height: 4),
+                            // List widgets
+                            const PenyiarList(),
+                            const SizedBox(height: 16),
+                            const ProgramList(),
+                            const SizedBox(height: 8),
+                            const EventList(),
+                            const SizedBox(height: 8),
+                            const ArtikelList(),
+                          ]),
+                        ),
                       ),
-                    ),
-                  ],
-                    ),
+                    ],
                   ),
                 ),
+              ),
             ],
           );
         },

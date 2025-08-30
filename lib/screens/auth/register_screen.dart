@@ -108,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final authService = AuthService();
-      final response = await authService.register(
+      await authService.register(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
@@ -116,7 +116,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (!mounted) return;
 
-      logger.i('Mengarahkan ke halaman verifikasi dengan email: ${_emailController.text.trim()}');
+      logger.i(
+        'Mengarahkan ke halaman verifikasi dengan email: ${_emailController.text.trim()}',
+      );
       if (mounted) {
         Navigator.pushReplacementNamed(
           context,
@@ -228,7 +230,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 300,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
+                        color: const Color.fromRGBO(255, 255, 255, 0.1),
                       ),
                     ),
                   ),
@@ -240,7 +242,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 400,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.1),
+                        color: const Color.fromRGBO(255, 255, 255, 0.1),
                       ),
                     ),
                   ),
@@ -273,7 +275,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Daftar untuk melanjutkan ke Radio Odan',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Color.fromRGBO(255, 255, 255, 0.9),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -367,9 +369,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Checkbox(
                             value: agreeTerms,
                             onChanged: _toggleTerms,
-                            fillColor: MaterialStateProperty.resolveWith<Color>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.selected)) {
+                            fillColor: WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.selected)) {
                                   return Colors.white;
                                 }
                                 return Colors.transparent;

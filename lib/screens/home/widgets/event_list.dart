@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../models/event_model.dart';
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
 import '../../../providers/event_provider.dart';
@@ -20,7 +19,6 @@ class EventListState extends State<EventList>
   bool get wantKeepAlive => true;
 
   bool _isMounted = false;
-  List<Event>? _lastItems;
 
   @override
   void initState() {
@@ -48,9 +46,7 @@ class EventListState extends State<EventList>
     }
 
     if (mounted) {
-      setState(() {
-        _lastItems = List<Event>.from(prov.events);
-      });
+      setState(() {});
     }
   }
 
@@ -93,9 +89,7 @@ class EventListState extends State<EventList>
       }
 
       if (mounted) {
-        setState(() {
-          _lastItems = List<Event>.from(provider.events);
-        });
+        setState(() {});
       }
     } finally {
       if (mounted) {

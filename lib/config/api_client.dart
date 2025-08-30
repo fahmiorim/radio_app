@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'app_api_config.dart';
 
@@ -31,26 +30,12 @@ class ApiClient {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-
-          if (kDebugMode) {
-            debugPrint('➡️  ${options.method} ${options.uri}');
-          }
           handler.next(options);
         },
         onResponse: (response, handler) {
-          if (kDebugMode) {
-            debugPrint(
-              '✅ ${response.statusCode} ${response.requestOptions.uri}',
-            );
-          }
           handler.next(response);
         },
         onError: (e, handler) {
-          if (kDebugMode) {
-            debugPrint(
-              '❌ ${e.response?.statusCode} ${e.requestOptions.uri} :: ${e.message}',
-            );
-          }
           handler.next(e);
         },
       ),

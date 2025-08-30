@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-
-import '../models/album_model.dart';
 import '../config/api_client.dart';
+import '../config/app_api_config.dart';
+import '../models/album_model.dart';
 
 class AlbumService {
   AlbumService._();
@@ -67,10 +66,7 @@ class AlbumService {
       throw Exception(
         'Gagal memuat featured albums (status ${res.statusCode})',
       );
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('AlbumService.fetchFeaturedAlbums DioError: ${e.message}');
-      }
+    } on DioError catch (e) {
       if (_featuredCache != null) return _featuredCache!;
       throw Exception('Gagal memuat album: ${e.message}');
     } catch (e) {
@@ -107,34 +103,33 @@ class AlbumService {
 
       if (res.statusCode == 200) {
         final data = res.data;
-        if (kDebugMode) {
-          debugPrint('AlbumService.fetchAllAlbums response: $data');
-        }
-        
+
         if (data is Map && data['status'] == true) {
           // Process album list
           final List<dynamic> items = data['data'] is List ? data['data'] : [];
           final List<AlbumModel> albums = [];
-          
+
           for (var item in items) {
             try {
               if (item is Map) {
                 final albumData = Map<String, dynamic>.from(item);
                 // Ensure we have a proper cover image URL
-                if (albumData['cover_image'] == null && albumData['image'] != null) {
+                if (albumData['cover_image'] == null &&
+                    albumData['image'] != null) {
                   albumData['cover_image'] = albumData['image'];
                 }
                 // Ensure cover image has full URL
-                if (albumData['cover_image'] is String && 
+                if (albumData['cover_image'] is String &&
                     !albumData['cover_image'].toString().startsWith('http')) {
-                  albumData['cover_image'] = 'http://192.168.1.7:8000/storage/${albumData['cover_image']}';
+                  albumData['cover_image'] =
+                      '${AppApiConfig.assetBaseUrl}${albumData['cover_image']}';
                 }
                 albums.add(AlbumModel.fromJson(albumData));
               }
             } catch (e) {
-              if (kDebugMode) {
-                debugPrint('Error parsing album: $e');
-              }
+              print('Error processing album item: $e');
+              // Skip this item and continue with the next one
+              continue;
             }
           }
 
@@ -170,10 +165,7 @@ class AlbumService {
         };
       }
       throw Exception('Gagal memuat daftar album (status ${res.statusCode})');
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('AlbumService.fetchAllAlbums DioError: ${e.message}');
-      }
+    } on DioError catch (e) {
       if (_allCache[page] != null) {
         return {
           'albums': _allCache[page]!,
@@ -201,8 +193,8 @@ class AlbumService {
     bool forceRefresh = false,
   }) async {
     final cacheKey = 'detail-$slug';
-    if (!forceRefresh && 
-        _detailCache[cacheKey] != null && 
+    if (!forceRefresh &&
+        _detailCache[cacheKey] != null &&
         _isFresh(_detailAt[cacheKey])) {
       return _detailCache[cacheKey]!;
     }
@@ -213,33 +205,30 @@ class AlbumService {
         final data = res.data;
         if (data is Map && data['status'] == true && data['data'] is Map) {
           final responseData = Map<String, dynamic>.from(data['data']);
-          
+
           // Handle the case where photos is a string ("Tidak ada foto")
           if (responseData['photos'] is String) {
             responseData['photos'] = [];
           }
-          
+
           final albumDetail = AlbumDetailModel.fromJson(responseData);
           _detailCache[cacheKey] = albumDetail;
           _detailAt[cacheKey] = DateTime.now();
-          
+
           return albumDetail;
         }
         throw Exception(
-          (data is Map ? data['message'] : null) ?? 'Format respons tidak valid',
+          (data is Map ? data['message'] : null) ??
+              'Format respons tidak valid',
         );
       }
       throw Exception('Gagal memuat detail album (status ${res.statusCode})');
-    } on DioException catch (e) {
-      if (kDebugMode) {
-        debugPrint('AlbumService.fetchAlbumDetail DioError: ${e.message}');
-      }
-      
+    } on DioError catch (e) {
       // Return cached data if available
       if (_detailCache[cacheKey] != null) {
         return _detailCache[cacheKey]!;
       }
-      
+
       throw Exception('Gagal memuat detail album: ${e.message}');
     } catch (e) {
       // Return cached data if available
@@ -249,5 +238,4 @@ class AlbumService {
       rethrow;
     }
   }
-
 }

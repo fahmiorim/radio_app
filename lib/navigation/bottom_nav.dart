@@ -64,49 +64,61 @@ class _BottomNavState extends State<BottomNav> {
       ),
 
       /// BottomNav
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) async {
-          if (index == 3) {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LiveChatScreen()),
-            );
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.black.withOpacity(0.8), // tambahkan warna latar belakang
+          elevation: 0,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) async {
+            if (index == 3) {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LiveChatScreen()),
+              );
 
-            if (result == 'goHome') {
+              if (result == 'goHome') {
+                setState(() {
+                  _currentIndex = 0;
+                });
+              }
+            } else {
               setState(() {
-                _currentIndex = 0;
+                _currentIndex = index;
               });
             }
-          } else {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article_outlined),
-            label: "Artikel",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.photo_library_outlined),
-            label: "Galeri",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: "Chat",
-          ),
-        ],
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.article_outlined),
+              label: "Artikel",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.photo_library_outlined),
+              label: "Galeri",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              label: "Chat",
+            ),
+          ],
+        ),
       ),
     );
   }

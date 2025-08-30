@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +16,32 @@ class FullPlayer extends StatefulWidget {
 class _FullPlayerState extends State<FullPlayer> {
   final _audioManager = AudioPlayerManager();
   bool isFavorited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      final radioProvider = Provider.of<RadioStationProvider>(context, listen: false);
+      final currentStation = radioProvider.currentStation;
+      
+      if (currentStation != null) {
+        debugPrint('Initializing player with station: ${currentStation.title}');
+        await _audioManager.playRadio(currentStation);
+        debugPrint('Player initialized successfully');
+      }
+    } catch (e) {
+      debugPrint('Error initializing player: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memutar radio. Coba lagi nanti.')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -55,7 +82,12 @@ class _FullPlayerState extends State<FullPlayer> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Update the provider state before navigating back
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          },
         ),
       ),
       body: SafeArea(
@@ -225,14 +257,8 @@ class _FullPlayerState extends State<FullPlayer> {
                                   icon: Icon(
                                     isPlaying ? Icons.pause : Icons.play_arrow,
                                   ),
-                                  onPressed: () {
-                                    if (radioProvider.isPlaying) {
-                                      _audioManager.pause();
-                                      radioProvider.setPlaying(false);
-                                    } else {
-                                      _audioManager.playRadio(currentStation);
-                                      radioProvider.setPlaying(true);
-                                    }
+                                  onPressed: () async {
+                                    await radioProvider.togglePlayPause();
                                   },
                                 ),
                         ),

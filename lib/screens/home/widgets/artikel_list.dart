@@ -5,10 +5,8 @@ import 'package:collection/collection.dart';
 
 import '../../../models/artikel_model.dart';
 import '../../../providers/artikel_provider.dart';
-import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
 import '../../../screens/artikel/artikel_detail_screen.dart';
-import '../../../navigation/bottom_nav.dart';
 import '../../../config/app_colors.dart';
 
 class ArtikelList extends StatefulWidget {
@@ -31,9 +29,9 @@ class ArtikelListState extends State<ArtikelList>
     super.initState();
     _isMounted = true;
     _scrollController.addListener(_onScroll);
-    
+
     WidgetsBinding.instance.addObserver(this);
-    
+
     // Load data after first frame to avoid context issues
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -67,7 +65,8 @@ class ArtikelListState extends State<ArtikelList>
 
     final provider = context.read<ArtikelProvider>();
     final currentItems = provider.recentArtikels;
-    final shouldRefresh = _lastItems == null ||
+    final shouldRefresh =
+        _lastItems == null ||
         !const DeepCollectionEquality().equals(_lastItems, currentItems);
 
     if (shouldRefresh) {
@@ -132,18 +131,6 @@ class ArtikelListState extends State<ArtikelList>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionTitle(
-              title: "Artikel",
-              onSeeAll: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const BottomNav(initialIndex: 1),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 8),
             SizedBox(
               height: 220,
               child: ListView.builder(
@@ -194,10 +181,13 @@ class ArtikelListState extends State<ArtikelList>
   Widget _buildArtikelItem(BuildContext context, Artikel artikel) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ArtikelDetailScreen(artikelSlug: artikel.slug),
-          ),
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (BuildContext context) {
+            return ArtikelDetailScreen(artikelSlug: artikel.slug);
+          },
         );
       },
       child: Container(
