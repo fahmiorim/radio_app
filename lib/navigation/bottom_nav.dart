@@ -38,40 +38,24 @@ class _BottomNavState extends State<BottomNav> {
       extendBody: true,
       body: Stack(
         children: [
+          // Main Content
           _screens[_currentIndex],
-
-          /// Gradient bawah
-          Align(
-            alignment: Alignment.bottomCenter,
+          
+          // MiniPlayer with Gradient Background
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: kBottomNavigationBarHeight,
             child: Container(
-              height:
-                  kBottomNavigationBarHeight +
-                  90 +
-                  MediaQuery.of(context).padding.bottom,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.95),
-                    Colors.black.withValues(alpha: 0.75),
-                    Colors.black.withValues(alpha: 0.7),
+                    Colors.black.withOpacity(0.9),
                     Colors.transparent,
                   ],
                 ),
-              ),
-            ),
-          ),
-
-          /// MiniPlayer
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom:
-                    MediaQuery.of(context).padding.bottom +
-                    kBottomNavigationBarHeight +
-                    6,
               ),
               child: const MiniPlayer(),
             ),

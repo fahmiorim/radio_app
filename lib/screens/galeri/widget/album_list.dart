@@ -7,6 +7,7 @@ import '../../../providers/album_provider.dart';
 import '../../../config/app_routes.dart';
 import '../../../widgets/skeleton/album_list_skeleton.dart';
 import '../../../widgets/section_title.dart';
+import '../album_detail_screen.dart';
 
 class AlbumList extends StatefulWidget {
   const AlbumList({super.key});
@@ -107,10 +108,11 @@ class _AlbumListState extends State<AlbumList>
       constraints: const BoxConstraints(maxWidth: 140, maxHeight: 180),
       child: GestureDetector(
         onTap: () {
-          Navigator.pushNamed(
+          Navigator.push(
             context,
-            AppRoutes.albumDetail,
-            arguments: album.slug,
+            MaterialPageRoute(
+              builder: (_) => AlbumDetailScreen(slug: album.slug),
+            ),
           );
         },
         child: Column(

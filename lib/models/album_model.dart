@@ -118,12 +118,7 @@ class PhotoModel {
       return image;
     }
     
-    // Handle case where image is a path that needs the base URL
-    if (image.startsWith('/')) {
-      return 'http://192.168.1.7:8000$image';
-    }
-    
-    // For any other case, use the _resolveAssetUrl
+    // For any other case, use the _resolveAssetUrl which will handle the base URL
     return _resolveAssetUrl(image);
   }
 
@@ -135,23 +130,11 @@ class PhotoModel {
     // Ensure we get the image URL correctly
     String? imageUrl = (json['image'] as String?)?.trim();
     
-    // If the URL is already complete, use it as is
-    if (imageUrl?.startsWith('http') == true) {
-      return PhotoModel(
-        id: asInt(json['id']),
-        albumId: asInt(json['album_id']),
-        image: imageUrl!,
-        order: (json['order'] is int) ? json['order'] as int : int.tryParse('${json['order']}'),
-        createdAt: asDate(json['created_at']),
-        updatedAt: asDate(json['updated_at']),
-      );
-    }
-    
-    // Otherwise, try to construct the full URL
+    // Always use the imageUrl as is, and let the url getter handle the URL construction
     return PhotoModel(
       id: asInt(json['id']),
       albumId: asInt(json['album_id']),
-      image: 'http://192.168.1.7:8000/storage/$imageUrl',
+      image: imageUrl ?? '',
       order: (json['order'] is int) ? json['order'] as int : int.tryParse('${json['order']}'),
       createdAt: asDate(json['created_at']),
       updatedAt: asDate(json['updated_at']),

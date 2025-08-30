@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:collection/collection.dart';
-
 import '../../../models/event_model.dart';
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
@@ -78,20 +76,30 @@ class EventListState extends State<EventList>
     super.dispose();
   }
 
+  bool _isChecking = false;
+
   Future<void> _checkAndRefresh() async {
-    if (!mounted) return;
+    if (!mounted || _isChecking) return;
 
-    final provider = context.read<EventProvider>();
-    final currentItems = provider.events;
-    final shouldRefresh = _lastItems == null ||
-        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+    _isChecking = true;
 
-    if (shouldRefresh) {
-      await provider.refresh();
+    try {
+      final provider = context.read<EventProvider>();
+      final currentItems = provider.events;
+
+      // Only refresh if we don't have any items yet
+      if (currentItems.isEmpty) {
+        await provider.refresh();
+      }
+
       if (mounted) {
         setState(() {
           _lastItems = List<Event>.from(provider.events);
         });
+      }
+    } finally {
+      if (mounted) {
+        _isChecking = false;
       }
     }
   }
@@ -211,18 +219,18 @@ class EventListState extends State<EventList>
   }
 
   Widget _thumbPlaceholder() => Container(
-        color: Colors.grey[900],
-        alignment: Alignment.center,
-        child: const Icon(Icons.broken_image, size: 44, color: Colors.white38),
-      );
+    color: Colors.grey[900],
+    alignment: Alignment.center,
+    child: const Icon(Icons.broken_image, size: 44, color: Colors.white38),
+  );
 
   Widget _thumbLoading() => const Center(
-        child: SizedBox(
-          width: 18,
-          height: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      );
+    child: SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
+  );
 
   Widget _errorView({required VoidCallback onRetry}) {
     return Center(

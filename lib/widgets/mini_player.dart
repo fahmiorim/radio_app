@@ -38,22 +38,30 @@ class _MiniPlayerState extends State<MiniPlayer> {
   @override
   Widget build(BuildContext context) {
     final radioProvider = Provider.of<RadioStationProvider>(context);
-    final currentStation = radioProvider.currentStation;
+    final currentStation = radioProvider.currentStation ?? RadioStationProvider.defaultStation;
 
-    if (currentStation == null) {
-      return const SizedBox.shrink();
-    }
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
-        Navigator.pushNamed(context, AppRoutes.fullPlayer);
+        // Gunakan navigator dengan pushReplacementNamed untuk mencegah penumpukan route
+        Navigator.of(context).pushReplacementNamed(
+          AppRoutes.fullPlayer,
+        );
       },
       child: Container(
         height: 55,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: const Color(0xF3200C18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
 
         child: Column(

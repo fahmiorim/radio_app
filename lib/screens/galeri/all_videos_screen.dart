@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/video_model.dart';
 import '../../providers/video_provider.dart';
 import '../../widgets/app_bar.dart';
+import '../../widgets/mini_player.dart';
 import '../../config/app_colors.dart';
 
 class AllVideosScreen extends StatefulWidget {
@@ -143,7 +144,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      appBar: CustomAppBar.transparent(title: 'Semua Video'),
+      appBar: const CustomAppBar(title: 'Semua Video'),
       body: Stack(
         children: [
           // Background gradient + bubble
@@ -180,6 +181,10 @@ class _AllVideosScreenState extends State<AllVideosScreen>
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.only(bottom: 0), // Adjust padding as needed
+        child: MiniPlayer(),
       ),
     );
   }

@@ -16,6 +16,7 @@ import '../screens/artikel/artikel_detail_screen.dart';
 import '../screens/galeri/all_videos_screen.dart';
 import '../screens/galeri/all_albums_screen.dart';
 import '../screens/profile/edit_profile_screen.dart';
+import '../screens/full_player/full_player.dart';
 import '../models/artikel_model.dart';
 
 class AppRoutes {
@@ -60,6 +61,7 @@ class AppRoutes {
     allPrograms: (_) => const AllProgramsScreen(),
     allVideos: (_) => const AllVideosScreen(),
     albumList: (_) => const AllAlbumsScreen(),
+    fullPlayer: (_) => const FullPlayer(),
     verification: (context) {
       final email = ModalRoute.of(context)?.settings.arguments as String? ?? '';
       return VerificationScreen(email: email);

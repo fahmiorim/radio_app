@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../providers/album_provider.dart';
 import '../../models/album_model.dart';
 import '../../config/app_colors.dart';
+import '../../widgets/mini_player.dart';
 
 class AlbumDetailScreen extends StatefulWidget {
   final String slug;
@@ -63,6 +64,13 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
       backgroundColor: AppColors.backgroundDark,
       body: Stack(
         children: [
+          // MiniPlayer di sini akan muncul di atas konten
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: MiniPlayer(),
+          ),
           // Background dekoratif
           Positioned.fill(
             child: Container(
@@ -323,6 +331,10 @@ class _PhotoViewer extends StatelessWidget {
             backgroundDecoration: const BoxDecoration(color: Colors.black),
           ),
         ),
+      ),
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.only(bottom: 0),
+        child: MiniPlayer(),
       ),
     );
   }

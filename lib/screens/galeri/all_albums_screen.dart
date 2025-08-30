@@ -7,6 +7,7 @@ import '../../config/app_colors.dart';
 import '../../providers/album_provider.dart';
 import '../../models/album_model.dart';
 import '../../widgets/app_bar.dart';
+import '../../widgets/mini_player.dart';
 import 'album_detail_screen.dart';
 
 class AllAlbumsScreen extends StatefulWidget {
@@ -68,7 +69,8 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
 
     final provider = context.read<AlbumProvider>();
     final currentAlbums = provider.allAlbums;
-    final shouldRefresh = _lastAlbums == null ||
+    final shouldRefresh =
+        _lastAlbums == null ||
         !const DeepCollectionEquality().equals(_lastAlbums, currentAlbums);
 
     if (shouldRefresh) {
@@ -113,8 +115,12 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      appBar: CustomAppBar.transparent(title: 'Semua Album'),
+      appBar: const CustomAppBar(title: 'Semua Album'),
       body: _buildBody(),
+      bottomNavigationBar: const Padding(
+        padding: EdgeInsets.only(bottom: 0),
+        child: MiniPlayer(),
+      ),
     );
   }
 
@@ -229,13 +235,13 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   }
 
   Widget _bubble(double size) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.05),
-        ),
-      );
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(0.05),
+    ),
+  );
 }
 
 class _AlbumCard extends StatelessWidget {
@@ -244,7 +250,7 @@ class _AlbumCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final coverUrl = album.coverUrl; // gunakan URL yang sudah di-resolve
+    final coverUrl = album.coverUrl;
 
     return GestureDetector(
       onTap: () {
@@ -270,16 +276,17 @@ class _AlbumCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Cover
+            // Cover with overlay and text
             Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Hero(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Cover image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(12),
+                    ),
+                    child: Hero(
                       tag: 'album-${album.slug}',
                       child: CachedNetworkImage(
                         imageUrl: coverUrl.isNotEmpty ? coverUrl : '',
@@ -297,66 +304,68 @@ class _AlbumCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Gradient overlay
-                    Positioned.fill(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.75),
-                            ],
-                          ),
+                  ),
+                  // Gradient overlay
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.75),
+                          ],
                         ),
                       ),
                     ),
-                    // Title & meta
-                    Positioned(
-                      left: 12,
-                      right: 12,
-                      bottom: 12,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            album.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              height: 1.2,
+                  ),
+                  // Title & meta
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 12,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          album.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.photo_library,
+                              size: 14,
+                              color: Colors.white70,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.photo_library,
-                                size: 14,
+                            const SizedBox(width: 4),
+                            Text(
+                              '${album.photosCount ?? 0} Foto',
+                              style: const TextStyle(
                                 color: Colors.white70,
+                                fontSize: 12,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${album.photosCount ?? 0} Foto',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            // (opsional) footer info lain
           ],
         ),
       ),
