@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 
 import '../../models/artikel_model.dart';
 import '../../providers/artikel_provider.dart';
@@ -16,33 +17,86 @@ class ArtikelScreen extends StatefulWidget {
   State<ArtikelScreen> createState() => _ArtikelScreenState();
 }
 
-class _ArtikelScreenState extends State<ArtikelScreen> {
+class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
-  bool _inited = false;
+  bool _isMounted = false;
+  List<Artikel>? _lastItems;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _scrollController.addListener(_onScroll);
+    
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Load data after first frame to avoid context issues
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_inited) return;
-    _inited = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final p = context.read<ArtikelProvider>();
-      if (!p.isLoading && p.artikels.isEmpty) {
-        p.refresh();
+      if (mounted) {
+        _checkAndRefresh();
       }
     });
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     _scrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      await context.read<ArtikelProvider>().refresh();
+    } else {
+      await context.read<ArtikelProvider>().fetchArtikels();
+    }
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Artikel>.from(
+          context.read<ArtikelProvider>().artikels,
+        );
+      });
+    }
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<ArtikelProvider>();
+    final currentItems = provider.artikels;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.refresh();
+      if (mounted) {
+        setState(() {
+          _lastItems = List<Artikel>.from(provider.artikels);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
   }
 
   void _onScroll() {
@@ -57,6 +111,7 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: CustomAppBar.transparent(title: 'Artikel'),

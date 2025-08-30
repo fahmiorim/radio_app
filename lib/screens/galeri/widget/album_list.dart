@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 
@@ -30,15 +29,32 @@ class _AlbumListState extends State<AlbumList>
     _isMounted = true;
     WidgetsBinding.instance.addObserver(this);
 
-    // Fetch albums ketika widget siap (hindari panggil di build)
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final provider = context.read<AlbumProvider>();
-      await provider.fetchFeaturedAlbums();
-      setState(() {
-        _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
-      });
+    // Load data after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
     });
+  }
+
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
+    try {
+      final provider = Provider.of<AlbumProvider>(context, listen: false);
+      await provider.fetchFeaturedAlbums(forceRefresh: forceRefresh);
+
+      if (mounted) {
+        setState(() {
+          _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        debugPrint('Error loading albums: $e');
+      }
+      rethrow;
+    }
   }
 
   @override
@@ -48,13 +64,18 @@ class _AlbumListState extends State<AlbumList>
     super.dispose();
   }
 
+  bool _isFirstBuild = true;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Tunda ke frame berikutnya agar aman jika memicu setState
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _checkAndRefresh();
-    });
+    // Only refresh on first build or when coming back to the tab
+    if (_isFirstBuild) {
+      _isFirstBuild = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadData(forceRefresh: true);
+      });
+    }
   }
 
   @override
@@ -70,24 +91,20 @@ class _AlbumListState extends State<AlbumList>
   Future<void> _checkAndRefresh() async {
     if (!mounted) return;
 
+    // Only check for refresh if the app is coming back to the foreground
     final provider = context.read<AlbumProvider>();
-    final current = provider.featuredAlbums;
-    final shouldRefresh = _lastAlbums == null ||
-        !const DeepCollectionEquality().equals(_lastAlbums, current);
-
-    if (shouldRefresh) {
-      await provider.fetchFeaturedAlbums();
-      if (mounted) {
-        setState(() {
-          _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
-        });
-      }
+    await provider.fetchFeaturedAlbums(forceRefresh: true);
+    if (mounted) {
+      setState(() {
+        _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+      });
     }
   }
 
   Widget _buildAlbumItem(BuildContext context, AlbumModel album) {
-    return SizedBox(
-      width: 160,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      constraints: const BoxConstraints(maxWidth: 140, maxHeight: 180),
       child: GestureDetector(
         onTap: () {
           Navigator.pushNamed(
@@ -98,16 +115,18 @@ class _AlbumListState extends State<AlbumList>
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Pastikan rasio konsisten agar list nggak "lompat-lompat"
-            AspectRatio(
-              aspectRatio: 1, // kotak (1:1). Ubah sesuai desain (mis. 4/5)
+            // Image container with fixed aspect ratio
+            SizedBox(
+              height: 130, // Adjusted height
+              width: double.infinity,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Pakai URL yang sudah di-resolve
+                    // Album cover image
                     Image.network(
                       album.coverUrl.isNotEmpty ? album.coverUrl : '',
                       fit: BoxFit.cover,
@@ -122,7 +141,7 @@ class _AlbumListState extends State<AlbumList>
                       ),
                     ),
 
-                    // Overlay gradient biar teks kebaca
+                    // Gradient overlay for better text visibility
                     Positioned.fill(
                       child: DecoratedBox(
                         decoration: BoxDecoration(
@@ -130,8 +149,8 @@ class _AlbumListState extends State<AlbumList>
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              Colors.black.withOpacity(0.65),
-                              Colors.black.withOpacity(0.15),
+                              Colors.black.withOpacity(0.7),
+                              Colors.transparent,
                               Colors.transparent,
                             ],
                             stops: const [0.0, 0.4, 1.0],
@@ -146,8 +165,8 @@ class _AlbumListState extends State<AlbumList>
                       bottom: 8,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 6,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.55),
@@ -160,7 +179,7 @@ class _AlbumListState extends State<AlbumList>
                               size: 14,
                               color: Colors.white,
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             Text(
                               '${album.photosCount ?? 0}',
                               style: const TextStyle(
@@ -185,28 +204,38 @@ class _AlbumListState extends State<AlbumList>
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-
-            // Judul
-            Text(
-              album.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                height: 1.2,
+            // Title and photo count in a column
+            Container(
+              padding: const EdgeInsets.only(top: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    album.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      height: 1.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Photo count
+                  Text(
+                    '${album.photosCount ?? 0} Foto',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            // Subteks jumlah foto
-            const SizedBox(height: 2),
-            Text(
-              '${album.photosCount ?? 0} Foto',
-              style: TextStyle(color: Colors.grey[400], fontSize: 12),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -217,58 +246,75 @@ class _AlbumListState extends State<AlbumList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final albumProvider = Provider.of<AlbumProvider>(context);
+    final isLoading = albumProvider.isLoadingFeatured;
+    final hasError = albumProvider.hasErrorFeatured;
+    final errMsg = albumProvider.errorMessageFeatured;
+    final items = albumProvider.featuredAlbums;
+
+    // Only update local state if data has actually changed
+    if (!const DeepCollectionEquality().equals(_lastAlbums, items)) {
+      _lastAlbums = List<AlbumModel>.from(items);
+    }
+
     return Consumer<AlbumProvider>(
       builder: (context, albumProvider, _) {
-        if (albumProvider.isLoadingFeatured) {
-          return const AlbumListSkeleton();
-        }
-
-        if (albumProvider.hasErrorFeatured) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  albumProvider.errorMessageFeatured,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: albumProvider.fetchFeaturedAlbums,
-                  child: const Text('Coba Lagi'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (albumProvider.featuredAlbums.isEmpty) {
-          return const Center(child: Text('Tidak ada album tersedia'));
-        }
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SectionTitle(
-              title: 'Album',
-              onSeeAll: () {
-                Navigator.pushNamed(context, AppRoutes.albumList);
-              },
+              title: 'Galeri',
+              onSeeAll: items.isNotEmpty
+                  ? () => Navigator.pushNamed(context, AppRoutes.albumList)
+                  : null,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             SizedBox(
-              height: 220, // total tinggi kartu (rasio 1:1 + teks)
-              child: ListView.separated(
-                padding: const EdgeInsets.only(right: 4),
-                scrollDirection: Axis.horizontal,
-                itemCount: albumProvider.featuredAlbums.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 16),
-                itemBuilder: (context, index) => _buildAlbumItem(
-                  context,
-                  albumProvider.featuredAlbums[index],
-                ),
-              ),
+              height: 400, // Slightly increased height
+              child: isLoading && items.isEmpty
+                  ? const AlbumListSkeleton()
+                  : hasError
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(errMsg, textAlign: TextAlign.center),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => _loadData(forceRefresh: true),
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : items.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Tidak ada album tersedia',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
+                  : GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.8,
+                            mainAxisExtent: 180,
+                          ),
+                      itemCount: items.length > 4 ? 4 : items.length,
+                      itemBuilder: (context, index) {
+                        return _buildAlbumItem(context, items[index]);
+                      },
+                    ),
             ),
+            const SizedBox(height: 24),
           ],
         );
       },

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../models/video_model.dart';
 import '../config/api_client.dart';
 
@@ -12,6 +13,12 @@ class VideoService {
   static DateTime? _cacheAt;
   static const Duration _ttl = Duration(minutes: 5);
 
+  // Clear cached data
+  Future<void> clearCache() async {
+    _cacheRecent = null;
+    _cacheAt = null;
+  }
+
   Future<List<VideoModel>> fetchRecent({bool forceRefresh = false}) async {
     final now = DateTime.now();
     final isFresh = _cacheAt != null && now.difference(_cacheAt!) < _ttl;
@@ -19,6 +26,11 @@ class VideoService {
 
     try {
       final res = await _dio.get('/video');
+      
+      if (kDebugMode) {
+        print('✅ ${res.statusCode} ${res.requestOptions.uri}');
+        print('Response data: ${res.data}');
+      }
 
       if (res.statusCode == 200) {
         final data = res.data;
@@ -132,8 +144,4 @@ class VideoService {
     }
   }
 
-  void clearCache() {
-    _cacheRecent = null;
-    _cacheAt = null;
-  }
 }

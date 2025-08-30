@@ -8,6 +8,16 @@ class AlbumService {
   AlbumService._();
   static final AlbumService I = AlbumService._();
 
+  // Clear all caches
+  Future<void> clearCache() async {
+    _featuredCache = null;
+    _featuredAt = null;
+    _allCache.clear();
+    _allAt = null;
+    _detailCache.clear();
+    _detailAt.clear();
+  }
+
   final Dio _dio = ApiClient.I.dio;
 
   static const Duration _ttl = Duration(minutes: 5);
@@ -240,12 +250,4 @@ class AlbumService {
     }
   }
 
-  void clearCache() {
-    _featuredCache = null;
-    _featuredAt = null;
-    _allCache.clear();
-    _allAt = null;
-    _detailCache.clear();
-    _detailAt.clear();
-  }
 }

@@ -38,7 +38,7 @@ class VideoProvider with ChangeNotifier {
   }
 
   Future<void> fetchRecentVideos({bool forceRefresh = false}) async {
-    if (_isLoadingRecent) return;
+    if (_isLoadingRecent && !forceRefresh) return;
 
     _isLoadingRecent = true;
     _hasErrorRecent = false;
@@ -47,17 +47,47 @@ class VideoProvider with ChangeNotifier {
 
     try {
       final items = await _svc.fetchRecent(forceRefresh: forceRefresh);
+      if (kDebugMode) {
+        print('✅ Fetched ${items.length} videos');
+      }
       _recentVideos
         ..clear()
         ..addAll(items.take(4));
-    } catch (e) {
+    } catch (e, stackTrace) {
       _hasErrorRecent = true;
       _errorMessageRecent = 'Gagal memuat video terbaru. Silakan coba lagi.';
-      if (kDebugMode) print('Error fetchRecentVideos: $e');
+      if (kDebugMode) {
+        print('❌ Error in fetchRecentVideos:');
+        print('Error type: ${e.runtimeType}');
+        print('Error message: $e');
+        print('Stack trace: $stackTrace');
+      }
     } finally {
       _isLoadingRecent = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refreshRecentVideos() async {
+    // Clear any existing cache and force refresh
+    await _svc.clearCache();
+    // Clear local state
+    _recentVideos.clear();
+    _hasErrorRecent = false;
+    _errorMessageRecent = '';
+    notifyListeners();
+    
+    // Force fetch fresh data
+    await fetchRecentVideos(forceRefresh: true);
+  }
+
+  // Clear all cached data
+  void clearCache() {
+    _recentVideos.clear();
+    _allVideos.clear();
+    _currentPage = 1;
+    _hasMore = true;
+    notifyListeners();
   }
 
   Future<void> fetchAllVideos({bool loadMore = false}) async {

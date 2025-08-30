@@ -49,8 +49,8 @@ class AlbumProvider with ChangeNotifier {
     await Future.wait([fetchFeaturedAlbums(), fetchAllAlbums()]);
   }
 
-  Future<void> fetchFeaturedAlbums() async {
-    if (_isLoadingFeatured) return;
+  Future<void> fetchFeaturedAlbums({bool forceRefresh = false}) async {
+    if (_isLoadingFeatured && !forceRefresh) return;
 
     _isLoadingFeatured = true;
     _hasErrorFeatured = false;
@@ -58,7 +58,7 @@ class AlbumProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final albums = await _svc.fetchFeaturedAlbums();
+      final albums = await _svc.fetchFeaturedAlbums(forceRefresh: forceRefresh);
       _featuredAlbums
         ..clear()
         ..addAll(albums.take(4));
@@ -70,6 +70,19 @@ class AlbumProvider with ChangeNotifier {
       _isLoadingFeatured = false;
       notifyListeners();
     }
+  }
+
+  Future<void> refreshFeaturedAlbums() async {
+    // Clear service cache
+    await _svc.clearCache();
+    // Clear local state
+    _featuredAlbums.clear();
+    _hasErrorFeatured = false;
+    _errorMessageFeatured = '';
+    notifyListeners();
+    
+    // Force fetch fresh data
+    await fetchFeaturedAlbums(forceRefresh: true);
   }
 
   void clearFeaturedError() {

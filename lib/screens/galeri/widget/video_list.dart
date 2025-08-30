@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
@@ -65,7 +64,8 @@ class _VideoListState extends State<VideoList>
 
     final provider = context.read<VideoProvider>();
     final current = provider.recentVideos;
-    final shouldRefresh = _lastVideos == null ||
+    final shouldRefresh =
+        _lastVideos == null ||
         !const DeepCollectionEquality().equals(_lastVideos, current);
 
     if (shouldRefresh) {
@@ -99,8 +99,8 @@ class _VideoListState extends State<VideoList>
     final url = (video.youtubeUrl.isNotEmpty)
         ? video.youtubeUrl
         : (video.youtubeId.isNotEmpty
-            ? 'https://www.youtube.com/watch?v=${video.youtubeId}'
-            : '');
+              ? 'https://www.youtube.com/watch?v=${video.youtubeId}'
+              : '');
 
     if (url.isEmpty) {
       if (mounted) {
@@ -150,145 +150,135 @@ class _VideoListState extends State<VideoList>
                   ? () => Navigator.pushNamed(context, AppRoutes.allVideos)
                   : null,
             ),
+            const SizedBox(height: 8),
             SizedBox(
-              height: 280,
+              height: 190, // Adjusted height to fit content
               child: isLoading
                   ? const VideoListSkeleton()
                   : hasError
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(errMsg, textAlign: TextAlign.center),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: context
-                                    .read<VideoProvider>()
-                                    .fetchRecentVideos,
-                                child: const Text('Coba Lagi'),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(errMsg, textAlign: TextAlign.center),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: context
+                                .read<VideoProvider>()
+                                .fetchRecentVideos,
+                            child: const Text('Coba Lagi'),
                           ),
-                        )
-                      : items.isEmpty
-                          ? const Center(
-                              child: Text(
-                                'Tidak ada video tersedia',
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            )
-                          : ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              itemCount: items.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(width: 16),
-                              itemBuilder: (context, index) {
-                                final video = items[index];
-                                final thumbnailUrl = _thumbUrl(video);
+                        ],
+                      ),
+                    )
+                  : items.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Tidak ada video tersedia',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
+                  : ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final video = items[index];
+                        final thumbnailUrl = _thumbUrl(video);
 
-                                return InkWell(
-                                  onTap: () => _openYoutubeVideo(video),
-                                  child: SizedBox(
-                                    width: 320,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Stack(
-                                          children: [
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              child: thumbnailUrl.isNotEmpty
-                                                  ? Image.network(
-                                                      thumbnailUrl,
-                                                      width: 320,
-                                                      height: 180,
-                                                      fit: BoxFit.cover,
-                                                      loadingBuilder: (context,
-                                                          child, progress) {
-                                                        if (progress == null) {
-                                                          return child;
-                                                        }
-                                                        return const SizedBox(
-                                                          width: 320,
-                                                          height: 180,
-                                                          child: Center(
-                                                            child:
-                                                                CircularProgressIndicator(),
-                                                          ),
-                                                        );
-                                                      },
-                                                      errorBuilder: (context,
-                                                              error,
-                                                              stackTrace) =>
-                                                          const SizedBox(
-                                                        width: 320,
-                                                        height: 180,
-                                                        child: Center(
-                                                          child: Icon(
-                                                            Icons.broken_image,
-                                                            size: 40,
-                                                            color:
-                                                                Colors.white70,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    )
-                                                  : const SizedBox(
-                                                      width: 320,
-                                                      height: 180,
-                                                      child: Center(
-                                                        child: Icon(
-                                                          Icons.videocam_off,
-                                                          size: 40,
-                                                          color:
-                                                              Colors.white70,
-                                                        ),
-                                                      ),
-                                                    ),
-                                            ),
-                                            const Positioned.fill(
-                                              child: Center(
-                                                child: DecoratedBox(
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.black54,
-                                                    shape: BoxShape.circle,
+                        return InkWell(
+                          onTap: () => _openYoutubeVideo(video),
+                          child: SizedBox(
+                            width: 270,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Stack(
+                                    children: [
+                                      thumbnailUrl.isNotEmpty
+                                          ? Image.network(
+                                              thumbnailUrl,
+                                              width: 270,
+                                              height: 150,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (context, child, progress) {
+                                                if (progress == null) return child;
+                                                return SizedBox(
+                                                  width: 270,
+                                                  height: 150,
+                                                  child: const Center(
+                                                    child: CircularProgressIndicator(),
                                                   ),
-                                                  child: Padding(
-                                                    padding:
-                                                        EdgeInsets.all(8.0),
-                                                    child: Icon(
-                                                      Icons.play_arrow,
-                                                      color: Colors.white,
-                                                      size: 40,
-                                                    ),
+                                                );
+                                              },
+                                              errorBuilder: (context, error, stackTrace) => SizedBox(
+                                                width: 270,
+                                                height: 150,
+                                                child: Center(
+                                                  child: Icon(
+                                                    Icons.broken_image,
+                                                    size: 40,
+                                                    color: Colors.white70,
                                                   ),
                                                 ),
                                               ),
+                                            )
+                                          : SizedBox(
+                                              width: 270,
+                                              height: 150,
+                                              child: Center(
+                                                child: Icon(
+                                                  Icons.videocam_off,
+                                                  size: 40,
+                                                  color: Colors.white70,
+                                                ),
+                                              ),
                                             ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          video.title,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
+                                      if (thumbnailUrl.isNotEmpty)
+                                        Positioned.fill(
+                                          child: Center(
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color: Colors.black54,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Icon(
+                                                  Icons.play_arrow,
+                                                  color: Colors.white,
+                                                  size: 40,
+                                                ),
+                                              ),
+                                            ),
                                           ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ],
-                                    ),
+                                    ],
                                   ),
-                                );
-                              },
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  video.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         );

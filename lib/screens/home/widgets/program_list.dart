@@ -175,7 +175,7 @@ class _ProgramListState extends State<ProgramList>
                       ),
                   child: Container(
                     width: 160,
-                    margin: const EdgeBoxInsets.only(right: 16),
+                    margin: const EdgeInsets.only(right: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

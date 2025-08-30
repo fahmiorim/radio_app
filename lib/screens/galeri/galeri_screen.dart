@@ -1,16 +1,55 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/providers/album_provider.dart';
+import 'package:radio_odan_app/providers/video_provider.dart';
 import 'widget/video_list.dart';
 import 'widget/album_list.dart';
 
-class GaleriScreen extends StatelessWidget {
+class GaleriScreen extends StatefulWidget {
   const GaleriScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  State<GaleriScreen> createState() => _GaleriScreenState();
+}
 
+class _GaleriScreenState extends State<GaleriScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+
+  Future<void> _handleRefresh() async {
+    try {
+      // Refresh both providers in parallel
+      await Future.wait([
+        Provider.of<VideoProvider>(
+          context,
+          listen: false,
+        ).fetchRecentVideos(forceRefresh: true),
+        Provider.of<AlbumProvider>(
+          context,
+          listen: false,
+        ).fetchFeaturedAlbums(forceRefresh: true),
+      ]);
+    } catch (e) {
+      // Handle error if needed
+      debugPrint('Error refreshing data: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Trigger initial refresh after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshIndicatorKey.currentState?.show();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: AppColors.backgroundDark,
@@ -72,26 +111,33 @@ class GaleriScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Main Content
+          // Main Content with RefreshIndicator
           SafeArea(
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // Content
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
+            child: RefreshIndicator(
+              key: _refreshIndicatorKey,
+              onRefresh: _handleRefresh,
+              color: AppColors.primary,
+              backgroundColor: Colors.white,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Content
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 4.0,
+                    ),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        const VideoList(),
+                        const SizedBox(height: 1),
+                        const AlbumList(),
+                        const SizedBox(height: 8), // Reduced space
+                      ]),
+                    ),
                   ),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      const VideoList(),
-                      const SizedBox(height: 8),
-                      const AlbumList(),
-                    ]),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
