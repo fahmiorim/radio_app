@@ -8,6 +8,7 @@ import '../../../providers/artikel_provider.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
 import '../../../screens/artikel/artikel_detail_screen.dart';
 import '../../../config/app_colors.dart';
+import '../../../widgets/section_title.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -96,6 +97,10 @@ class ArtikelListState extends State<ArtikelList>
     });
   }
 
+  void _seeAllArticles() {
+    // TODO: Implement navigation to all articles screen
+  }
+
   @override
   void dispose() {
     _isMounted = false;
@@ -131,16 +136,23 @@ class ArtikelListState extends State<ArtikelList>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              height: 220,
-              child: ListView.builder(
-                key: const PageStorageKey('recent_articles_scroll'),
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: provider.recentArtikels.length > 5
-                    ? 5
-                    : provider.recentArtikels.length,
-                padding: const EdgeInsets.only(left: 16),
+            SectionTitle(
+              title: 'Artikel Terbaru',
+              onSeeAll: provider.recentArtikels.isNotEmpty ? _seeAllArticles : null,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: GridView.builder(
+                key: const PageStorageKey('recent_articles_grid'),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16.0,
+                  mainAxisSpacing: 16.0,
+                  childAspectRatio: 0.7,
+                ),
+                itemCount: provider.recentArtikels.length > 4 ? 4 : provider.recentArtikels.length,
                 itemBuilder: (context, index) {
                   final artikel = provider.recentArtikels[index];
                   return _buildArtikelItem(context, artikel);
@@ -191,16 +203,17 @@ class ArtikelListState extends State<ArtikelList>
         );
       },
       child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 16),
+        width: double.infinity,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 160,
-                height: 150,
+            AspectRatio(
+              aspectRatio: 1,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
                 color: AppColors.cardBackground,
                 child: artikel.gambarUrl.isEmpty
                     ? _thumbPlaceholder()
@@ -209,7 +222,8 @@ class ArtikelListState extends State<ArtikelList>
                         fit: BoxFit.cover,
                         placeholder: (_, __) => _thumbLoading(),
                         errorWidget: (_, __, ___) => _thumbPlaceholder(),
-                      ),
+                        ),
+                ),
               ),
             ),
             const SizedBox(height: 8),

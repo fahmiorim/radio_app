@@ -8,15 +8,14 @@ import '../models/radio_station.dart';
 /// Uses a singleton pattern to ensure only one instance exists
 class AudioPlayerManager {
   static final AudioPlayerManager _instance = AudioPlayerManager._internal();
-  factory AudioPlayerManager() => _instance;
-
-  late final AudioPlayer _player;
+  static AudioPlayerManager get instance => _instance;
+  
+  final AudioPlayer _player = AudioPlayer();
   // Track current playing station and URL
   RadioStation? _currentStation;
   String? _currentUrl;
 
   AudioPlayerManager._internal() {
-    _player = AudioPlayer();
     _setupAudioSession();
   }
 
@@ -58,9 +57,16 @@ class AudioPlayerManager {
   /// Play a radio station
   Future<void> playRadio(RadioStation station) async {
     final url = station.streamUrl;
+    
+    // Don't reinitialize if it's the same station and URL
+    if (_currentStation?.id == station.id && _currentUrl == url) {
+      if (_player.playing != true) {
+        await _player.play();
+      }
+      return;
+    }
 
     try {
-      await _player.stop();
       _currentStation = station;
       _currentUrl = url;
       final audioSource = AudioSource.uri(

@@ -11,48 +11,42 @@ import '../models/now_playing.dart';
 import '../models/radio_station.dart';
 
 class RadioStationProvider with ChangeNotifier {
-  // --- STATE ---
   RadioStation? _currentStation;
   bool _isPlaying = false;
   NowPlayingInfo? _nowPlaying;
 
-  // --- WS / Polling ---
   WebSocketChannel? _ws;
   StreamSubscription? _wsSub;
   Timer? _reconnectTimer;
   Timer? _pollingTimer;
   int _reconnectAttempts = 0;
 
-  // --- GETTERS ---
   RadioStation? get currentStation => _currentStation;
   bool get isPlaying => _isPlaying;
   NowPlayingInfo? get nowPlaying => _nowPlaying;
 
-  // --- DEFAULT STATION CONFIG ---
-  // Tambahkan semua endpoint yang dibutuhkan di RadioStation (atau ganti sesuai modelmu)
   static final RadioStation defaultStation = RadioStation(
+    id: 'odan_fm',
     title: "ODAN 89,3 FM",
     host: "Host Odan",
     coverUrl: "assets/cover.jpg",
     streamUrl: "https://rsb.batubarakab.go.id:8000/radio.mp3",
-    // ini bukan lagi 'nowPlayingUrl' untuk WS; kita pakai 3 properti terpisah di bawah
-    nowPlayingUrl: "https://rsb.batubarakab.go.id/api/nowplaying_static/odan_fm.json",
+    nowPlayingUrl:
+        "https://rsb.batubarakab.go.id/api/nowplaying_static/odan_fm.json",
   );
 
-  // Konfigurasi WS/SSE & polling untuk station
   static const String _stationShortcode = 'odan_fm';
   static const String _wsUrl =
       'wss://rsb.batubarakab.go.id/api/live/nowplaying/websocket';
   static const String _staticNowPlayingUrl =
       'https://rsb.batubarakab.go.id/api/nowplaying_static/odan_fm.json';
 
-  final AudioPlayerManager _audioManager = AudioPlayerManager();
+  final AudioPlayerManager _audioManager = AudioPlayerManager.instance;
   StreamSubscription<PlayerState>? _playerStateSubscription;
 
   RadioStationProvider() {
     _currentStation = defaultStation;
 
-    // Sinkronkan state dengan just_audio
     _playerStateSubscription = _audioManager.playerStateStream.listen((state) {
       final now = state.playing;
       if (_isPlaying != now) {
@@ -61,13 +55,11 @@ class RadioStationProvider with ChangeNotifier {
       }
     });
 
-    // Mulai koneksi WS (dengan fallback polling kalau gagal)
     _connectNowPlayingWS();
   }
 
   void setStation(RadioStation station) {
     _currentStation = station;
-    // ganti station -> restart WS & polling
     _teardownRealtime();
     _connectNowPlayingWS();
     notifyListeners();
@@ -80,20 +72,16 @@ class RadioStationProvider with ChangeNotifier {
     super.dispose();
   }
 
-  // -------------------------------
-  // Realtime via WebSocket AzuraCast
-  // -------------------------------
   void _connectNowPlayingWS() {
-    _teardownRealtime(); // pastikan bersih
+    _teardownRealtime();
 
     try {
       _ws = WebSocketChannel.connect(Uri.parse(_wsUrl));
 
-      // Kirim frame subscribe segera setelah connect
       final subMsg = {
         "subs": {
-          "station:$_stationShortcode": {"recover": true}
-        }
+          "station:$_stationShortcode": {"recover": true},
+        },
       };
       _ws!.sink.add(jsonEncode(subMsg));
 
@@ -104,7 +92,6 @@ class RadioStationProvider with ChangeNotifier {
 
             Map<String, dynamic>? np;
 
-            // Pesan awal (cached publications)
             if (msg is Map && msg.containsKey('connect')) {
               final subs = msg['connect']?['subs'] as Map?;
               subs?.forEach((_, sub) {
@@ -118,7 +105,6 @@ class RadioStationProvider with ChangeNotifier {
               });
             }
 
-            // Update realtime
             if (msg is Map && msg.containsKey('pub')) {
               final data = msg['pub']?['data'] as Map?;
               if (data != null && data['np'] != null) {
@@ -128,7 +114,7 @@ class RadioStationProvider with ChangeNotifier {
 
             if (np != null) {
               _updateNowPlayingFromNp(np!);
-              _reconnectAttempts = 0; // sukses terima data -> reset backoff
+              _reconnectAttempts = 0;
             }
           } catch (e) {
             log('WS parse error: $e');
@@ -136,7 +122,7 @@ class RadioStationProvider with ChangeNotifier {
         },
         onError: (e) {
           log('WebSocket error: $e');
-          _startPollingFallback(); // aktifkan polling sementara
+          _startPollingFallback();
           _scheduleReconnect();
         },
         onDone: () {
@@ -153,12 +139,7 @@ class RadioStationProvider with ChangeNotifier {
   }
 
   void _updateNowPlayingFromNp(Map<String, dynamic> np) {
-    // NOTE:
-    // Struktur np (dari WS) ≈ struktur /api/nowplaying/<station>.
-    // Jika modelmu `NowPlayingInfo.fromJson` sudah cocok, langsung pakai:
     try {
-      // Kalau modelmu mengharapkan 'now_playing' saja, kamu bisa:
-      // final Map<String, dynamic> modelJson = np['now_playing'] ?? np;
       final Map<String, dynamic> modelJson = np;
 
       _nowPlaying = NowPlayingInfo.fromJson(modelJson);
@@ -183,7 +164,6 @@ class RadioStationProvider with ChangeNotifier {
 
   void _scheduleReconnect() {
     _reconnectTimer?.cancel();
-    // Exponential backoff: 2, 4, 8, ... max 60s
     _reconnectAttempts = (_reconnectAttempts + 1).clamp(1, 30);
     final secs = (2 << (_reconnectAttempts - 1));
     final wait = Duration(seconds: secs > 60 ? 60 : secs);
@@ -191,9 +171,6 @@ class RadioStationProvider with ChangeNotifier {
     _reconnectTimer = Timer(wait, _connectNowPlayingWS);
   }
 
-  // -------------------------------
-  // Fallback Polling (Static JSON)
-  // -------------------------------
   void _startPollingFallback() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 12), (_) async {
@@ -202,7 +179,8 @@ class RadioStationProvider with ChangeNotifier {
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body) as Map<String, dynamic>;
           // respons static: { station, listeners, live, now_playing, ... }
-          final np = data; // langsung pass (sesuaikan jika modelmu butuh subset)
+          final np =
+              data; // langsung pass (sesuaikan jika modelmu butuh subset)
           _updateNowPlayingFromNp(np);
         } else {
           log('Polling NP non-200: ${res.statusCode}');
@@ -213,9 +191,6 @@ class RadioStationProvider with ChangeNotifier {
     });
   }
 
-  // -------------------------------
-  // Audio controls
-  // -------------------------------
   Future<void> togglePlayPause() async {
     if (_currentStation == null) {
       log('No station selected');

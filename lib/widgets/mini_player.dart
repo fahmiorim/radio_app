@@ -14,7 +14,17 @@ class MiniPlayer extends StatefulWidget {
 }
 
 class _MiniPlayerState extends State<MiniPlayer> {
-  final AudioPlayerManager _audioManager = AudioPlayerManager();
+  final AudioPlayerManager _audioManager = AudioPlayerManager.instance;
+
+  Widget _buildDefaultCover() {
+    return Image.asset(
+      'assets/odanlogo.png',
+      width: 42,
+      height: 42,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) => const Icon(Icons.music_note, size: 24, color: Colors.white70),
+    );
+  }
 
   @override
   void dispose() {
@@ -68,19 +78,15 @@ class _MiniPlayerState extends State<MiniPlayer> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: (nowPlaying?.artUrl.isNotEmpty ?? false)
+                    child: (nowPlaying != null && nowPlaying.artUrl.isNotEmpty)
                         ? CachedNetworkImage(
                             imageUrl: cover,
                             height: 42,
                             width: 42,
                             fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => _buildDefaultCover(),
                           )
-                        : Image.asset(
-                            cover,
-                            height: 42,
-                            width: 42,
-                            fit: BoxFit.cover,
-                          ),
+                        : _buildDefaultCover(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

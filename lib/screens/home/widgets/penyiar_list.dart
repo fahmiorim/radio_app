@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:collection/collection.dart';
 
 import '../../../../models/penyiar_model.dart';
@@ -24,22 +23,22 @@ class PenyiarListState extends State<PenyiarList>
   bool _isMounted = false;
 
   List<Penyiar>? _lastItems;
-  
+
   @override
   void initState() {
     super.initState();
     _isMounted = true;
-    
+
     // Initial load
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _loadData();
       }
     });
-    
+
     WidgetsBinding.instance.addObserver(this);
   }
-  
+
   Future<void> _loadData({bool forceRefresh = false}) async {
     await context.read<PenyiarProvider>().init();
     if (forceRefresh) {
@@ -53,7 +52,7 @@ class PenyiarListState extends State<PenyiarList>
       });
     }
   }
-  
+
   // Public method to trigger refresh from parent
   Future<void> refreshData() async {
     await _loadData(forceRefresh: true);
@@ -76,13 +75,14 @@ class PenyiarListState extends State<PenyiarList>
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
-  
+
   Future<void> _checkAndRefresh() async {
     if (!mounted) return;
 
     final provider = context.read<PenyiarProvider>();
     final currentItems = provider.items;
-    final shouldRefresh = _lastItems == null ||
+    final shouldRefresh =
+        _lastItems == null ||
         !const DeepCollectionEquality().equals(_lastItems, currentItems);
 
     if (shouldRefresh) {
@@ -102,7 +102,6 @@ class PenyiarListState extends State<PenyiarList>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -110,7 +109,9 @@ class PenyiarListState extends State<PenyiarList>
     return Selector<PenyiarProvider, Map<String, dynamic>>(
       selector: (_, provider) => ({
         'isLoading': provider.isLoading,
-        'items': List<Penyiar>.from(provider.items), // Create a new list to ensure proper updates
+        'items': List<Penyiar>.from(
+          provider.items,
+        ), // Create a new list to ensure proper updates
         'error': provider.error,
       }),
       builder: (context, data, _) {
@@ -133,12 +134,9 @@ class PenyiarListState extends State<PenyiarList>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 20, right: 20, bottom: 12, top: 4),
-              child: SectionTitle(title: 'Penyiar Radio'),
-            ),
+            SectionTitle(title: 'Penyiar Radio'),
             SizedBox(
-              height: 180,
+              height: 160,
               child: isLoading
                   ? const PenyiarSkeleton()
                   : items.isEmpty

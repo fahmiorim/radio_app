@@ -14,13 +14,29 @@ class FullPlayer extends StatefulWidget {
 }
 
 class _FullPlayerState extends State<FullPlayer> {
-  final _audioManager = AudioPlayerManager();
+  final _audioManager = AudioPlayerManager.instance;
   bool isFavorited = false;
+
+  Widget _buildDefaultCover() {
+    return Image.asset(
+      'assets/odanlogo.png',
+      width: double.infinity,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.music_note, size: 100, color: Colors.white),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _initializePlayer();
+  }
+
+  @override
+  void dispose() {
+    _audioManager.dispose();
+    super.dispose();
   }
 
   Future<void> _initializePlayer() async {
@@ -108,26 +124,28 @@ class _FullPlayerState extends State<FullPlayer> {
                   padding: const EdgeInsets.all(30.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: (nowPlaying?.artUrl.isNotEmpty ?? false)
+                    child: (nowPlaying != null && nowPlaying.artUrl.isNotEmpty)
                         ? CachedNetworkImage(
                             imageUrl: cover,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            errorWidget: (context, url, error) =>
+                                _buildDefaultCover(),
                           )
-                        : Image.asset(
-                            cover,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
+                        : _buildDefaultCover(),
                   ),
                 ),
               ),
             ),
 
             // === Title & Host & LIVE ===
-            Expanded(
-              flex: 2,
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
@@ -138,13 +156,17 @@ class _FullPlayerState extends State<FullPlayer> {
                       color: Colors.white,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     artist,
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -157,8 +179,8 @@ class _FullPlayerState extends State<FullPlayer> {
                     child: const Text(
                       "LIVE",
                       style: TextStyle(
-                        color: Colors.white,
                         fontSize: 12,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

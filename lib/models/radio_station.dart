@@ -1,4 +1,5 @@
 class RadioStation {
+  final String id;
   final String title;
   final String host;
   final String coverUrl;
@@ -6,6 +7,7 @@ class RadioStation {
   final String nowPlayingUrl;
 
   RadioStation({
+    required this.id,
     required this.title,
     required this.host,
     required this.coverUrl,

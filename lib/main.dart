@@ -5,7 +5,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
 import 'config/app_routes.dart';
-import 'audio/audio_player_manager.dart';
 import 'screens/auth/auth_wrapper.dart';
 import 'providers/program_provider.dart';
 import 'providers/penyiar_provider.dart';
@@ -44,8 +43,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
-    // Dispose the audio player when the app is terminated
-    AudioPlayerManager().dispose();
+    // No need to dispose the audio manager here as it's a singleton
+    // and should live for the entire app lifecycle
     super.dispose();
   }
 
