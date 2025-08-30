@@ -65,16 +65,17 @@ class _PenyiarListState extends State<PenyiarList>
   
   Future<void> _checkAndRefresh() async {
     if (!mounted) return;
-    
-    final currentItems = context.read<PenyiarProvider>().items;
-    final shouldRefresh = _lastItems == null || 
-                         !const DeepCollectionEquality().equals(_lastItems, currentItems);
-    
+
+    final provider = context.read<PenyiarProvider>();
+    final currentItems = provider.items;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
     if (shouldRefresh) {
-      await context.read<PenyiarProvider>().refresh();
+      await provider.refresh();
       if (mounted) {
         setState(() {
-          _lastItems = List<Penyiar>.from(currentItems);
+          _lastItems = List<Penyiar>.from(provider.items);
         });
       }
     }
