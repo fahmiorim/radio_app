@@ -198,7 +198,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _loadInitialData,
+                    onPressed: _loadData,
                     child: const Text('Coba Lagi'),
                   ),
                 ],
