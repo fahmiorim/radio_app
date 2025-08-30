@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../../../models/album_model.dart';
 import '../../../providers/album_provider.dart';
@@ -13,15 +14,51 @@ class AlbumList extends StatefulWidget {
   State<AlbumList> createState() => _AlbumListState();
 }
 
-class _AlbumListState extends State<AlbumList> {
+class _AlbumListState extends State<AlbumList>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  List<AlbumModel> _lastAlbums = [];
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Fetch albums ketika widget ready (hindari panggil di build)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AlbumProvider>().fetchFeaturedAlbums();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<AlbumProvider>();
+      await provider.fetchFeaturedAlbums();
+      _lastAlbums = List.from(provider.featuredAlbums);
     });
   }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkAndRefresh();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkAndRefresh();
+    }
+  }
+
+  Future<void> _checkAndRefresh() async {
+    final provider = context.read<AlbumProvider>();
+    if (!listEquals(_lastAlbums, provider.featuredAlbums)) {
+      await provider.fetchFeaturedAlbums();
+      _lastAlbums = List.from(provider.featuredAlbums);
+    }
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 
   Widget _buildAlbumItem(BuildContext context, AlbumModel album) {
     return SizedBox(
@@ -157,6 +194,7 @@ class _AlbumListState extends State<AlbumList> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<AlbumProvider>(
       builder: (context, albumProvider, _) {
         if (albumProvider.isLoadingFeatured) {
