@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
+
+import '../../../models/event_model.dart';
 
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
@@ -15,18 +18,73 @@ class EventList extends StatefulWidget {
 }
 
 class _EventListState extends State<EventList>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
 
-  // ❌ gak perlu fetch di initState (sudah di-init di main.dart)
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     context.read<EventProvider>().init(); // kalau pun mau guard
-  //   });
-  // }
+  bool _isMounted = false;
+  List<Event>? _lastItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _isMounted = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    await context.read<EventProvider>().init();
+    _lastItems = List<Event>.from(context.read<EventProvider>().events);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<EventProvider>();
+    final currentItems = provider.events;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.refresh();
+      if (mounted) {
+        setState(() {
+          _lastItems = List<Event>.from(provider.events);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
