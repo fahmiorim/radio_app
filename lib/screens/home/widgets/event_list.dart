@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 
 import '../../../models/event_model.dart';
-
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
 import '../../../providers/event_provider.dart';
@@ -30,30 +29,34 @@ class EventListState extends State<EventList>
     super.initState();
     _isMounted = true;
 
+    WidgetsBinding.instance.addObserver(this);
+
+    // Jalankan setelah frame pertama agar aman untuk akses context
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _loadData();
       }
     });
-
-    WidgetsBinding.instance.addObserver(this);
   }
 
   Future<void> _loadData({bool forceRefresh = false}) async {
-    await context.read<EventProvider>().init();
+    final prov = context.read<EventProvider>();
+
+    await prov.init();
     if (forceRefresh) {
-      await context.read<EventProvider>().refresh();
+      await prov.refresh();
     } else {
-      await context.read<EventProvider>().load(cacheFirst: true);
+      await prov.load(cacheFirst: true);
     }
+
     if (mounted) {
       setState(() {
-        _lastItems = List<Event>.from(context.read<EventProvider>().events);
+        _lastItems = List<Event>.from(prov.events);
       });
     }
   }
-  
-  // Public method to trigger refresh from parent
+
+  // Bisa dipanggil parent untuk memaksa refresh
   Future<void> refreshData() async {
     await _loadData(forceRefresh: true);
   }
@@ -208,18 +211,18 @@ class EventListState extends State<EventList>
   }
 
   Widget _thumbPlaceholder() => Container(
-    color: Colors.grey[900],
-    alignment: Alignment.center,
-    child: const Icon(Icons.broken_image, size: 44, color: Colors.white38),
-  );
+        color: Colors.grey[900],
+        alignment: Alignment.center,
+        child: const Icon(Icons.broken_image, size: 44, color: Colors.white38),
+      );
 
   Widget _thumbLoading() => const Center(
-    child: SizedBox(
-      width: 18,
-      height: 18,
-      child: CircularProgressIndicator(strokeWidth: 2),
-    ),
-  );
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
 
   Widget _errorView({required VoidCallback onRetry}) {
     return Center(

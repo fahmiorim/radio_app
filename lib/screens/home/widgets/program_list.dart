@@ -28,20 +28,31 @@ class _ProgramListState extends State<ProgramList>
   void initState() {
     super.initState();
     _isMounted = true;
+
     WidgetsBinding.instance.addObserver(this);
-    _loadData();
+
+    // Load data setelah frame pertama supaya aman dari context issues
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
   }
 
   Future<void> _loadData({bool forceRefresh = false}) async {
-    await context.read<ProgramProvider>().fetchTodaysPrograms(forceRefresh: forceRefresh);
+    await context.read<ProgramProvider>().fetchTodaysPrograms(
+      forceRefresh: forceRefresh,
+    );
     if (mounted) {
       setState(() {
-        _lastItems = List<Program>.from(context.read<ProgramProvider>().todaysPrograms);
+        _lastItems = List<Program>.from(
+          context.read<ProgramProvider>().todaysPrograms,
+        );
       });
     }
   }
-  
-  // Public method to trigger refresh from parent
+
+  // Public method: bisa dipanggil parent untuk hard refresh
   Future<void> refreshData() async {
     await _loadData(forceRefresh: true);
   }
@@ -56,6 +67,13 @@ class _ProgramListState extends State<ProgramList>
     });
   }
 
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
   Future<void> _checkAndRefresh() async {
     if (!mounted) return;
 
@@ -68,8 +86,7 @@ class _ProgramListState extends State<ProgramList>
       await provider.fetchTodaysPrograms(forceRefresh: true);
       if (mounted) {
         setState(() {
-          _lastItems =
-              List<Program>.from(provider.todaysPrograms);
+          _lastItems = List<Program>.from(provider.todaysPrograms);
         });
       }
     }
@@ -153,12 +170,12 @@ class _ProgramListState extends State<ProgramList>
 
                 return GestureDetector(
                   onTap: () => context.read<ProgramProvider>().selectProgram(
-                    program,
-                    context,
-                  ),
+                        program,
+                        context,
+                      ),
                   child: Container(
                     width: 160,
-                    margin: const EdgeInsets.only(right: 16),
+                    margin: const EdgeBoxInsets.only(right: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -218,10 +235,10 @@ class _ProgramListState extends State<ProgramList>
   }
 
   Widget _buildLoadingThumb() {
-    return SizedBox(
+    return const SizedBox(
       height: 225,
       width: 160,
-      child: const Center(
+      child: Center(
         child: SizedBox(
           width: 18,
           height: 18,

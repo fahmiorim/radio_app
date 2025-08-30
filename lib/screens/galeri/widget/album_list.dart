@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
+
 import '../../../models/album_model.dart';
 import '../../../providers/album_provider.dart';
 import '../../../config/app_routes.dart';
@@ -16,22 +18,32 @@ class AlbumList extends StatefulWidget {
 
 class _AlbumListState extends State<AlbumList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  List<AlbumModel> _lastAlbums = [];
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _isMounted = false;
+  List<AlbumModel>? _lastAlbums;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     WidgetsBinding.instance.addObserver(this);
-    // Fetch albums ketika widget ready (hindari panggil di build)
+
+    // Fetch albums ketika widget siap (hindari panggil di build)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
       final provider = context.read<AlbumProvider>();
       await provider.fetchFeaturedAlbums();
-      _lastAlbums = List.from(provider.featuredAlbums);
+      setState(() {
+        _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+      });
     });
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -39,43 +51,39 @@ class _AlbumListState extends State<AlbumList>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Use addPostFrameCallback to defer the refresh until after the build is complete
+    // Tunda ke frame berikutnya agar aman jika memicu setState
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _checkAndRefresh();
-      }
+      if (mounted) _checkAndRefresh();
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Use addPostFrameCallback to defer the refresh until after the build is complete
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      // Tunda ke frame berikutnya agar aman terhadap build yang sedang berjalan
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _checkAndRefresh();
-        }
+        if (mounted) _checkAndRefresh();
       });
     }
   }
 
   Future<void> _checkAndRefresh() async {
     if (!mounted) return;
-    
+
     final provider = context.read<AlbumProvider>();
-    if (!listEquals(_lastAlbums, provider.featuredAlbums)) {
+    final current = provider.featuredAlbums;
+    final shouldRefresh = _lastAlbums == null ||
+        !const DeepCollectionEquality().equals(_lastAlbums, current);
+
+    if (shouldRefresh) {
       await provider.fetchFeaturedAlbums();
-      
       if (mounted) {
         setState(() {
-          _lastAlbums = List.from(provider.featuredAlbums);
+          _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
         });
       }
     }
   }
-
-  @override
-  bool get wantKeepAlive => true;
 
   Widget _buildAlbumItem(BuildContext context, AlbumModel album) {
     return SizedBox(
@@ -99,11 +107,10 @@ class _AlbumListState extends State<AlbumList>
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // PAKAI URL YANG SUDAH DI-RESOLVE
+                    // Pakai URL yang sudah di-resolve
                     Image.network(
                       album.coverUrl.isNotEmpty ? album.coverUrl : '',
                       fit: BoxFit.cover,
-                      // Loading state kecil tanpa bikin jank (pakai skeleton utama untuk list)
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(color: Colors.grey[300]);
@@ -155,7 +162,7 @@ class _AlbumListState extends State<AlbumList>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '${(album.photosCount ?? 0)}',
+                              '${album.photosCount ?? 0}',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -171,7 +178,6 @@ class _AlbumListState extends State<AlbumList>
                     Positioned.fill(
                       child: Hero(
                         tag: 'album-${album.slug}',
-                        // gunakan Container transparan, hero akan "membawa" gambar di atas
                         child: Container(color: Colors.transparent),
                       ),
                     ),
@@ -198,7 +204,6 @@ class _AlbumListState extends State<AlbumList>
             const SizedBox(height: 2),
             Text(
               '${album.photosCount ?? 0} Foto',
-              // kalau tadi pakai getter: '${album.totalPhotos} Foto',
               style: TextStyle(color: Colors.grey[400], fontSize: 12),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

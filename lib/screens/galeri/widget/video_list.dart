@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:collection/collection.dart';
 
 import '../../../config/app_routes.dart';
 import '../../../models/video_model.dart';
@@ -18,38 +19,40 @@ class VideoList extends StatefulWidget {
 
 class _VideoListState extends State<VideoList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  List<VideoModel> _lastVideos = const [];
+  @override
+  bool get wantKeepAlive => true;
 
-  Future<void> _checkAndRefresh() async {
-    if (!mounted) return;
-    
-    final provider = context.read<VideoProvider>();
-    if (!listEquals(_lastVideos, provider.recentVideos)) {
-      await provider.fetchRecentVideos(forceRefresh: true);
-      
-      if (mounted) {
-        setState(() {
-          _lastVideos = List.of(provider.recentVideos);
-        });
-      }
-    }
-  }
+  bool _isMounted = false;
+  List<VideoModel>? _lastVideos;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
+
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final provider = context.read<VideoProvider>();
-      await provider.fetchRecentVideos();
-      _lastVideos = List.of(provider.recentVideos);
+
+    // Jalankan setelah frame pertama agar aman akses context
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
     });
+  }
+
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    final provider = context.read<VideoProvider>();
+    await provider.fetchRecentVideos(forceRefresh: forceRefresh);
+    if (mounted) {
+      setState(() {
+        _lastVideos = List<VideoModel>.from(provider.recentVideos);
+      });
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Use addPostFrameCallback to defer the refresh until after the build is complete
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _checkAndRefresh();
@@ -57,33 +60,47 @@ class _VideoListState extends State<VideoList>
     });
   }
 
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<VideoProvider>();
+    final current = provider.recentVideos;
+    final shouldRefresh = _lastVideos == null ||
+        !const DeepCollectionEquality().equals(_lastVideos, current);
+
+    if (shouldRefresh) {
+      await provider.fetchRecentVideos(forceRefresh: true);
+      if (mounted) {
+        setState(() {
+          _lastVideos = List<VideoModel>.from(provider.recentVideos);
+        });
+      }
+    }
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Use addPostFrameCallback to defer the refresh until after the build is complete
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      // Tunda ke frame berikutnya agar aman terhadap setState saat build
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _checkAndRefresh();
-        }
+        if (mounted) _checkAndRefresh();
       });
     }
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
-
-  @override
-  bool get wantKeepAlive => true;
 
   Future<void> _openYoutubeVideo(VideoModel video) async {
     final url = (video.youtubeUrl.isNotEmpty)
         ? video.youtubeUrl
         : (video.youtubeId.isNotEmpty
-              ? 'https://www.youtube.com/watch?v=${video.youtubeId}'
-              : '');
+            ? 'https://www.youtube.com/watch?v=${video.youtubeId}'
+            : '');
 
     if (url.isEmpty) {
       if (mounted) {
@@ -138,135 +155,140 @@ class _VideoListState extends State<VideoList>
               child: isLoading
                   ? const VideoListSkeleton()
                   : hasError
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(errMsg, textAlign: TextAlign.center),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: context
-                                .read<VideoProvider>()
-                                .fetchRecentVideos,
-                            child: const Text('Coba Lagi'),
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(errMsg, textAlign: TextAlign.center),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: context
+                                    .read<VideoProvider>()
+                                    .fetchRecentVideos,
+                                child: const Text('Coba Lagi'),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    )
-                  : items.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Tidak ada video tersedia',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    )
-                  : ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: items.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 16),
-                      itemBuilder: (context, index) {
-                        final video = items[index];
-                        final thumbnailUrl = _thumbUrl(video);
+                        )
+                      : items.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Tidak ada video tersedia',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            )
+                          : ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: items.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 16),
+                              itemBuilder: (context, index) {
+                                final video = items[index];
+                                final thumbnailUrl = _thumbUrl(video);
 
-                        return InkWell(
-                          onTap: () => _openYoutubeVideo(video),
-                          child: SizedBox(
-                            width: 320,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: thumbnailUrl.isNotEmpty
-                                          ? Image.network(
-                                              thumbnailUrl,
-                                              width: 320,
-                                              height: 180,
-                                              fit: BoxFit.cover,
-                                              loadingBuilder:
-                                                  (context, child, progress) {
-                                                    if (progress == null) {
-                                                      return child;
-                                                    }
-                                                    return const SizedBox(
+                                return InkWell(
+                                  onTap: () => _openYoutubeVideo(video),
+                                  child: SizedBox(
+                                    width: 320,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Stack(
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: thumbnailUrl.isNotEmpty
+                                                  ? Image.network(
+                                                      thumbnailUrl,
+                                                      width: 320,
+                                                      height: 180,
+                                                      fit: BoxFit.cover,
+                                                      loadingBuilder: (context,
+                                                          child, progress) {
+                                                        if (progress == null) {
+                                                          return child;
+                                                        }
+                                                        return const SizedBox(
+                                                          width: 320,
+                                                          height: 180,
+                                                          child: Center(
+                                                            child:
+                                                                CircularProgressIndicator(),
+                                                          ),
+                                                        );
+                                                      },
+                                                      errorBuilder: (context,
+                                                              error,
+                                                              stackTrace) =>
+                                                          const SizedBox(
+                                                        width: 320,
+                                                        height: 180,
+                                                        child: Center(
+                                                          child: Icon(
+                                                            Icons.broken_image,
+                                                            size: 40,
+                                                            color:
+                                                                Colors.white70,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : const SizedBox(
                                                       width: 320,
                                                       height: 180,
                                                       child: Center(
-                                                        child:
-                                                            CircularProgressIndicator(),
-                                                      ),
-                                                    );
-                                                  },
-                                              errorBuilder:
-                                                  (
-                                                    context,
-                                                    error,
-                                                    stackTrace,
-                                                  ) => const SizedBox(
-                                                    width: 320,
-                                                    height: 180,
-                                                    child: Center(
-                                                      child: Icon(
-                                                        Icons.broken_image,
-                                                        size: 40,
-                                                        color: Colors.white70,
+                                                        child: Icon(
+                                                          Icons.videocam_off,
+                                                          size: 40,
+                                                          color:
+                                                              Colors.white70,
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
-                                            )
-                                          : const SizedBox(
-                                              width: 320,
-                                              height: 180,
+                                            ),
+                                            const Positioned.fill(
                                               child: Center(
-                                                child: Icon(
-                                                  Icons.videocam_off,
-                                                  size: 40,
-                                                  color: Colors.white70,
+                                                child: DecoratedBox(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black54,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Padding(
+                                                    padding:
+                                                        EdgeInsets.all(8.0),
+                                                    child: Icon(
+                                                      Icons.play_arrow,
+                                                      color: Colors.white,
+                                                      size: 40,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                    ),
-                                    const Positioned.fill(
-                                      child: Center(
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: Colors.black54,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Icon(
-                                              Icons.play_arrow,
-                                              color: Colors.white,
-                                              size: 40,
-                                            ),
-                                          ),
+                                          ],
                                         ),
-                                      ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          video.title,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  video.title,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
                                   ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
-                    ),
             ),
           ],
         );

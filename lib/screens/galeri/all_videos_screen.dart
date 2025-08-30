@@ -26,13 +26,18 @@ class _AllVideosScreenState extends State<AllVideosScreen>
       GlobalKey<RefreshIndicatorState>();
 
   bool _isLoadingMore = false;
-  List<VideoModel> _lastVideos = [];
+  bool _isMounted = false;
+  List<VideoModel>? _lastVideos;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     WidgetsBinding.instance.addObserver(this);
+
     _scrollController.addListener(_onScroll);
+
+    // Load awal setelah frame pertama agar aman untuk akses context
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialVideos();
     });
@@ -41,12 +46,17 @@ class _AllVideosScreenState extends State<AllVideosScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    unawaited(_checkAndRefresh());
+    // Tunda ke frame berikutnya agar aman jika memicu setState
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_checkAndRefresh());
+      }
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
       unawaited(_checkAndRefresh());
     }
   }
@@ -65,15 +75,27 @@ class _AllVideosScreenState extends State<AllVideosScreen>
   }
 
   Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
     final vp = context.read<VideoProvider>();
-    const equality = DeepCollectionEquality();
-    if (!equality.equals(_lastVideos, vp.allVideos)) {
-      await _onRefresh();
+    final currentVideos = vp.allVideos;
+    final shouldRefresh = _lastVideos == null ||
+        !const DeepCollectionEquality().equals(_lastVideos, currentVideos);
+
+    if (shouldRefresh) {
+      vp.resetPagination();
+      await vp.fetchAllVideos();
+      if (mounted) {
+        setState(() {
+          _lastVideos = List<VideoModel>.from(vp.allVideos);
+        });
+      }
     }
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
@@ -124,6 +146,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
       appBar: CustomAppBar.transparent(title: 'Semua Video'),
       body: Stack(
         children: [
+          // Background gradient + bubble
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -143,6 +166,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
             ),
           ),
 
+          // Content
           Positioned.fill(
             child: Consumer<VideoProvider>(
               builder: (context, vp, _) {
