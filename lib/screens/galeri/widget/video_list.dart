@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -15,14 +16,48 @@ class VideoList extends StatefulWidget {
   State<VideoList> createState() => _VideoListState();
 }
 
-class _VideoListState extends State<VideoList> {
+class _VideoListState extends State<VideoList>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  List<VideoModel> _lastVideos = const [];
+
+  Future<void> _checkAndRefresh() async {
+    final provider = context.read<VideoProvider>();
+    if (!listEquals(_lastVideos, provider.recentVideos)) {
+      await provider.fetchRecentVideos(forceRefresh: true);
+      _lastVideos = List.of(provider.recentVideos);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<VideoProvider>().fetchRecentVideos();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final provider = context.read<VideoProvider>();
+      await provider.fetchRecentVideos();
+      _lastVideos = List.of(provider.recentVideos);
     });
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _checkAndRefresh();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _checkAndRefresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 
   Future<void> _openYoutubeVideo(VideoModel video) async {
     final url = (video.youtubeUrl.isNotEmpty)
@@ -62,6 +97,7 @@ class _VideoListState extends State<VideoList> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Consumer<VideoProvider>(
       builder: (context, videoProvider, _) {
         final isLoading = videoProvider.isLoadingRecent;
