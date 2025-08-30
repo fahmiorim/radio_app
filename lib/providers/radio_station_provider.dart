@@ -57,7 +57,8 @@ class RadioStationProvider with ChangeNotifier {
     try {
       if (_isPlaying) {
         log('Pausing playback');
-        await _audioManager.pause();
+        // Stop completely so that resuming fetches fresh audio and avoids delay
+        await _audioManager.stop();
         _isPlaying = false;
       } else {
         log('Starting playback for ${_currentStation!.title}');
