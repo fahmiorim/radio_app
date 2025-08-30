@@ -41,31 +41,12 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  bool _wasPlaying = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
+class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    // Dispose the audio player when the app is terminated
     AudioPlayerManager().dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final manager = AudioPlayerManager();
-    if (state == AppLifecycleState.paused) {
-      _wasPlaying = manager.player.playing;
-      manager.pause();
-    } else if (state == AppLifecycleState.resumed && _wasPlaying) {
-      manager.player.play();
-    }
   }
 
   @override

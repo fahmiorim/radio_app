@@ -44,12 +44,6 @@ class _FullPlayerState extends State<FullPlayer> {
   }
 
   @override
-  void dispose() {
-    _audioManager.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final radioProvider = Provider.of<RadioStationProvider>(context);
     final currentStation = radioProvider.currentStation;
