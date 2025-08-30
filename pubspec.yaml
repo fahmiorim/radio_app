@@ -54,6 +54,7 @@ dependencies:
   html: ^0.15.4
   url_launcher: ^6.2.5
   shared_preferences: ^2.2.2
+  web_socket_channel: ^2.4.0
 
   flutter:
     sdk: flutter

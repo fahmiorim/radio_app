@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../audio/audio_player_manager.dart';
 import '../models/now_playing.dart';
@@ -13,7 +13,8 @@ class RadioStationProvider with ChangeNotifier {
   RadioStation? _currentStation;
   bool _isPlaying = false;
   NowPlayingInfo? _nowPlaying;
-  Timer? _nowPlayingTimer;
+  WebSocketChannel? _nowPlayingChannel;
+  StreamSubscription? _nowPlayingSubscription;
 
   RadioStation? get currentStation => _currentStation;
   bool get isPlaying => _isPlaying;
@@ -25,7 +26,8 @@ class RadioStationProvider with ChangeNotifier {
     host: "Barakab Radio",
     coverUrl: "assets/cover.jpg",
     streamUrl: "https://rsb.batubarakab.go.id:8000/radio.mp3",
-    nowPlayingUrl: "https://rsb.batubarakab.go.id/api/nowplaying/odan_fm",
+    nowPlayingUrl:
+        "wss://rsb.batubarakab.go.id/api/live/nowplaying/websocket",
   );
 
   final AudioPlayerManager _audioManager = AudioPlayerManager();
@@ -43,39 +45,46 @@ class RadioStationProvider with ChangeNotifier {
         notifyListeners();
       }
     });
-
-    // Fetch initial now playing info and refresh periodically
-    fetchNowPlaying();
-    _nowPlayingTimer =
-        Timer.periodic(const Duration(seconds: 30), (_) => fetchNowPlaying());
+    _connectNowPlaying();
   }
 
   void setStation(RadioStation station) {
     _currentStation = station;
-    fetchNowPlaying();
+    _connectNowPlaying();
     notifyListeners();
   }
 
   @override
   void dispose() {
     _playerStateSubscription?.cancel();
-    _nowPlayingTimer?.cancel();
+    _nowPlayingSubscription?.cancel();
+    _nowPlayingChannel?.sink.close();
     super.dispose();
   }
 
-  Future<void> fetchNowPlaying() async {
+  void _connectNowPlaying() {
     final station = _currentStation;
     if (station == null) return;
 
+    _nowPlayingSubscription?.cancel();
+    _nowPlayingChannel?.sink.close();
+
     try {
-      final response = await http.get(Uri.parse(station.nowPlayingUrl));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        _nowPlaying = NowPlayingInfo.fromJson(data);
-        notifyListeners();
-      }
+      _nowPlayingChannel =
+          WebSocketChannel.connect(Uri.parse(station.nowPlayingUrl));
+      _nowPlayingSubscription = _nowPlayingChannel!.stream.listen((message) {
+        try {
+          final data = jsonDecode(message as String) as Map<String, dynamic>;
+          _nowPlaying = NowPlayingInfo.fromJson(data);
+          notifyListeners();
+        } catch (e) {
+          log('Error parsing now playing: $e');
+        }
+      }, onError: (error) {
+        log('WebSocket error: $error');
+      });
     } catch (e) {
-      log('Error fetching now playing: $e');
+      log('Error connecting WebSocket: $e');
     }
   }
 
