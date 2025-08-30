@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/event_model.dart';
@@ -16,34 +17,73 @@ class AllEventsScreen extends StatefulWidget {
   State<AllEventsScreen> createState() => _AllEventsScreenState();
 }
 
-class _AllEventsScreenState extends State<AllEventsScreen> {
+class _AllEventsScreenState extends State<AllEventsScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
-  bool _isInit = false;
+  bool _isMounted = false;
+  List<Event>? _lastItems;
 
   @override
   void initState() {
     super.initState();
+    _isMounted = true;
     _scrollController.addListener(_onScroll);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  Future<void> _loadData() async {
+    await context.read<EventProvider>().refresh();
+    _lastItems = List<Event>.from(context.read<EventProvider>().events);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_isInit) return;
-    _isInit = true;
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<EventProvider>();
-      if (!provider.isLoading && provider.events.isEmpty) {
-        provider.refresh();
+      if (mounted) {
+        _checkAndRefresh();
       }
     });
   }
 
   @override
   void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<EventProvider>();
+    final currentItems = provider.events;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.refresh();
+      if (mounted) {
+        setState(() {
+          _lastItems = List<Event>.from(provider.events);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
   }
 
   void _onScroll() {
