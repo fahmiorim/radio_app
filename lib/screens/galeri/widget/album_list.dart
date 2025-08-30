@@ -39,21 +39,38 @@ class _AlbumListState extends State<AlbumList>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _checkAndRefresh();
+    // Use addPostFrameCallback to defer the refresh until after the build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkAndRefresh();
+      // Use addPostFrameCallback to defer the refresh until after the build is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _checkAndRefresh();
+        }
+      });
     }
   }
 
   Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+    
     final provider = context.read<AlbumProvider>();
     if (!listEquals(_lastAlbums, provider.featuredAlbums)) {
       await provider.fetchFeaturedAlbums();
-      _lastAlbums = List.from(provider.featuredAlbums);
+      
+      if (mounted) {
+        setState(() {
+          _lastAlbums = List.from(provider.featuredAlbums);
+        });
+      }
     }
   }
 

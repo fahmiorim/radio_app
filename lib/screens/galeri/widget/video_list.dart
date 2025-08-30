@@ -21,10 +21,17 @@ class _VideoListState extends State<VideoList>
   List<VideoModel> _lastVideos = const [];
 
   Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+    
     final provider = context.read<VideoProvider>();
     if (!listEquals(_lastVideos, provider.recentVideos)) {
       await provider.fetchRecentVideos(forceRefresh: true);
-      _lastVideos = List.of(provider.recentVideos);
+      
+      if (mounted) {
+        setState(() {
+          _lastVideos = List.of(provider.recentVideos);
+        });
+      }
     }
   }
 
@@ -42,12 +49,24 @@ class _VideoListState extends State<VideoList>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _checkAndRefresh();
+    // Use addPostFrameCallback to defer the refresh until after the build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _checkAndRefresh();
+    if (state == AppLifecycleState.resumed) {
+      // Use addPostFrameCallback to defer the refresh until after the build is complete
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _checkAndRefresh();
+        }
+      });
+    }
   }
 
   @override
