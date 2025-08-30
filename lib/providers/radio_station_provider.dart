@@ -22,12 +22,11 @@ class RadioStationProvider with ChangeNotifier {
 
   // Default radio station
   static final RadioStation defaultStation = RadioStation(
-    title: "Radio Barakab",
-    host: "Barakab Radio",
+    title: "ODAN 89,3 FM",
+    host: "Host Odan",
     coverUrl: "assets/cover.jpg",
     streamUrl: "https://rsb.batubarakab.go.id:8000/radio.mp3",
-    nowPlayingUrl:
-        "wss://rsb.batubarakab.go.id/api/live/nowplaying/websocket",
+    nowPlayingUrl: "wss://rsb.batubarakab.go.id/api/live/nowplaying/websocket",
   );
 
   final AudioPlayerManager _audioManager = AudioPlayerManager();
@@ -70,19 +69,23 @@ class RadioStationProvider with ChangeNotifier {
     _nowPlayingChannel?.sink.close();
 
     try {
-      _nowPlayingChannel =
-          WebSocketChannel.connect(Uri.parse(station.nowPlayingUrl));
-      _nowPlayingSubscription = _nowPlayingChannel!.stream.listen((message) {
-        try {
-          final data = jsonDecode(message as String) as Map<String, dynamic>;
-          _nowPlaying = NowPlayingInfo.fromJson(data);
-          notifyListeners();
-        } catch (e) {
-          log('Error parsing now playing: $e');
-        }
-      }, onError: (error) {
-        log('WebSocket error: $error');
-      });
+      _nowPlayingChannel = WebSocketChannel.connect(
+        Uri.parse(station.nowPlayingUrl),
+      );
+      _nowPlayingSubscription = _nowPlayingChannel!.stream.listen(
+        (message) {
+          try {
+            final data = jsonDecode(message as String) as Map<String, dynamic>;
+            _nowPlaying = NowPlayingInfo.fromJson(data);
+            notifyListeners();
+          } catch (e) {
+            log('Error parsing now playing: $e');
+          }
+        },
+        onError: (error) {
+          log('WebSocket error: $error');
+        },
+      );
     } catch (e) {
       log('Error connecting WebSocket: $e');
     }
