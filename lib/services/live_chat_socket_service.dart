@@ -911,10 +911,6 @@ class LiveChatSocketService {
       _log('📤 Sending request to /admin/live-chat/$roomId/send');
       _log('📝 Request data: $requestData');
       
-      // Get CSRF token
-      _log('🔄 Ensuring CSRF token...');
-      await _ensureCsrfToken();
-      
       // Log the headers we're about to send
       final headers = {
         'Accept': 'application/json',
@@ -1020,18 +1016,4 @@ class LiveChatSocketService {
     }
   }
 
-  // Ensure CSRF token is set
-  Future<void> _ensureCsrfToken() async {
-    try {
-      await ApiClient.I.dioRoot.get(
-        '/sanctum/csrf-cookie',
-        options: Options(
-          headers: {'Accept': 'application/json'},
-          validateStatus: (status) => status! < 400,
-        ),
-      );
-    } catch (e) {
-      _log('❌ Error ensuring CSRF token: $e');
-    }
-  }
 }
