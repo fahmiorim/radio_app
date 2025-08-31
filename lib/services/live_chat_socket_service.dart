@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:dio/dio.dart' show Options;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:radio_odan_app/services/user_service.dart';
 import '../config/pusher_config.dart';
 import '../models/live_message_model.dart';
 import '../config/api_client.dart';
@@ -870,8 +871,10 @@ class LiveChatSocketService {
     try {
       _log('📤 Attempting to send message to room $roomId: $message');
 
+      final currentUser = await _getCurrentUserInfo();
+
       // Send the message via HTTP
-      await _sendMessageViaHttp(roomId, message, onSuccess, onError);
+      await _sendMessageViaHttp(roomId, message, currentUser, onSuccess, onError);
     } catch (e, stackTrace) {
       _log('❌ Error in sendMessage: $e\n$stackTrace', name: 'SendMessageError');
       onError('Failed to send message: ${e.toString()}');
@@ -882,14 +885,13 @@ class LiveChatSocketService {
   Future<void> _sendMessageViaHttp(
     int roomId,
     String message,
+    Map<String, dynamic> currentUser,
     Function(LiveChatMessage)? onSuccess,
     Function(String) onError,
   ) async {
     try {
       _log('🔄 Sending message via HTTP to room $roomId');
-      
-      // Get current user info
-      final currentUser = _getCurrentUserInfo();
+
       _log('👤 Current user: ${currentUser['id']} - ${currentUser['name']}');
       
       // Get authentication token
@@ -990,13 +992,23 @@ class LiveChatSocketService {
   }
 
   // Get current user info
-  Map<String, dynamic> _getCurrentUserInfo() {
-    // This is a placeholder - you should replace this with actual user info
-    // from your authentication system
+  Future<Map<String, dynamic>> _getCurrentUserInfo() async {
+    try {
+      final user = await UserService.getProfile();
+      if (user != null) {
+        return {
+          'id': user.id.toString(),
+          'name': user.name,
+          'avatar': user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
+        };
+      }
+    } catch (e) {
+      _log('❌ Error getting current user info: $e');
+    }
     return {
-      'id': '1',  // Replace with actual user ID
-      'name': 'User',  // Replace with actual username
-      'avatar': null,  // Replace with actual avatar URL if available
+      'id': '',
+      'name': 'User',
+      'avatar': null,
     };
   }
   
