@@ -8,6 +8,8 @@ import '../../widgets/chat/chat_message_item.dart';
 import '../../widgets/chat/message_input_field.dart';
 import '../../widgets/chat/unread_messages_label.dart';
 import '../../widgets/chat/no_live_placeholder.dart';
+import '../../services/live_chat_socket_service.dart' show UnauthorizedException;
+import '../../config/app_routes.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;
@@ -113,6 +115,10 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       await prov.send(text);
       _messageController.clear();
       _scrollToBottom();
+    } on UnauthorizedException {
+      if (!mounted) return;
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
