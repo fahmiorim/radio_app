@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/live_chat_provider.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/artikel/artikel_screen.dart';
 import '../screens/galeri/galeri_screen.dart';
@@ -86,7 +89,12 @@ class _BottomNavState extends State<BottomNav> {
             if (index == 3) {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => LiveChatScreen(roomId: 1)), // Ganti dengan ID room yang sesuai
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider(
+                    create: (_) => LiveChatProvider(roomId: 1)..init(),
+                    child: const LiveChatScreen(roomId: 1),
+                  ),
+                ),
               );
 
               if (result == 'goHome') {
