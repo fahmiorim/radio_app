@@ -18,7 +18,7 @@ class PusherConfig {
   }
 
   static String get authEndpoint {
-    final endpoint = dotenv.maybeGet('BROADCAST_AUTH_ENDPOINT');
+    final endpoint = dotenv.maybeGet('PUSHER_AUTH_ENDPOINT');
     if (endpoint == null || endpoint.isEmpty) {
       return '/broadcasting/auth';
     }

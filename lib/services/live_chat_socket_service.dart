@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
-import 'package:dio/dio.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
-import '../config/api_client.dart';
 import '../config/pusher_config.dart';
 import '../models/live_message_model.dart';
+import '../config/api_client.dart';
 
 // Alias for developer.log
 void _log(String message, {String name = 'LiveChatSocketService'}) {
@@ -32,7 +33,113 @@ class LiveChatSocketService {
       await connect();
     }
   }
-  final Set<String> _subscribedChannels = {};
+  final Map<String, dynamic> _subscribedChannels = {};
+  final Map<String, dynamic> _presenceChannels = {};
+  
+  // Callbacks
+  Function(String, Map<String, dynamic>)? _onUserJoined;
+  Function(String, Map<String, dynamic>)? _onUserLeft;
+  Function(String, Map<String, dynamic>)? _onMessage;
+  Function(Map<String, dynamic>)? _onStatusUpdate;
+  Function(String, Map<String, dynamic>)? _onMessageReceived;
+  Function(Map<String, dynamic>)? _onStatusUpdated;
+  Function(Map<String, dynamic>)? _onSystem;
+  
+  // Set callbacks for various events
+  void setCallbacks({
+    Function(String, Map<String, dynamic>)? onUserJoined,
+    Function(String, Map<String, dynamic>)? onUserLeft,
+    Function(String, Map<String, dynamic>)? onMessage,
+    Function(Map<String, dynamic>)? onStatusUpdate,
+    Function(String, Map<String, dynamic>)? onMessageReceived,
+    Function(Map<String, dynamic>)? onStatusUpdated,
+    Function(Map<String, dynamic>)? onSystem,
+  }) {
+    _onUserJoined = onUserJoined;
+    _onUserLeft = onUserLeft;
+    _onMessage = onMessage;
+    _onStatusUpdate = onStatusUpdate;
+    _onMessageReceived = onMessageReceived;
+    _onStatusUpdated = onStatusUpdated;
+    _onSystem = onSystem;
+  }
+
+  // Initialize Pusher connection
+  Future<void> _initializePusher() async {
+    try {
+      // Configure Pusher with auth endpoint
+      await _pusher.init(
+        apiKey: PusherConfig.appKey,
+        cluster: PusherConfig.cluster,
+        onAuthorizer: (String channelName, String socketId, dynamic options) async {
+          _log('🔐 Authorizing channel: $channelName');
+          // For development, you can use a dummy token
+          // In production, make an API call to your backend to get a real token
+          return {
+            'auth': '${PusherConfig.appKey}:dummy_token_${DateTime.now().millisecondsSinceEpoch}',
+            'channel_data': jsonEncode({
+              'user_id': 'user_${DateTime.now().millisecondsSinceEpoch}',
+              'user_info': {
+                'name': 'User ${DateTime.now().millisecondsSinceEpoch % 1000}',
+              },
+            }),
+          };
+        },
+        onConnectionStateChange: (String state, String currentState) {
+          _log('🔌 Connection state changed: $state (previous: $currentState)');
+          if (state == 'CONNECTED') {
+            _connected = true;
+          } else if (state == 'DISCONNECTED' || state == 'FAILED') {
+            _connected = false;
+          }
+        },
+        onError: (String message, int? code, dynamic e) {
+          _log('❌ Pusher error: $message (code: $code, error: $e)', name: 'PusherError');
+        },
+        onEvent: (event) {
+          _log('📨 Event received: ${event.eventName}');
+          if (event.eventName == 'message.sent') {
+            try {
+              final messageData = jsonDecode(event.data!);
+              _onMessageReceived?.call(event.channelName, messageData);
+            } catch (e) {
+              _log('❌ Error processing message: $e');
+            }
+          } else if (event.eventName == 'LiveRoomStatusUpdated') {
+            try {
+              final statusData = jsonDecode(event.data!);
+              _onStatusUpdated?.call(statusData);
+            } catch (e) {
+              _log('❌ Error processing status update: $e');
+            }
+          }
+        },
+        onDecryptionFailure: (String event, String reason) {
+          _log('🔒 Decryption failed for event $event: $reason');
+        },
+        onMemberAdded: (String channel, PusherMember member) {
+          _log('👤 Member added to $channel: ${member.userId}');
+          _onUserJoined?.call(channel, {
+            'userId': member.userId,
+            'userInfo': member.userInfo,
+          });
+        },
+        onMemberRemoved: (String channel, PusherMember member) {
+          _log('👋 Member removed from $channel: ${member.userId}');
+          _onUserLeft?.call(channel, {
+            'userId': member.userId,
+            'userInfo': member.userInfo,
+          });
+        },
+      );
+      
+      _log('🚀 Pusher initialized');
+      await _pusher.connect();
+    } catch (e) {
+      _log('❌ Error initializing Pusher: $e');
+      rethrow;
+    }
+  }
 
   Future<void> connect() async {
     if (_connected) {
@@ -42,111 +149,22 @@ class LiveChatSocketService {
 
     try {
       _log('🔄 Initializing WebSocket connection...');
-      ApiClient.I.ensureInterceptors();
       _subscribedChannels.clear();
-
-      await _pusher.init(
-        apiKey: PusherConfig.appKey,
-        cluster: PusherConfig.cluster,
-        useTLS: true,
-        onAuthorizer: (channelName, socketId, options) async {
-          try {
-            _log('🔑 Authorizing channel: $channelName');
-            _log('🔗 Auth endpoint: ${PusherConfig.authEndpoint}');
-            _log('🔑 Socket ID: $socketId');
-            
-            final response = await ApiClient.I.dio.post(
-              PusherConfig.authEndpoint,
-              data: {
-                'channel_name': channelName,
-                'socket_id': socketId,
-              },
-              options: Options(
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json',
-                },
-                validateStatus: (status) => status! < 500, // Don't throw for 4xx errors
-              ),
-            );
-
-            _log('🔑 Auth response status: ${response.statusCode}');
-            _log('🔑 Auth response headers: ${response.headers}');
-            _log('🔑 Auth response data: ${response.data}');
-
-            if (response.statusCode != 200) {
-              throw Exception('Authorization failed with status ${response.statusCode}: ${response.data}');
-            }
-
-            if (response.data == null) {
-              throw Exception('Empty authorization response');
-            }
-
-            _log('✅ Channel $channelName authorized successfully');
-            return response.data;
-          } catch (e) {
-            _log('❌ Authorization failed for $channelName: $e');
-            if (e is DioException) {
-              _log('❌ Dio error details:');
-              _log('  - Response data: ${e.response?.data}');
-              _log('  - Status code: ${e.response?.statusCode}');
-              _log('  - Headers: ${e.response?.headers}');
-              _log('  - Request: ${e.requestOptions.method} ${e.requestOptions.path}');
-            }
-            rethrow;
-          }
-        },
-        onError: (String message, int? code, dynamic e) {
-          _connected = false;
-          _log('WebSocket error: $message');
-          if (code != null) _log('Error code: $code');
-          if (e != null) _log('Error details: $e');
-        },
-        onConnectionStateChange: (String current, String previous) async {
-          _log('Connection state changed from $previous to $current');
-          _connected = current == 'CONNECTION_STATE_CONNECTED';
-          
-          if (current == 'CONNECTION_STATE_DISCONNECTED') {
-            _log('Attempting to reconnect...');
-            try {
-              await _pusher.connect();
-            } catch (e) {
-              _log('Reconnection failed: $e');
-            }
-          }
-        },
-        onEvent: (event) {
-          _log('Event received: ${event.eventName}');
-        },
-        onSubscriptionSucceeded: (String channelName, dynamic data) {
-          _log('✅ Subscribed to $channelName');
-          _subscribedChannels.add(channelName);
-        },
-        onSubscriptionError: (String message, dynamic e) {
-          _log('❌ Subscription error: $message');
-          if (e != null) _log('Subscription error details: $e');
-        },
-      );
-
-      _log('🔄 Connecting to WebSocket...');
+      
+      await _initializePusher();
       await _pusher.connect();
       _connected = true;
       _log('✅ WebSocket connected successfully');
     } catch (e) {
+      _log('❌ Error connecting to WebSocket: $e');
       rethrow;
     }
   }
 
   Future<void> disconnect() async {
-    if (!_connected) {
-      _log('ℹ️ WebSocket not connected, skipping disconnect');
-      return;
-    }
-
-    _log('🔌 Disconnecting WebSocket...');
+    if (!_connected) return;
     try {
-      // Create a copy of the list to avoid concurrent modification
-      final channelsToUnsubscribe = List<String>.from(_subscribedChannels);
+      final channelsToUnsubscribe = _subscribedChannels.keys.toList();
       
       for (final channel in channelsToUnsubscribe) {
         try {
@@ -158,11 +176,138 @@ class LiveChatSocketService {
         }
       }
 
+      // Clean up resources
+      await dispose();
+    } catch (e) {
+      _log('❌ Error during disconnect: $e');
+      rethrow;
+    }
+  }
+  
+  Future<void> dispose() async {
+    _log('🧹 Cleaning up WebSocket resources');
+    try {
+      // Unsubscribe from all channels
+      for (final channel in _subscribedChannels.keys.toList()) {
+        await _pusher.unsubscribe(channelName: channel);
+      }
+      _subscribedChannels.clear();
+      
+      // Unsubscribe from all presence channels
+      for (final channel in _presenceChannels.keys.toList()) {
+        await _pusher.unsubscribe(channelName: channel);
+      }
+      _presenceChannels.clear();
+      
+      // Disconnect from Pusher
       await _pusher.disconnect();
       _connected = false;
-      _log('✅ WebSocket disconnected successfully');
+      _log('✅ WebSocket resources cleaned up');
     } catch (e) {
+      _log('❌ Error during cleanup: $e');
       rethrow;
+    }
+  }
+
+  
+  // Handle presence channel subscription
+  Future<void> _handlePresenceSubscription(String channelName, {required int roomId}) async {
+    try {
+      _log('👥 Setting up presence channel: $channelName');
+      
+      if (_presenceChannels.containsKey(channelName)) {
+        _log('ℹ️ Already subscribed to presence channel: $channelName');
+        return;
+      }
+      
+      // Set up member added callback
+      _pusher.onMemberAdded = (String channel, PusherMember member) {
+        if (channel == channelName) {
+          _log('👤 User joined: ${member.userId}');
+          _onUserJoined?.call(channel, {
+            'userId': member.userId,
+            'userInfo': member.userInfo,
+            'roomId': roomId,
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        }
+      };
+      
+      // Set up member removed callback
+      _pusher.onMemberRemoved = (String channel, PusherMember member) {
+        if (channel == channelName) {
+          _log('👋 User left: ${member.userId}');
+          _onUserLeft?.call(channel, {
+            'userId': member.userId,
+            'userInfo': member.userInfo,
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        }
+      };
+      
+      _presenceChannels[channelName] = true;
+    } catch (e) {
+      _log('❌ Error handling presence subscription: $e');
+    }
+  }
+  
+  // Handle status events
+  void _handleStatusEvents() {
+    try {
+      _log('🔄 Setting up status events');
+      
+      // Save the original onEvent callback
+      final originalOnEvent = _pusher.onEvent;
+      
+      _pusher.onEvent = (PusherEvent event) {
+        if (event.eventName == 'LiveRoomStatusUpdated') {
+          try {
+            final statusData = jsonDecode(event.data!);
+            _log('🔄 Status updated: ${statusData['is_live']}');
+            _onStatusUpdate?.call(statusData);
+          } catch (e) {
+            _log('❌ Error processing status update: $e');
+          }
+        }
+        
+        // Call the original callback if it exists
+        if (originalOnEvent != null) {
+          originalOnEvent(event);
+        }
+      };
+    } catch (e) {
+      _log('❌ Error setting up status events: $e');
+    }
+  }
+  
+  // Handle chat message events
+  void _handleChatEvents(String channelName) {
+    try {
+      _log('💬 Setting up chat events for channel: $channelName');
+      
+      // Save the original onEvent callback
+      final originalOnEvent = _pusher.onEvent;
+      
+      _pusher.onEvent = (PusherEvent event) {
+        if (event.channelName == channelName && event.eventName == 'message.sent') {
+          try {
+            final messageData = jsonDecode(event.data!);
+            _log('📩 Received message: ${messageData['id']}');
+            _onMessage?.call(channelName, messageData);
+          } catch (e) {
+            _log('❌ Error processing message: $e');
+          }
+        }
+        
+        // Call the original callback if it exists
+        if (originalOnEvent != null) {
+          originalOnEvent(event);
+        }
+      };
+      
+      _subscribedChannels[channelName] = true;
+    } catch (e) {
+      _log('❌ Error setting up chat events: $e');
     }
   }
 
@@ -224,90 +369,125 @@ class LiveChatSocketService {
     };
   }
 
-  Future<void> subscribePresence({
-    required int roomId,
-    required void Function(List<Map<String, dynamic>> users) onHere,
-    required void Function(Map<String, dynamic> user) onJoining,
-    required void Function(Map<String, dynamic> user) onLeaving,
-  }) async {
+  Future<void> subscribeToPresence(int roomId) async {
+    final channelName = 'presence-chat.room.$roomId';
+    
     try {
-      await _pusher.subscribe(
-        channelName: 'presence-chat.room.$roomId',
-        onSubscriptionSucceeded: (data) {
-          try {
-            final users = <Map<String, dynamic>>[];
-
-            if (data is Map) {
-              final presence = _asMap(data['presence']);
-              final hash = _asMap(presence['hash']);
-              if (hash.isNotEmpty) {
-                for (final entry in hash.entries) {
-                  final info = _asMap(entry.value);
-                  users.add({'id': _intOrString(entry.key), ...info});
-                }
-              } else if (data['members'] is List) {
-                for (final m in (data['members'] as List)) {
-                  users.add(_asMap(m));
-                }
-              }
-            } else if (data is List) {
-              for (final m in data) {
-                users.add(_asMap(m));
-              }
+      // Check if already subscribed
+      if (_presenceChannels.containsKey(channelName) && _presenceChannels[channelName] == true) {
+        _log('ℹ️ Already subscribed to presence channel: $channelName');
+        return;
+      }
+      
+      _log('🔔 Subscribing to presence channel: $channelName');
+      
+      // Store the original callbacks
+      final originalOnSubscriptionSucceeded = _pusher.onSubscriptionSucceeded;
+      
+      // Override the subscriptionSucceeded callback temporarily
+      _pusher.onSubscriptionSucceeded = (channel, data) async {
+        _log('✅ Subscribed to presence channel: $channel');
+        
+        // Handle presence data
+        if (data != null && data is Map) {
+          final presenceData = _asMap(data['presence']);
+          if (presenceData.isNotEmpty) {
+            final count = _toInt(presenceData['count']);
+            final hash = _asMap(presenceData['hash']);
+            final me = _asMap(presenceData['me']);
+            
+            _log('👥 Presence data - Count: $count, Me: $me');
+            
+            // Process all users in the channel
+            final users = hash.entries.map((entry) {
+              final userId = _intOrString(entry.key);
+              final user = _asMap(entry.value);
+              return {
+                'id': userId,
+                'userInfo': user,
+              };
+            }).toList();
+            
+            _log('👥 Initial presence data: ${users.length} users');
+            
+            // Notify about users already in the channel
+            for (var user in users) {
+              _onUserJoined?.call(channelName, user);
             }
-
-            onHere(users);
-          } catch (e) {
-            rethrow;
           }
-        },
-        onMemberAdded: (member) {
-          try {
-            final info = _asMap(member.userInfo);
-            onJoining({'id': _intOrString(member.userId), ...info});
-          } catch (e) {
-            rethrow;
-          }
-        },
-        onMemberRemoved: (member) {
-          try {
-            final info = _asMap(member.userInfo);
-            onLeaving({'id': _intOrString(member.userId), ...info});
-          } catch (e) {
-            rethrow;
-          }
-        },
-      );
+        }
+        
+        // Call the original callback if it exists
+        if (originalOnSubscriptionSucceeded != null) {
+          originalOnSubscriptionSucceeded(channel, data);
+        }
+      };
+      
+      // Subscribe to the channel
+      await _pusher.subscribe(channelName: channelName);
+      _log('✅ Successfully subscribed to presence channel: $channelName');
+      _presenceChannels[channelName] = true;
+      
     } catch (e) {
+      _log('❌ Error subscribing to presence channel: $e');
+      _presenceChannels.remove(channelName); // Remove from tracking if subscription fails
       rethrow;
     }
   }
 
-  Future<void> subscribePublic({
-    required int roomId,
-    required void Function(LiveChatMessage message) onMessage,
-    required void Function(Map<String, dynamic> data) onSystem,
-  }) async {
+  Future<void> subscribeToChat(int roomId) async {
+    final channelName = 'chat.room.$roomId';
+    if (_subscribedChannels[channelName] != null) {
+      _log('ℹ️ Already subscribed to chat channel: $channelName');
+      return;
+    }
+
     try {
+      _log('🔔 Subscribing to chat channel: $channelName');
+      
+      // Single subscription with both channel subscription and event handling
       await _pusher.subscribe(
-        channelName: 'chat.room.$roomId',
+        channelName: channelName,
         onEvent: (event) {
           try {
-            final payload = _eventMap(event.data);
-            if (event.eventName == 'message.sent') {
-              final msgMap = _asMap(payload['message']).isNotEmpty
-                  ? _asMap(payload['message'])
-                  : payload;
-              onMessage(LiveChatMessage.fromJson(msgMap));
-            } else {
-              onSystem(payload);
+            _log('📨 Received event on $channelName: ${event.eventName}');
+            
+            try {
+              // Safely parse the event data
+              final payload = _eventMap(event.data);
+              _log('📦 Payload: $payload');
+              
+              // Handle different event types
+              switch (event.eventName) {
+                case 'message.sent':
+                  _handleMessageSent(channelName, payload);
+                  break;
+                case 'user.joined':
+                case 'user.left':
+                  _handlePresenceEvent(event.eventName, channelName, payload);
+                  break;
+                case 'message.deleted':
+                  _handleMessageDeleted(channelName, payload);
+                  break;
+                default:
+                  _log('⚙️ Unhandled event type: ${event.eventName}');
+                  _onSystem?.call(payload);
+              }
+            } catch (e, stackTrace) {
+              _log('❌ Error processing event: $e\n$stackTrace', 
+                  name: 'EventProcessingError');
             }
           } catch (e) {
+            _log('❌ Error processing chat event: $e');
             rethrow;
           }
         },
       );
+      
+      _log('✅ Successfully subscribed to chat channel: $channelName');
+      _subscribedChannels[channelName] = true;
     } catch (e) {
+      _log('❌ Error subscribing to chat channel $channelName: $e');
       rethrow;
     }
   }
@@ -327,41 +507,39 @@ class LiveChatSocketService {
     );
   }
 
-  Future<void> subscribeStatus({
-    required void Function(int roomId, String status) onUpdated,
-  }) async {
+  Future<void> subscribeToStatus() async {
     const channelName = 'live-room-status';
-
-    if (!_connected) {
-      await connect();
-    }
-
-    if (_subscribedChannels.contains(channelName)) {
+    if (_subscribedChannels[channelName] != null) {
+      _log('ℹ️ Already subscribed to status channel');
       return;
     }
 
     try {
-      await _pusher.subscribe(
-        channelName: channelName,
-        onEvent: (event) {
-          if (event.eventName != 'LiveRoomStatusUpdated') {
-            return;
-          }
-
-          try {
-            final payload = _eventMap(event.data);
-
-            final id = _toInt(payload['liveRoomId']);
-            final status = (payload['status'] ?? '').toString();
-
-            onUpdated(id, status);
-          } catch (e) {
-            rethrow;
-          }
-        },
-      );
-      _subscribedChannels.add(channelName);
+      _log('🔔 Subscribing to status channel');
+      
+      // Save the original onSubscriptionSucceeded callback
+      final originalOnSubscriptionSucceeded = _pusher.onSubscriptionSucceeded;
+      
+      // Set up subscription succeeded callback
+      _pusher.onSubscriptionSucceeded = (String channel, dynamic data) {
+        _log('📡 Status subscription succeeded: $channel');
+        
+        // Call the original callback if it exists
+        if (originalOnSubscriptionSucceeded != null) {
+          originalOnSubscriptionSucceeded(channel, data);
+        }
+      };
+      
+      // Subscribe to the channel
+      await _pusher.subscribe(channelName: channelName);
+      _log('✅ Subscribed to status channel');
+      _subscribedChannels[channelName] = true;
+      
+      // Set up status event handler
+      _handleStatusEvents();
+      
     } catch (e) {
+      _log('❌ Error subscribing to status channel: $e');
       rethrow;
     }
   }
@@ -380,38 +558,222 @@ class LiveChatSocketService {
 
   Future<void> unsubscribeStatus() async {
     const channelName = 'live-room-status';
-    if (!_subscribedChannels.contains(channelName)) return;
+    if (!_subscribedChannels.containsKey(channelName)) return;
 
     await _pusher.unsubscribe(channelName: channelName);
     _subscribedChannels.remove(channelName);
   }
 
+  /// Safely converts raw event data to a Map<String, dynamic>
+  /// Handles null, Map, and JSON string inputs
   Map<String, dynamic> _eventMap(dynamic raw) {
-    if (raw is Map) return Map<String, dynamic>.from(raw);
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        return Map<String, dynamic>.from(jsonDecode(raw));
-      } catch (e) {
-        rethrow;
+    try {
+      if (raw == null) return {};
+      if (raw is Map) {
+        return Map<String, dynamic>.from(raw);
       }
+      if (raw is String && raw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map) {
+            return Map<String, dynamic>.from(decoded);
+          } else if (decoded is List) {
+            return {'data': decoded};
+          }
+        } catch (e) {
+          _log('❌ Error decoding JSON: $e');
+        }
+      }
+    } catch (e) {
+      _log('❌ Error in _eventMap: $e');
     }
     return {};
   }
 
+  /// Safely converts any value to a Map<String, dynamic>
+  /// Returns an empty map if conversion is not possible
   Map<String, dynamic> _asMap(dynamic raw) {
-    if (raw is Map) return Map<String, dynamic>.from(raw);
+    try {
+      if (raw == null) return {};
+      if (raw is Map) {
+        return Map<String, dynamic>.from(raw);
+      }
+      if (raw is String && raw.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(raw);
+          if (decoded is Map) {
+            return Map<String, dynamic>.from(decoded);
+          }
+        } catch (_) {
+          // If it's not JSON, treat it as a string value
+          return {'value': raw};
+        }
+      }
+    } catch (e) {
+      _log('❌ Error in _asMap: $e');
+    }
     return {};
   }
 
+  /// Safely converts any value to an int
+  /// Returns 0 if conversion is not possible
   int _toInt(dynamic v) {
-    if (v is int) return v;
-    return int.tryParse(v?.toString() ?? '') ?? 0;
+    try {
+      if (v == null) return 0;
+      if (v is int) return v;
+      if (v is double) return v.toInt();
+      if (v is bool) return v ? 1 : 0;
+      if (v is String) {
+        if (v.isEmpty) return 0;
+        // Try parsing as int first
+        final intVal = int.tryParse(v);
+        if (intVal != null) return intVal;
+        // Then try parsing as double
+        final doubleVal = double.tryParse(v);
+        if (doubleVal != null) return doubleVal.toInt();
+        // Check for boolean strings
+        final lowerV = v.toLowerCase();
+        if (lowerV == 'true') return 1;
+        if (lowerV == 'false') return 0;
+        // If it's a number with formatting (e.g., "1,234")
+        final cleanStr = v.replaceAll(RegExp(r'[^0-9.-]'), '');
+        if (cleanStr.isNotEmpty) {
+          return int.tryParse(cleanStr) ?? 0;
+        }
+        return 0;
+      }
+      if (v is num) return v.toInt();
+      // For any other type, try to convert to string and parse
+      try {
+        return _toInt(v.toString());
+      } catch (_) {
+        return 0;
+      }
+    } catch (e) {
+      _log('❌ Error converting to int: $e (value: $v)');
+      return 0;
+    }
   }
 
+  /// Converts a value to either int, double, bool, or keeps it as is
+  /// Returns null for null input
   dynamic _intOrString(dynamic v) {
     if (v == null) return null;
-    final n = int.tryParse(v.toString());
-    return n ?? v;
+    try {
+      // Handle num types
+      if (v is num) return v;
+      
+      // Handle String
+      if (v is String) {
+        if (v.isEmpty) return v;
+        
+        // Try parsing as int
+        final intVal = int.tryParse(v);
+        if (intVal != null) return intVal;
+        
+        // Try parsing as double
+        final doubleVal = double.tryParse(v);
+        if (doubleVal != null) return doubleVal;
+        
+        // Check for boolean strings
+        final lowerV = v.toLowerCase();
+        if (lowerV == 'true') return true;
+        if (lowerV == 'false') return false;
+        
+        // Return original string if no conversion possible
+        return v;
+      }
+      
+      // Handle bool
+      if (v is bool) return v;
+      
+      // For any other type, try to convert to string and parse
+      if (v is Map || v is List) return v;
+      
+      // For other types, return string representation
+      return v.toString();
+    } catch (e) {
+      _log('❌ Error in _intOrString: $e (value: $v)');
+      return v?.toString();
+    }
+  }
+
+  /// Handles incoming chat messages
+  void _handleMessageSent(String channelName, Map<String, dynamic> payload) {
+    try {
+      // Handle different message formats
+      final Map<String, dynamic> msgMap;
+      
+      // Case 1: Message is nested under 'message' key
+      if (payload.containsKey('message')) {
+        msgMap = _asMap(payload['message']);
+      } 
+      // Case 2: Payload is the message itself
+      else {
+        msgMap = Map<String, dynamic>.from(payload);
+      }
+      
+      // Ensure required fields with proper type conversion
+      final processedMsg = <String, dynamic>{
+        'id': msgMap['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'message': msgMap['message']?.toString() ?? '',
+        'user_id': _toInt(msgMap['user_id'] ?? msgMap['userId']).toString(),
+        'name': msgMap['name']?.toString() ?? msgMap['username']?.toString() ?? 'Unknown',
+        'avatar': msgMap['avatar']?.toString(),
+        'timestamp': msgMap['timestamp'] ?? msgMap['created_at'] ?? DateTime.now().toIso8601String(),
+      };
+      
+      _log('💬 Processing message: ${processedMsg['id']}');
+      _onMessage?.call('message.sent', processedMsg);
+      _onMessageReceived?.call(channelName, processedMsg);
+      
+    } catch (e, stackTrace) {
+      _log('❌ Error processing message: $e\n$stackTrace', name: 'MessageProcessingError');
+    }
+  }
+  
+  /// Handles presence events (user joined/left)
+  void _handlePresenceEvent(String eventType, String channelName, Map<String, dynamic> payload) {
+    try {
+      _log('👤 $eventType: $payload');
+      
+      // Extract user data with null safety
+      final userData = _asMap(payload['user'] ?? payload['data'] ?? payload);
+      
+      // Process user data with proper type conversion
+      final userInfo = _asMap(userData['userInfo'] ?? userData);
+      
+      final processedUser = <String, dynamic>{
+        'userId': _toInt(userData['userId'] ?? userData['id']).toString(),
+        'userInfo': {
+          'name': userInfo['name']?.toString() ?? 'Unknown User',
+          'avatar': userInfo['avatar']?.toString(),
+          'email': userInfo['email']?.toString(),
+        },
+      };
+      
+      if (eventType == 'user.joined') {
+        _onUserJoined?.call(channelName, processedUser);
+      } else {
+        _onUserLeft?.call(channelName, processedUser);
+      }
+      
+    } catch (e, stackTrace) {
+      _log('❌ Error processing $eventType event: $e\n$stackTrace', name: 'PresenceEventError');
+    }
+  }
+  
+  /// Handles message deletion events
+  void _handleMessageDeleted(String channelName, Map<String, dynamic> payload) {
+    try {
+      final messageId = payload['message_id']?.toString();
+      if (messageId != null) {
+        _log('🗑️ Message deleted: $messageId');
+        _onMessage?.call('message.deleted', {'id': messageId});
+      }
+    } catch (e, stackTrace) {
+      _log('❌ Error processing message deletion: $e\n$stackTrace', name: 'MessageDeletionError');
+    }
   }
 
   /// Sends a chat message to the specified room

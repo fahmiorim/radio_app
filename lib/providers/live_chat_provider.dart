@@ -87,24 +87,31 @@ class LiveChatProvider with ChangeNotifier {
 
   Future<void> _subscribeStatusOnce() async {
     if (_statusSubscribed) return;
-    await _svc.subscribeStatus(onUpdated: (rid, status) async {
-      final live = status.toLowerCase() == 'started';
-      _isLive = live;
+    
+    // Set up status update callback
+    _svc.setCallbacks(
+      onStatusUpdated: (data) {
+        final isLive = data['isLive'] == true || data['status'] == 'started';
+        _isLive = isLive;
 
-      if (!live) {
-        _messages.clear();
+        if (!isLive) {
+          _messages.clear();
+          notifyListeners();
+          return;
+        }
+
+        // Live started → update room, subscribe to public chat, and load history
+        _currentRoomId = data['roomId'] ?? _currentRoomId ?? roomId;
+        _page = 1; _hasMore = true; _messages.clear();
         notifyListeners();
-        return;
-      }
 
-      // live dimulai → set room, subscribe public, dan tarik history
-      _currentRoomId = rid ?? _currentRoomId ?? roomId;
-      _page = 1; _hasMore = true; _messages.clear();
-      notifyListeners();
-
-      await _subscribePublicOnce();
-      await loadMore();
-    });
+        _subscribePublicOnce();
+        loadMore();
+      },
+    );
+    
+    // Subscribe to status channel
+    await _svc.subscribeToStatus();
     _statusSubscribed = true;
   }
 
@@ -112,38 +119,31 @@ class LiveChatProvider with ChangeNotifier {
   Future<void> _subscribePresenceOnce() async {
     if (_presenceSubscribed) return;
 
-    await _svc.subscribePresence(
-      roomId: roomId,
-      onHere: (users) {
-        _onlineUsers
-          ..clear()
-          ..addAll(users.map((u) => OnlineUser(
-                id: (u['id'] ?? '').toString(),
-                username: (u['name'] ?? u['username'] ?? 'User').toString(),
-                userAvatar: (u['avatar'] ?? u['photo'])?.toString(),
-                joinTime: DateTime.now(),
-              )));
-        notifyListeners();
-      },
-      onJoining: (u) {
-        final id = (u['id'] ?? '').toString();
+    // Set up presence callbacks
+    _svc.setCallbacks(
+      onUserJoined: (channel, userData) {
+        final user = userData as Map<String, dynamic>;
+        final id = (user['userId'] ?? '').toString();
         if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
           _onlineUsers.add(OnlineUser(
             id: id,
-            username: (u['name'] ?? u['username'] ?? 'User').toString(),
-            userAvatar: (u['avatar'] ?? u['photo'])?.toString(),
+            username: (user['userInfo']?['name'] ?? user['userInfo']?['username'] ?? 'User').toString(),
+            userAvatar: (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])?.toString(),
             joinTime: DateTime.now(),
           ));
           notifyListeners();
         }
       },
-      onLeaving: (u) {
-        final id = (u['id'] ?? '').toString();
+      onUserLeft: (channel, userData) {
+        final user = userData as Map<String, dynamic>;
+        final id = (user['userId'] ?? '').toString();
         _onlineUsers.removeWhere((x) => x.id == id);
         notifyListeners();
       },
     );
 
+    // Subscribe to presence channel
+    await _svc.subscribeToPresence(roomId);
     _presenceSubscribed = true;
   }
 
@@ -151,26 +151,48 @@ class LiveChatProvider with ChangeNotifier {
   Future<void> _subscribePublicOnce() async {
     if (_publicSubscribed) return;
     final rid = _currentRoomId ?? roomId;
+    
+    _isLoading = true;
+    notifyListeners();
 
-    await _svc.subscribePublic(
-      roomId: rid,
-      onMessage: (LiveChatMessage msg) {
-        // hindari duplikasi jika history + realtime overlap
-        if (_messages.any((m) => m.id == msg.id.toString())) return;
+    try {
+      // Set up message received callback
+      _svc.setCallbacks(
+        onMessageReceived: (channel, messageData) {
+          try {
+            final msg = LiveChatMessage.fromJson(
+              messageData is Map<String, dynamic> 
+                  ? messageData 
+                  : {'id': '${DateTime.now().millisecondsSinceEpoch}'}
+            );
+            
+            // Avoid duplicates if history + realtime overlap
+            if (_messages.any((m) => m.id == msg.id.toString())) return;
 
-        _messages.add(ChatMessage(
-          id: msg.id.toString(),
-          username: msg.name,
-          message: msg.message,
-          timestamp: msg.timestamp,
-          userAvatar: msg.avatar,
-        ));
-        notifyListeners();
-      },
-      onSystem: (_) {},
-    );
+            _messages.add(ChatMessage(
+              id: msg.id.toString(),
+              username: msg.name,
+              message: msg.message,
+              timestamp: msg.timestamp,
+              userAvatar: msg.avatar,
+            ));
+            notifyListeners();
+          } catch (e) {
+            debugPrint('Error processing message: $e');
+          }
+        },
+      );
 
-    _publicSubscribed = true;
+      // Subscribe to chat channel
+      await _svc.subscribeToChat(rid);
+      _publicSubscribed = true;
+    } catch (e) {
+      debugPrint('Error subscribing to public chat: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // ==== HISTORY (PAGINATION) ====
