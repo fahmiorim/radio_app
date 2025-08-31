@@ -20,12 +20,17 @@ class LiveChatMessage {
   factory LiveChatMessage.fromJson(Map<String, dynamic> json) {
     String avatar = json['avatar']?.toString() ?? '';
     if (avatar.isNotEmpty && !avatar.startsWith('http')) {
-      avatar = '${AppApiConfig.apiBaseUrl}/storage/${avatar.startsWith('/') ? avatar.substring(1) : avatar}';
+      if (avatar.startsWith('/')) {
+        avatar = '${AppApiConfig.assetBaseUrl}$avatar';
+      } else {
+        avatar = '${AppApiConfig.assetBaseUrl}/$avatar';
+      }
     }
+
     return LiveChatMessage(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       message: json['message']?.toString() ?? '',
-      userId: json['user_id'] as int,
+      userId: (json['user_id'] as num).toInt(),
       name: json['name']?.toString() ?? '',
       avatar: avatar,
       timestamp: DateTime.parse(json['timestamp'] as String),

@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class LiveChatStatus {
   final bool isLive;
   final String title;
@@ -22,7 +24,7 @@ class LiveChatStatus {
     final raw = json['started_at'];
     if (raw is String && raw.isNotEmpty) {
       try {
-        started = DateTime.parse(raw);
+        started = DateFormat('yyyy-MM-dd HH:mm:ss').parse(raw, true).toLocal();
       } catch (_) {}
     }
     return LiveChatStatus(

@@ -86,7 +86,7 @@ class _BottomNavState extends State<BottomNav> {
             if (index == 3) {
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LiveChatScreen()),
+                MaterialPageRoute(builder: (_) => LiveChatScreen(roomId: 1)), // Ganti dengan ID room yang sesuai
               );
 
               if (result == 'goHome') {
