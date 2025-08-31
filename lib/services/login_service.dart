@@ -15,7 +15,9 @@ class AuthService {
       );
 
       final auth = AuthResponse.fromJson(response.data);
+      logger.i('Saving token: ${auth.token}');
       await UserService.saveToken(auth.token);
+      logger.i('Token saved successfully');
       return auth;
     } on DioException catch (e) {
       String msg = 'Login gagal';

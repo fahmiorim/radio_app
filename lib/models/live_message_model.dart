@@ -18,8 +18,10 @@ class LiveChatMessage {
   });
 
   factory LiveChatMessage.fromJson(Map<String, dynamic> json) {
-    String avatar = json['avatar']?.toString() ?? '';
+    // === Avatar handling ===
+    String avatar = json['avatar']?.toString().trim() ?? '';
     if (avatar.isNotEmpty && !avatar.startsWith('http')) {
+      // normalisasi path avatar
       if (avatar.startsWith('/')) {
         avatar = '${AppApiConfig.assetBaseUrl}$avatar';
       } else {
@@ -27,13 +29,27 @@ class LiveChatMessage {
       }
     }
 
+    // === ID parsing helper ===
     int _parseId(dynamic value) {
       if (value == null) return 0;
+      if (value is int) return value;
       if (value is num) return value.toInt();
       if (value is String) {
         return int.tryParse(value) ?? double.tryParse(value)?.toInt() ?? 0;
       }
       return 0;
+    }
+
+    // === Timestamp parsing ===
+    DateTime _parseTimestamp(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      final str = value.toString();
+      try {
+        return DateTime.parse(str).toLocal();
+      } catch (_) {
+        return DateTime.now();
+      }
     }
 
     return LiveChatMessage(
@@ -42,9 +58,22 @@ class LiveChatMessage {
       userId: _parseId(json['user_id']),
       name: json['name']?.toString() ?? '',
       avatar: avatar,
-      timestamp: DateTime.parse(
-        json['timestamp']?.toString() ?? DateTime.now().toIso8601String(),
+      timestamp: _parseTimestamp(
+        json['timestamp'] ??
+            json['created_at'] ??
+            DateTime.now().toIso8601String(),
       ),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'message': message,
+      'user_id': userId,
+      'name': name,
+      'avatar': avatar,
+      'timestamp': timestamp.toIso8601String(),
+    };
   }
 }

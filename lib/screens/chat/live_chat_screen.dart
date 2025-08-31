@@ -4,12 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../providers/live_chat_provider.dart';
 import '../../providers/user_provider.dart';
-import '../../widgets/chat/chat_message_item.dart';
-import '../../widgets/chat/message_input_field.dart';
-import '../../widgets/chat/unread_messages_label.dart';
-import '../../widgets/chat/no_live_placeholder.dart';
-import '../../services/live_chat_socket_service.dart' show UnauthorizedException;
-import '../../config/app_routes.dart';
+import 'chat/chat_message_item.dart';
+import 'chat/message_input_field.dart';
+import 'chat/unread_messages_label.dart';
+import 'chat/no_live_placeholder.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;
@@ -28,11 +26,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   int _lastMessageCount = 0;
   Timer? _scrollTimer;
 
-  LiveChatProvider? _prov; // provider
-
   bool _isCurrentUser(String username) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    return userProvider.user?.name.toLowerCase() == username.toLowerCase();
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final current = user?.name;
+    if (current == null) return false;
+    return current.toLowerCase() == username.toLowerCase();
   }
 
   @override
@@ -41,26 +39,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     _scrollController.addListener(_handleScroll);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // CHANGED: aman melakukan lookup di sini
-    _prov ??= Provider.of<LiveChatProvider>(context, listen: false);
-
-    // Tambahkan listener untuk mendengarkan perubahan provider
-    _prov?.addListener(_handleProviderUpdate);
-  }
-
-  void _handleProviderUpdate() {
-    if (_prov == null) return;
-  }
-
   void _handleScroll() {
-    // CHANGED: jangan context.read di luar build, pakai _prov
+    final prov = context.read<LiveChatProvider>();
+
     if (_scrollController.offset <=
             _scrollController.position.minScrollExtent + 200 &&
         !_scrollController.position.outOfRange) {
-      _prov?.loadMore();
+      prov.loadMore();
     }
 
     _scrollTimer?.cancel();
@@ -72,9 +57,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       if (!mounted) return;
       setState(() {
         _isUserScrolledUp = isScrolledUp;
-        if (!isScrolledUp) {
-          _firstUnreadIndex = -1;
-        }
+        if (!isScrolledUp) _firstUnreadIndex = -1;
       });
     });
   }
@@ -89,13 +72,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   }
 
   void _scrollToUnreadMessages() {
-    // CHANGED: pakai _prov, bukan context.read
-    final messages = _prov?.messages;
+    final messages = context.read<LiveChatProvider>().messages;
     if (_firstUnreadIndex == -1 || !_scrollController.hasClients) return;
 
     final offset =
         _scrollController.position.maxScrollExtent -
-        (messages!.length - _firstUnreadIndex) * 70;
+        (messages.length - _firstUnreadIndex) * 70;
 
     _scrollController.animateTo(
       offset.clamp(
@@ -115,15 +97,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       await prov.send(text);
       _messageController.clear();
       _scrollToBottom();
-    } on UnauthorizedException {
-      if (!mounted) return;
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to send message: ${e.toString()}'),
+          content: Text('Failed to send message: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -139,7 +117,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       ),
       builder: (context) {
         return SafeArea(
-          child: Container(
+          child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -189,146 +167,147 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<LiveChatProvider>(
-      builder: (context, prov, _) {
-        if (prov.isLoading) {
+    // Provider dibuat di atas (ChangeNotifierProvider), jadi tidak perlu init di sini
+    return WillPopScope(
+      onWillPop: () async {
+        await context.read<LiveChatProvider>().shutdown();
+        return true;
+      },
+      child: Consumer<LiveChatProvider>(
+        builder: (context, prov, _) {
+          if (prov.isLoading) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Live Chat')),
+              body: const Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final messages = prov.messages;
+          if (!_isUserScrolledUp) {
+            _firstUnreadIndex = -1;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _scrollToBottom();
+            });
+          } else if (messages.length > _lastMessageCount &&
+              _firstUnreadIndex == -1) {
+            _firstUnreadIndex = _lastMessageCount;
+          }
+          _lastMessageCount = messages.length;
+
+          final unreadCount = _firstUnreadIndex == -1
+              ? 0
+              : messages.length - _firstUnreadIndex;
+
           return Scaffold(
-            appBar: AppBar(title: const Text('Live Chat')),
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        final messages = prov.messages;
-        if (!_isUserScrolledUp) {
-          _firstUnreadIndex = -1;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _scrollToBottom();
-          });
-        } else if (messages.length > _lastMessageCount &&
-            _firstUnreadIndex == -1) {
-          _firstUnreadIndex = _lastMessageCount;
-        }
-        _lastMessageCount = messages.length;
-
-        final unreadCount = _firstUnreadIndex == -1
-            ? 0
-            : messages.length - _firstUnreadIndex;
-
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat'),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context, 'goHome'),
-            ),
-            centerTitle: true,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.people_alt),
-                onPressed: () => _showOnlineUsers(context, prov),
+            appBar: AppBar(
+              title: Text(prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () async {
+                  await prov.shutdown();
+                  if (!mounted) return;
+                  Navigator.pop(context, 'goHome');
+                },
               ),
-            ],
-          ),
-          body: Stack(
-            children: [
-              if (!prov.isLive)
-                const NoLivePlaceholder()
-              else
-                ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.only(
-                    bottom: 80,
-                    left: 8,
-                    right: 8,
-                    top: 8,
-                  ),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    if (_isUserScrolledUp && index == _firstUnreadIndex) {
-                      return Column(
-                        children: [
-                          UnreadMessagesLabel(count: unreadCount),
-                          ChatMessageItem(
-                            message: message,
-                            isCurrentUser: _isCurrentUser(message.username),
-                            time: prov.formatTime(message.timestamp),
-                          ),
-                        ],
-                      );
-                    }
-                    return ChatMessageItem(
-                      message: message,
-                      isCurrentUser: _isCurrentUser(message.username),
-                      time: prov.formatTime(message.timestamp),
-                    );
-                  },
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.people_alt),
+                  onPressed: () => _showOnlineUsers(context, prov),
                 ),
-              if (_isUserScrolledUp && unreadCount > 0)
-                Positioned(
-                  bottom: 80,
-                  right: 16,
-                  child: GestureDetector(
-                    onTap: _scrollToUnreadMessages,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[800],
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+              ],
+            ),
+            body: Stack(
+              children: [
+                if (!prov.isLive)
+                  const NoLivePlaceholder()
+                else
+                  ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(
+                      bottom: 80,
+                      left: 8,
+                      right: 8,
+                      top: 8,
+                    ),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      if (_isUserScrolledUp && index == _firstUnreadIndex) {
+                        return Column(
+                          children: [
+                            UnreadMessagesLabel(count: unreadCount),
+                            ChatMessageItem(
+                              message: message,
+                              isCurrentUser: _isCurrentUser(message.username),
+                              time: prov.formatTime(message.timestamp),
+                            ),
+                          ],
+                        );
+                      }
+                      return ChatMessageItem(
+                        message: message,
+                        isCurrentUser: _isCurrentUser(message.username),
+                        time: prov.formatTime(message.timestamp),
+                      );
+                    },
+                  ),
+                if (_isUserScrolledUp && unreadCount > 0)
+                  Positioned(
+                    bottom: 80,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: _scrollToUnreadMessages,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[800],
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '$unreadCount pesan baru',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        '$unreadCount pesan baru',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                ),
-              if (prov.isLive)
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: MessageInputField(
-                    controller: _messageController,
-                    onSend: () => _sendMessage(prov),
+                if (prov.isLive)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: MessageInputField(
+                      controller: _messageController,
+                      onSend: () => _sendMessage(prov),
+                    ),
                   ),
-                ),
-            ],
-          ),
-        );
-      },
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
   @override
   void dispose() {
-    // Hapus listener
-    _prov?.removeListener(_handleProviderUpdate);
     _scrollController.removeListener(_handleScroll);
-
-    // Hentikan timer
-    _scrollTimer?.cancel();
-
-    // Bersihkan controller
     _scrollController.dispose();
     _messageController.dispose();
-
-    // Matikan provider
-    _prov?.shutdown();
-
+    _scrollTimer?.cancel();
     super.dispose();
   }
 }

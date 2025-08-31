@@ -75,8 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
           await Future.delayed(const Duration(seconds: 1));
 
           if (mounted) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
           }
         }
       } else {
@@ -212,26 +213,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 4),
                         Text(
                           'Selamat datang',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
+                          style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.w700,
-                                color:
-                                    Theme.of(context).colorScheme.onSurface,
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           'Masuk untuk melanjutkan ke Radio Odan',
                           textAlign: TextAlign.center,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withOpacity(.7),
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(.7),
+                              ),
                         ),
                         const SizedBox(height: 24),
 
@@ -255,14 +252,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 TextFormField(
                                   controller: _emailController,
-                                  style:
-                                      const TextStyle(color: Colors.black87),
+                                  style: const TextStyle(color: Colors.black87),
                                   decoration: const InputDecoration(
                                     labelText: 'Email',
-                                    labelStyle:
-                                        TextStyle(color: Colors.black54),
-                                    prefixIcon: Icon(Icons.email,
-                                        color: Colors.black54),
+                                    labelStyle: TextStyle(
+                                      color: Colors.black54,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.email,
+                                      color: Colors.black54,
+                                    ),
                                   ),
                                   keyboardType: TextInputType.emailAddress,
                                   validator: (value) {
@@ -278,14 +277,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(height: 16),
                                 TextFormField(
                                   controller: _passwordController,
-                                  style:
-                                      const TextStyle(color: Colors.black87),
+                                  style: const TextStyle(color: Colors.black87),
                                   decoration: InputDecoration(
                                     labelText: 'Password',
                                     labelStyle: const TextStyle(
-                                        color: Colors.black54),
-                                    prefixIcon: const Icon(Icons.lock,
-                                        color: Colors.black54),
+                                      color: Colors.black54,
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.lock,
+                                      color: Colors.black54,
+                                    ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
                                         _obscureText
@@ -373,8 +374,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   children: [
                                     Expanded(child: Divider()),
                                     Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(horizontal: 16),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
                                       child: Text('ATAU'),
                                     ),
                                     Expanded(child: Divider()),
@@ -400,7 +402,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(color: Colors.grey),
+                                      side: const BorderSide(
+                                        color: Colors.grey,
+                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),

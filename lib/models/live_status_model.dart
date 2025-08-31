@@ -1,5 +1,3 @@
-import 'package:intl/intl.dart';
-
 class LiveChatStatus {
   final bool isLive;
   final String title;
@@ -8,6 +6,7 @@ class LiveChatStatus {
   final int likes;
   final bool liked;
   final int listenerCount;
+  final int? roomId;
 
   LiveChatStatus({
     required this.isLive,
@@ -17,28 +16,30 @@ class LiveChatStatus {
     required this.likes,
     required this.liked,
     required this.listenerCount,
+    this.roomId,
   });
+
+  static int _toInt(dynamic v) =>
+      v is int ? v : int.tryParse(v?.toString() ?? '') ?? 0;
 
   factory LiveChatStatus.fromJson(Map<String, dynamic> json) {
     DateTime? started;
     final raw = json['started_at'];
     if (raw is String && raw.isNotEmpty) {
       try {
-        started = DateFormat('yyyy-MM-dd HH:mm:ss').parse(raw, true).toLocal();
+        started = DateTime.parse(raw).toLocal(); // ISO + offset: aman
       } catch (_) {}
     }
+
     return LiveChatStatus(
       isLive: json['is_live'] == true,
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       startedAt: started,
-      likes: json['likes'] is int
-          ? json['likes']
-          : int.tryParse(json['likes']?.toString() ?? '') ?? 0,
+      likes: _toInt(json['likes']),
       liked: json['liked'] == true,
-      listenerCount: json['listener_count'] is int
-          ? json['listener_count']
-          : int.tryParse(json['listener_count']?.toString() ?? '') ?? 0,
+      listenerCount: _toInt(json['listener_count']),
+      roomId: json['room_id'] == null ? null : _toInt(json['room_id']),
     );
   }
 
@@ -50,6 +51,7 @@ class LiveChatStatus {
     int? likes,
     bool? liked,
     int? listenerCount,
+    int? roomId,
   }) {
     return LiveChatStatus(
       isLive: isLive ?? this.isLive,
@@ -59,6 +61,7 @@ class LiveChatStatus {
       likes: likes ?? this.likes,
       liked: liked ?? this.liked,
       listenerCount: listenerCount ?? this.listenerCount,
+      roomId: roomId ?? this.roomId,
     );
   }
 }

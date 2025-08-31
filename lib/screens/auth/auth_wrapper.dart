@@ -17,27 +17,37 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _isLoading = true;
   bool _isAuthenticated = false;
+  late final ValueNotifier<bool> _authNotifier;
 
   @override
   void initState() {
     super.initState();
+    _authNotifier = ValueNotifier<bool>(false);
     _checkAuthStatus();
+  }
+
+  @override
+  void dispose() {
+    _authNotifier.dispose();
+    super.dispose();
   }
 
   Future<void> _checkAuthStatus() async {
     try {
       final isLoggedIn = await AuthService.isLoggedIn();
-
+      
       if (mounted) {
         setState(() {
           _isAuthenticated = isLoggedIn;
           _isLoading = false;
         });
+        _authNotifier.value = isLoggedIn;
       }
     } catch (e) {
       logger.e('Error checking auth status: $e');
       if (mounted) {
         setState(() => _isLoading = false);
+        _authNotifier.value = false;
       }
     }
   }
@@ -75,7 +85,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
           }
           return true;
         },
-        child: widget.child,
+        child: ValueListenableBuilder<bool>(
+          valueListenable: _authNotifier,
+          builder: (context, isAuthenticated, child) {
+            // Force a rebuild of the child when auth state changes
+            if (isAuthenticated && ModalRoute.of(context)?.settings.name == AppRoutes.login) {
+              // If we're on the login page but are authenticated, navigate to home
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.of(context).pushReplacementNamed(AppRoutes.bottomNav);
+              });
+            }
+            return widget.child;
+          },
+        ),
       );
     }
 
