@@ -27,13 +27,24 @@ class LiveChatMessage {
       }
     }
 
+    int _parseId(dynamic value) {
+      if (value == null) return 0;
+      if (value is num) return value.toInt();
+      if (value is String) {
+        return int.tryParse(value) ?? double.tryParse(value)?.toInt() ?? 0;
+      }
+      return 0;
+    }
+
     return LiveChatMessage(
-      id: (json['id'] as num).toInt(),
+      id: _parseId(json['id']),
       message: json['message']?.toString() ?? '',
-      userId: (json['user_id'] as num).toInt(),
+      userId: _parseId(json['user_id']),
       name: json['name']?.toString() ?? '',
       avatar: avatar,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      timestamp: DateTime.parse(
+        json['timestamp']?.toString() ?? DateTime.now().toIso8601String(),
+      ),
     );
   }
 }
