@@ -1,273 +1,230 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 import '../models/chat_model.dart';
 import '../models/live_message_model.dart';
 import '../services/live_chat_socket_service.dart';
 
 class LiveChatProvider with ChangeNotifier {
+  final int roomId;
+  LiveChatProvider({required this.roomId});
+
   final LiveChatSocketService _svc = LiveChatSocketService.I;
 
+  // ---- STATE ----
   final List<ChatMessage> _messages = [];
+  List<ChatMessage> get messages => List.unmodifiable(_messages);
+
   final List<OnlineUser> _onlineUsers = [];
+  List<OnlineUser> get onlineUsers => List.unmodifiable(_onlineUsers);
 
   bool _isLive = false;
-  bool _isLoading = false;
-  bool _isLoadingMessages = false;
-  bool _hasMoreMessages = true;
-  bool _isSocketInitialized = false;
-  bool _statusSubscribed = false;
-  bool _chatSubscribed = false;
-  bool _presenceSubscribed = false;
-  int? _subscribedRoomId;
-
-  int _currentPage = 1;
-  final int _messagesPerPage = 20;
-  int? _currentRoomId;
-
-  List<ChatMessage> get messages => _messages;
-  List<OnlineUser> get onlineUsers => _onlineUsers;
   bool get isLive => _isLive;
+
+  bool _isLoading = true;
   bool get isLoading => _isLoading;
-  bool get isLoadingMessages => _isLoadingMessages;
-  bool get hasMoreMessages => _hasMoreMessages;
+
+  bool _hasMore = true;
+  bool get hasMore => _hasMore;
+
+  // pagination
+  int _page = 1;
+  final int _perPage = 20;
+
+  // connection/subscription guards
+  bool _socketReady = false;
+  bool _statusSubscribed = false;
+  bool _presenceSubscribed = false;
+  bool _publicSubscribed = false;
+
+  int? _currentRoomId; // dari API status (bisa beda dengan roomId default)
   int? get currentRoomId => _currentRoomId;
 
-  Future<void> init(int roomId) async {
-    _currentRoomId = roomId;
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      await _initializeSocket();
-      await checkLiveStatus();
-    } catch (e) {
-      _isLoading = false;
-      _isLive = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> _initializeSocket() async {
-    if (_isSocketInitialized) return;
+  // ==== INIT ====
+  Future<void> init() async {
+    if (_socketReady) return;
 
     await _svc.connect();
-    _isSocketInitialized = true;
+    _socketReady = true;
 
-    if (!_statusSubscribed) {
-      try {
-        await _svc.subscribeStatus(
-          onUpdated: (roomId, status) {
-            final isLive = (status.toLowerCase() == 'started');
-            _isLive = isLive;
-            if (!isLive) {
-              _messages.clear();
-              _onlineUsers.clear();
-              unawaited(_unsubscribeRoom());
-            } else {
-              _currentRoomId = roomId ?? _currentRoomId;
-              _currentPage = 1;
-              _hasMoreMessages = true;
-              _messages.clear();
-              unawaited(_subscribeRoom(_currentRoomId!));
-              unawaited(loadOldMessages());
-            }
-            notifyListeners();
-          },
-        );
-        _statusSubscribed = true;
-      } catch (e) {
-        final msg = e.toString();
-        if (msg.contains('Already subscribed')) {
-          _statusSubscribed = true;
-        } else {
-          rethrow;
-        }
-      }
-    }
+    await _subscribeStatusOnce();
+    await _subscribePresenceOnce();
+
+    await refreshStatus();
   }
 
-  Future<void> _subscribeRoom(int roomId) async {
-    if (_subscribedRoomId == roomId && _chatSubscribed && _presenceSubscribed) {
-      return;
-    }
-
-    await _unsubscribeRoom();
+  // ==== STATUS ====
+  Future<void> refreshStatus() async {
+    _isLoading = true; notifyListeners();
 
     try {
-      await _svc.subscribePublic(
-        roomId: roomId,
-        onMessage: (LiveChatMessage msg) {
-          if (_messages.any((m) => m.id == msg.id.toString())) return;
-          _messages.add(
-            ChatMessage(
-              id: msg.id.toString(),
-              username: msg.name,
-              message: msg.message,
-              timestamp: msg.timestamp,
-              userAvatar: msg.avatar,
-            ),
-          );
-          notifyListeners();
-        },
-        onSystem: (_) {},
-      );
-      _chatSubscribed = true;
+      final s = await _svc.checkLiveStatus();
+      _isLive = s['isLive'] == true;
 
-      await _svc.subscribePresence(
-        roomId: roomId,
-        onHere: (users) {
-          _onlineUsers
-            ..clear()
-            ..addAll(users.map((u) {
-              final name = (u['name'] ?? u['username'] ?? 'Unknown').toString();
-              return OnlineUser(
-                id: u['id'].toString(),
-                username: name,
-                joinTime: DateTime.now(),
-              );
-            }));
-          notifyListeners();
-        },
-        onJoining: (user) {
-          final name =
-              (user['name'] ?? user['username'] ?? 'Unknown').toString();
-          _onlineUsers.add(
-            OnlineUser(
-              id: user['id'].toString(),
-              username: name,
-              joinTime: DateTime.now(),
-            ),
-          );
-          notifyListeners();
-        },
-        onLeaving: (user) {
-          _onlineUsers.removeWhere((u) => u.id == user['id'].toString());
-          notifyListeners();
-        },
-      );
-      _presenceSubscribed = true;
-      _subscribedRoomId = roomId;
-    } catch (e) {
-      // ignore errors
-    }
-  }
-
-  Future<void> _unsubscribeRoom() async {
-    if (_subscribedRoomId != null) {
-      if (_chatSubscribed) {
-        await _svc.unsubscribePublic(_subscribedRoomId!);
-        _chatSubscribed = false;
-      }
-      if (_presenceSubscribed) {
-        await _svc.unsubscribePresence(_subscribedRoomId!);
-        _presenceSubscribed = false;
-      }
-    }
-    _onlineUsers.clear();
-    _subscribedRoomId = null;
-  }
-
-  Future<void> checkLiveStatus() async {
-    try {
-      final status = await _svc.checkLiveStatus();
-      _isLive = status['isLive'] == true;
-      final liveRoom = status['liveRoom'] as Map<String, dynamic>?;
+      final liveRoom = s['liveRoom'] as Map<String, dynamic>?;
       if (liveRoom != null && liveRoom['id'] != null) {
         _currentRoomId = liveRoom['id'] as int;
-        if (_isLive) {
-          _currentPage = 1;
-          _hasMoreMessages = true;
-          _messages.clear();
-          await _subscribeRoom(_currentRoomId!);
-          await loadOldMessages();
-        } else {
-          _messages.clear();
-          _onlineUsers.clear();
-          await _unsubscribeRoom();
-        }
-      } else if (!_isLive) {
+      } else {
+        _currentRoomId = roomId; // fallback ke roomId dari constructor
+      }
+
+      if (_isLive) {
+        _page = 1; _hasMore = true; _messages.clear();
+        await _subscribePublicOnce();
+        await loadMore();
+      } else {
         _messages.clear();
-        _onlineUsers.clear();
-        await _unsubscribeRoom();
+        // presence tetap aktif untuk lihat user online kalau backend mendukung,
+        // kalau tidak ingin: _onlineUsers.clear();
       }
     } catch (_) {
       _isLive = false;
       _messages.clear();
-      _onlineUsers.clear();
-      await _unsubscribeRoom();
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _isLoading = false; notifyListeners();
     }
   }
 
-  Future<void> loadOldMessages() async {
-    if (_isLoadingMessages || !_hasMoreMessages || _currentRoomId == null) {
-      return;
-    }
+  Future<void> _subscribeStatusOnce() async {
+    if (_statusSubscribed) return;
+    await _svc.subscribeStatus(onUpdated: (rid, status) async {
+      final live = status.toLowerCase() == 'started';
+      _isLive = live;
 
-    _isLoadingMessages = true;
-    notifyListeners();
+      if (!live) {
+        _messages.clear();
+        notifyListeners();
+        return;
+      }
 
+      // live dimulai → set room, subscribe public, dan tarik history
+      _currentRoomId = rid ?? _currentRoomId ?? roomId;
+      _page = 1; _hasMore = true; _messages.clear();
+      notifyListeners();
+
+      await _subscribePublicOnce();
+      await loadMore();
+    });
+    _statusSubscribed = true;
+  }
+
+  // ==== PRESENCE (ONLINE USERS) ====
+  Future<void> _subscribePresenceOnce() async {
+    if (_presenceSubscribed) return;
+
+    await _svc.subscribePresence(
+      roomId: roomId,
+      onHere: (users) {
+        _onlineUsers
+          ..clear()
+          ..addAll(users.map((u) => OnlineUser(
+                id: (u['id'] ?? '').toString(),
+                username: (u['name'] ?? u['username'] ?? 'User').toString(),
+                userAvatar: (u['avatar'] ?? u['photo'])?.toString(),
+                joinTime: DateTime.now(),
+              )));
+        notifyListeners();
+      },
+      onJoining: (u) {
+        final id = (u['id'] ?? '').toString();
+        if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
+          _onlineUsers.add(OnlineUser(
+            id: id,
+            username: (u['name'] ?? u['username'] ?? 'User').toString(),
+            userAvatar: (u['avatar'] ?? u['photo'])?.toString(),
+            joinTime: DateTime.now(),
+          ));
+          notifyListeners();
+        }
+      },
+      onLeaving: (u) {
+        final id = (u['id'] ?? '').toString();
+        _onlineUsers.removeWhere((x) => x.id == id);
+        notifyListeners();
+      },
+    );
+
+    _presenceSubscribed = true;
+  }
+
+  // ==== PUBLIC CHAT (REALTIME MESSAGE) ====
+  Future<void> _subscribePublicOnce() async {
+    if (_publicSubscribed) return;
+    final rid = _currentRoomId ?? roomId;
+
+    await _svc.subscribePublic(
+      roomId: rid,
+      onMessage: (LiveChatMessage msg) {
+        // hindari duplikasi jika history + realtime overlap
+        if (_messages.any((m) => m.id == msg.id.toString())) return;
+
+        _messages.add(ChatMessage(
+          id: msg.id.toString(),
+          username: msg.name,
+          message: msg.message,
+          timestamp: msg.timestamp,
+          userAvatar: msg.avatar,
+        ));
+        notifyListeners();
+      },
+      onSystem: (_) {},
+    );
+
+    _publicSubscribed = true;
+  }
+
+  // ==== HISTORY (PAGINATION) ====
+  Future<void> loadMore() async {
+    if (!_isLive || !_hasMore) return;
+
+    final rid = _currentRoomId ?? roomId;
     try {
-      final messages = await _svc.fetchChatHistory(
-        roomId: _currentRoomId!,
-        page: _currentPage,
-        perPage: _messagesPerPage,
+      final data = await _svc.fetchChatHistory(
+        roomId: rid,
+        page: _page,
+        perPage: _perPage,
       );
 
-      if (messages.isEmpty) {
-        _hasMoreMessages = false;
+      if (data.isEmpty) {
+        _hasMore = false;
       } else {
-        final newMessages = messages
-            .map(
-              (msg) => ChatMessage(
-                id: msg['id'].toString(),
-                username: msg['name'] ?? 'Unknown',
-                message: msg['message'] ?? '',
-                timestamp: DateTime.parse(msg['timestamp']),
-              ),
-            )
-            .toList();
-        _messages.insertAll(0, newMessages);
-        _currentPage++;
+        final newMsgs = data.map((m) => ChatMessage(
+          id: '${m['id']}',
+          username: m['name'] ?? 'Unknown',
+          message: m['message'] ?? '',
+          timestamp: DateTime.parse(m['timestamp']),
+        )).toList();
+
+        // older first → masukkan di atas list
+        _messages.insertAll(0, newMsgs);
+        _page++;
       }
     } catch (_) {
-      // ignore
+      // ignore error tarik history
     } finally {
-      _isLoadingMessages = false;
       notifyListeners();
     }
   }
 
-  Future<void> sendMessage(String text, {Function(String)? onError}) async {
-    if (text.isEmpty || _currentRoomId == null) return;
+  // ==== SEND (optimistic) ====
+  Future<void> send(String text, {String username = 'Anda'}) async {
+    final t = text.trim();
+    if (t.isEmpty || !_isLive) return;
 
-    try {
-      await _svc.sendMessage(
-        roomId: _currentRoomId!,
-        message: text,
-        onSuccess: (LiveChatMessage msg) {
-          _messages.add(
-            ChatMessage(
-              id: msg.id.toString(),
-              username: msg.name,
-              message: msg.message,
-              timestamp: msg.timestamp,
-              userAvatar: msg.avatar,
-            ),
-          );
-          notifyListeners();
-        },
-        onError: (err) {
-          onError?.call(err);
-        },
-      );
-    } catch (e) {
-      onError?.call(e.toString());
-    }
+    // Optimistic UI
+    _messages.add(ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      username: username,
+      message: t,
+      timestamp: DateTime.now(),
+    ));
+    notifyListeners();
+
+    // TODO: kirim ke backend:
+    // await _svc.sendMessage(roomId: _currentRoomId ?? roomId, message: t);
   }
 
+  // ==== FORMATTER (opsional dipakai Screen) ====
   String formatTime(DateTime time) {
     final now = DateTime.now();
     final difference = now.difference(time);
@@ -277,17 +234,18 @@ class LiveChatProvider with ChangeNotifier {
     return '${difference.inDays} hari lalu';
   }
 
-  Future<void> disposeSocket() async {
-    try {
-      await _unsubscribeRoom();
-      await _svc.disconnect();
-    } catch (_) {}
-  }
-
+  // ==== LIFECYCLE ====
+  // Jangan disconnect di dispose (hot reload sering panggil dispose).
   @override
   void dispose() {
-    unawaited(_unsubscribeRoom());
-    _svc.disconnect();
     super.dispose();
+  }
+
+  // Panggil dari dispose() screen saat benar-benar keluar.
+  Future<void> shutdown() async {
+    try { await _svc.unsubscribePublic(_currentRoomId ?? roomId); } catch (_) {}
+    try { await _svc.unsubscribePresence(roomId); } catch (_) {}
+    try { await _svc.unsubscribeStatus(); } catch (_) {}
+    try { await _svc.disconnect(); } catch (_) {}
   }
 }
