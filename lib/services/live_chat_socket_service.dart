@@ -886,12 +886,13 @@ class LiveChatSocketService {
   ) async {
     try {
       _log('🔄 Sending message via HTTP to room $roomId');
+      ApiClient.I.ensureInterceptors();
 
       final response = await ApiClient.I.dioRoot.post(
         '/live-chat/$roomId/send',
         data: {'message': message},
         options: Options(
-          headers: const {
+          headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
           },
