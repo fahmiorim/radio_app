@@ -41,7 +41,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     if (_scrollController.offset <=
             _scrollController.position.minScrollExtent + 200 &&
         !_scrollController.position.outOfRange) {
-      prov.loadOldMessages();
+      prov.loadMore();
     }
 
     _scrollTimer?.cancel();
@@ -90,18 +90,20 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   Future<void> _sendMessage(LiveChatProvider prov) async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-    _messageController.clear();
-
-    await prov.sendMessage(text, onError: (msg) {
+    
+    try {
+      await prov.send(text);
+      _messageController.clear();
+      _scrollToBottom();
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(msg),
+          content: Text('Failed to send message: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
-    });
-
-    _scrollToBottom();
+    }
   }
 
   void _showOnlineUsers(BuildContext context, LiveChatProvider prov) {
@@ -162,7 +164,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LiveChatProvider()..init(widget.roomId),
+      create: (_) => LiveChatProvider(roomId: widget.roomId),
       child: Consumer<LiveChatProvider>(
         builder: (context, prov, _) {
           if (prov.isLoading) {
