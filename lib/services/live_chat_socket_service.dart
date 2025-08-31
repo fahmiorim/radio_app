@@ -868,93 +868,12 @@ class LiveChatSocketService {
   }) async {
     try {
       _log('📤 Attempting to send message to room $roomId: $message');
-      
-      // Get the current user's info
-      final currentUser = _getCurrentUserInfo();
-      
-      // Create a temporary message for optimistic UI update
-      final tempMessage = LiveChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: currentUser['name'] ?? 'You',
-        message: message,
-        timestamp: DateTime.now(),
-        userId: int.tryParse(currentUser['id']?.toString() ?? '0') ?? 0,
-        avatar: currentUser['avatar']?.toString() ?? '',
-      );
-      
-      // Show the message optimistically
-      onSuccess?.call(tempMessage);
-      
+
       // Send the message via HTTP
       await _sendMessageViaHttp(roomId, message, onSuccess, onError);
     } catch (e, stackTrace) {
       _log('❌ Error in sendMessage: $e\n$stackTrace', name: 'SendMessageError');
       onError('Failed to send message: ${e.toString()}');
-    }
-  }
-  
-  // Helper method to get current user info
-  Map<String, dynamic> _getCurrentUserInfo() {
-    // Replace this with actual user info from your auth system
-    return {
-      'id': 'user_${DateTime.now().millisecondsSinceEpoch}',
-      'name': 'User',
-      'avatar': null,
-    };
-  }
-  
-  // Get CSRF token from cookies
-  Future<Map<String, String>> _getCsrfHeaders() async {
-    try {
-      // First, get the CSRF cookie
-      final response = await ApiClient.I.dioRoot.get(
-        '/sanctum/csrf-cookie',
-        options: Options(
-          headers: {
-            'Accept': 'application/json',
-          },
-          followRedirects: false,
-          validateStatus: (status) => status! < 400,
-        ),
-      );
-
-      // Extract cookies from response
-      final cookies = response.headers['set-cookie'];
-      String? xsrfToken;
-      String? sessionCookie;
-
-      if (cookies != null) {
-        for (final cookie in cookies) {
-          if (cookie.contains('XSRF-TOKEN')) {
-            final match = RegExp('XSRF-TOKEN=([^;]+)').firstMatch(cookie);
-            if (match != null) {
-              xsrfToken = Uri.decodeComponent(match.group(1)!);
-            }
-          } else if (cookie.contains('laravel_session') || cookie.contains('session')) {
-            sessionCookie = cookie.split(';').first;
-          }
-        }
-      }
-
-      _log('🔑 CSRF Token: ${xsrfToken != null ? 'Found' : 'Not found'}');
-      _log('🍪 Session Cookie: ${sessionCookie != null ? 'Found' : 'Not found'}');
-
-      // Return headers for the next request
-      return {
-        'X-XSRF-TOKEN': xsrfToken ?? '',
-        'Cookie': sessionCookie ?? '',
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Referer': 'https://your-domain.com', // Replace with your actual domain
-      };
-    } catch (e) {
-      _log('❌ Error getting CSRF token: $e');
-      return {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-      };
     }
   }
   
@@ -967,32 +886,16 @@ class LiveChatSocketService {
   ) async {
     try {
       _log('🔄 Sending message via HTTP to room $roomId');
-      
-      // Get current user info
-      final currentUser = _getCurrentUserInfo();
-      
-      // Prepare the request data to match Laravel's expected format
-      final requestData = {
-        'message': message,
-        'user_id': currentUser['id'],
-        'name': currentUser['name'],
-        'avatar': currentUser['avatar'],
-      };
-      
-      _log('📤 Sending request to /admin/live-chat/$roomId/send with data: $requestData');
-      
-      // Get CSRF headers including cookies
-      final headers = await _getCsrfHeaders();
-      
-      _log('🔑 Using headers: $headers');
-      
-      // Make the HTTP request with proper headers
+
       final response = await ApiClient.I.dioRoot.post(
-        '/admin/live-chat/$roomId/send',
-        data: requestData,
+        '/live-chat/$roomId/send',
+        data: {'message': message},
         options: Options(
-          headers: headers,
-          validateStatus: (status) => status! < 500, // Don't throw for 4xx errors
+          headers: const {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) => status! < 500,
           followRedirects: false,
         ),
       );
@@ -1004,27 +907,27 @@ class LiveChatSocketService {
         if (responseData['success'] == true) {
           final messageData = responseData['data'] as Map<String, dynamic>;
           _log('✅ Message sent successfully: $messageData');
-          
-          // Create a LiveChatMessage from the response
+
           final sentMessage = LiveChatMessage(
             id: messageData['id'] as int? ?? 0,
-            message: message,
+            message: messageData['message']?.toString() ?? message,
             userId: int.tryParse(messageData['user_id']?.toString() ?? '0') ?? 0,
             name: messageData['name']?.toString() ?? 'User',
             avatar: messageData['avatar']?.toString() ?? '',
-            timestamp: DateTime.parse(messageData['created_at'] ?? DateTime.now().toIso8601String()),
+            timestamp: DateTime.parse(
+              messageData['created_at'] ?? DateTime.now().toIso8601String(),
+            ),
           );
-          
+
           onSuccess?.call(sentMessage);
           return;
         }
       }
-      
-      // If we get here, something went wrong
-      final errorMessage = response.data is Map 
-          ? response.data['message']?.toString() 
+
+      final errorMessage = response.data is Map
+          ? response.data['message']?.toString()
           : 'Failed to send message. Status: ${response.statusCode}';
-      
+
       _log('❌ Failed to send message: $errorMessage');
       onError(errorMessage ?? 'Failed to send message');
     } catch (e, stackTrace) {
