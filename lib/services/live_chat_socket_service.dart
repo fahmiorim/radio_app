@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:dio/dio.dart' show Options;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/pusher_config.dart';
 import '../models/live_message_model.dart';
 import '../config/api_client.dart';
@@ -886,54 +887,151 @@ class LiveChatSocketService {
   ) async {
     try {
       _log('🔄 Sending message via HTTP to room $roomId');
-      ApiClient.I.ensureInterceptors();
-
+      
+      // Get current user info
+      final currentUser = _getCurrentUserInfo();
+      _log('👤 Current user: ${currentUser['id']} - ${currentUser['name']}');
+      
+      // Get authentication token
+      final token = await _getAuthToken();
+      if (token == null || token.isEmpty) {
+        _log('❌ No authentication token found');
+        onError('You need to be logged in to send messages');
+        return;
+      }
+      
+      // Prepare the request data
+      final requestData = {
+        'message': message,
+        'user_id': currentUser['id'],
+        'name': currentUser['name'],
+        'avatar': currentUser['avatar'],
+      };
+      
+      _log('📤 Sending request to /admin/live-chat/$roomId/send');
+      _log('📝 Request data: $requestData');
+      
+      // Get CSRF token
+      _log('🔄 Ensuring CSRF token...');
+      await _ensureCsrfToken();
+      
+      // Log the headers we're about to send
+      final headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+      _log('📋 Request headers: $headers');
+      
+      // Make the HTTP request with proper headers
+      _log('🚀 Sending POST request...');
       final response = await ApiClient.I.dioRoot.post(
-        '/live-chat/$roomId/send',
-        data: {'message': message},
+        '/admin/live-chat/$roomId/send',
+        data: requestData,
         options: Options(
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
+          headers: headers,
           validateStatus: (status) => status! < 500,
           followRedirects: false,
         ),
       );
 
-      _log('📥 Received response: ${response.statusCode} - ${response.data}');
+      _log('📥 Received response:');
+      _log('  Status: ${response.statusCode}');
+      _log('  Headers: ${response.headers}');
+      _log('  Data: ${response.data}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = response.data as Map<String, dynamic>;
         if (responseData['success'] == true) {
-          final messageData = responseData['data'] as Map<String, dynamic>;
-          _log('✅ Message sent successfully: $messageData');
-
+          final messageData = responseData['data'] ?? responseData;
+          _log('✅ Message sent successfully');
+          
+          // Create a LiveChatMessage from the response
           final sentMessage = LiveChatMessage(
-            id: messageData['id'] as int? ?? 0,
+            id: messageData['id'] as int? ?? DateTime.now().millisecondsSinceEpoch,
             message: messageData['message']?.toString() ?? message,
             userId: int.tryParse(messageData['user_id']?.toString() ?? '0') ?? 0,
-            name: messageData['name']?.toString() ?? 'User',
-            avatar: messageData['avatar']?.toString() ?? '',
-            timestamp: DateTime.parse(
-              messageData['created_at'] ?? DateTime.now().toIso8601String(),
-            ),
+            name: messageData['name']?.toString() ?? currentUser['name'] ?? 'User',
+            avatar: messageData['avatar']?.toString() ?? currentUser['avatar'] ?? '',
+            timestamp: messageData['created_at'] != null 
+                ? DateTime.parse(messageData['created_at'].toString())
+                : DateTime.now(),
           );
-
+          
           onSuccess?.call(sentMessage);
           return;
         }
       }
-
-      final errorMessage = response.data is Map
-          ? response.data['message']?.toString()
-          : 'Failed to send message. Status: ${response.statusCode}';
+      
+      // Handle different error statuses
+      String errorMessage = 'Failed to send message';
+      
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (response.statusCode == 422) {
+        // Handle validation errors
+        if (response.data is Map && response.data['errors'] != null) {
+          final errors = response.data['errors'] as Map<String, dynamic>;
+          errorMessage = errors.values.first?.first?.toString() ?? errorMessage;
+        }
+      } else if (response.data is Map && response.data['message'] != null) {
+        errorMessage = response.data['message'].toString();
+      } else if (response.statusMessage != null) {
+        errorMessage = '${response.statusCode}: ${response.statusMessage}';
+      }
 
       _log('❌ Failed to send message: $errorMessage');
-      onError(errorMessage ?? 'Failed to send message');
+      onError(errorMessage);
     } catch (e, stackTrace) {
       _log('❌ HTTP send message failed: $e\n$stackTrace');
       onError('Failed to send message: ${e.toString()}');
+    }
+  }
+
+  // Get current user info
+  Map<String, dynamic> _getCurrentUserInfo() {
+    // This is a placeholder - you should replace this with actual user info
+    // from your authentication system
+    return {
+      'id': '1',  // Replace with actual user ID
+      'name': 'User',  // Replace with actual username
+      'avatar': null,  // Replace with actual avatar URL if available
+    };
+  }
+  
+  // Get authentication token from secure storage
+  Future<String?> _getAuthToken() async {
+    try {
+      final storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'user_token');
+      _log('🔑 Retrieved auth token: ${token != null ? 'Token exists' : 'Token is null'}');
+      if (token == null) {
+        _log('⚠️ No auth token found in secure storage');
+      } else if (token.isEmpty) {
+        _log('⚠️ Auth token is empty');
+      } else {
+        _log('✅ Valid auth token found');
+      }
+      return token;
+    } catch (e) {
+      _log('❌ Error getting auth token: $e');
+      return null;
+    }
+  }
+
+  // Ensure CSRF token is set
+  Future<void> _ensureCsrfToken() async {
+    try {
+      await ApiClient.I.dioRoot.get(
+        '/sanctum/csrf-cookie',
+        options: Options(
+          headers: {'Accept': 'application/json'},
+          validateStatus: (status) => status! < 400,
+        ),
+      );
+    } catch (e) {
+      _log('❌ Error ensuring CSRF token: $e');
     }
   }
 }
