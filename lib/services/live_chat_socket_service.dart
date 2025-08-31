@@ -11,6 +11,13 @@ import '../config/api_client.dart';
 // Alias for developer.log
 void _log(String message, {String name = 'LiveChatSocketService'}) {}
 
+class UnauthorizedException implements Exception {
+  final String message;
+  UnauthorizedException([this.message = 'Unauthorized']);
+  @override
+  String toString() => message;
+}
+
 class LiveChatSocketService {
   LiveChatSocketService._();
   static final LiveChatSocketService I = LiveChatSocketService._();
@@ -867,6 +874,7 @@ class LiveChatSocketService {
     required String message,
     Function(LiveChatMessage)? onSuccess,
     required Function(String) onError,
+    Function()? onUnauthorized,
   }) async {
     try {
       _log('📤 Attempting to send message to room $roomId: $message');
@@ -874,7 +882,16 @@ class LiveChatSocketService {
       final currentUser = await _getCurrentUserInfo();
 
       // Send the message via HTTP
-      await _sendMessageViaHttp(roomId, message, currentUser, onSuccess, onError);
+      await _sendMessageViaHttp(
+        roomId,
+        message,
+        currentUser,
+        onSuccess,
+        onError,
+        onUnauthorized,
+      );
+    } on UnauthorizedException {
+      rethrow;
     } catch (e, stackTrace) {
       _log('❌ Error in sendMessage: $e\n$stackTrace', name: 'SendMessageError');
       onError('Failed to send message: ${e.toString()}');
@@ -888,6 +905,7 @@ class LiveChatSocketService {
     Map<String, dynamic> currentUser,
     Function(LiveChatMessage)? onSuccess,
     Function(String) onError,
+    Function()? onUnauthorized,
   ) async {
     try {
       _log('🔄 Sending message via HTTP to room $roomId');
@@ -898,8 +916,10 @@ class LiveChatSocketService {
       final token = await _getAuthToken();
       if (token == null || token.isEmpty) {
         _log('❌ No authentication token found');
+        await UserService.clearToken();
         onError('You need to be logged in to send messages');
-        return;
+        onUnauthorized?.call();
+        throw UnauthorizedException('No authentication token');
       }
       
       // Prepare the request data
@@ -964,9 +984,13 @@ class LiveChatSocketService {
       
       // Handle different error statuses
       String errorMessage = 'Failed to send message';
-      
+
       if (response.statusCode == 401 || response.statusCode == 403) {
         errorMessage = 'Authentication failed. Please log in again.';
+        await UserService.clearToken();
+        onUnauthorized?.call();
+        onError(errorMessage);
+        throw UnauthorizedException(errorMessage);
       } else if (response.statusCode == 422) {
         // Handle validation errors
         if (response.data is Map && response.data['errors'] != null) {

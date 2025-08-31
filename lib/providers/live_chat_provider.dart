@@ -287,11 +287,13 @@ class LiveChatProvider with ChangeNotifier {
           // Remove the optimistic message if sending failed
           _messages.removeWhere((m) => m.id == tempId);
           notifyListeners();
-          
+
           // Show error to user (you might want to use a snackbar or toast)
           debugPrint('Failed to send message: $error');
         },
       );
+    } on UnauthorizedException {
+      rethrow;
     } catch (e) {
       // Remove the optimistic message if an exception occurs
       _messages.removeWhere((m) => m.id == tempId);
