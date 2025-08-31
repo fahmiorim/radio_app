@@ -163,10 +163,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => LiveChatProvider(roomId: widget.roomId)..init(),
-      child: Consumer<LiveChatProvider>(
-        builder: (context, prov, _) {
+    return Consumer<LiveChatProvider>(
+      builder: (context, prov, _) {
           if (prov.isLoading) {
             return Scaffold(
               appBar: AppBar(title: const Text('Live Chat')),
@@ -282,8 +280,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               ],
             ),
           );
-        },
-      ),
+      },
     );
   }
 
