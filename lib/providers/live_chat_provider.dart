@@ -55,7 +55,8 @@ class LiveChatProvider with ChangeNotifier {
 
   // ==== STATUS ====
   Future<void> refreshStatus() async {
-    _isLoading = true; notifyListeners();
+    _isLoading = true;
+    notifyListeners();
 
     try {
       final s = await _svc.checkLiveStatus();
@@ -69,7 +70,9 @@ class LiveChatProvider with ChangeNotifier {
       }
 
       if (_isLive) {
-        _page = 1; _hasMore = true; _messages.clear();
+        _page = 1;
+        _hasMore = true;
+        _messages.clear();
         await _subscribePublicOnce();
         await loadMore();
       } else {
@@ -81,13 +84,14 @@ class LiveChatProvider with ChangeNotifier {
       _isLive = false;
       _messages.clear();
     } finally {
-      _isLoading = false; notifyListeners();
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
   Future<void> _subscribeStatusOnce() async {
     if (_statusSubscribed) return;
-    
+
     // Set up status update callback
     _svc.setCallbacks(
       onStatusUpdated: (data) {
@@ -102,14 +106,16 @@ class LiveChatProvider with ChangeNotifier {
 
         // Live started → update room, subscribe to public chat, and load history
         _currentRoomId = data['roomId'] ?? _currentRoomId ?? roomId;
-        _page = 1; _hasMore = true; _messages.clear();
+        _page = 1;
+        _hasMore = true;
+        _messages.clear();
         notifyListeners();
 
         _subscribePublicOnce();
         loadMore();
       },
     );
-    
+
     // Subscribe to status channel
     await _svc.subscribeToStatus();
     _statusSubscribed = true;
@@ -125,12 +131,20 @@ class LiveChatProvider with ChangeNotifier {
         final user = userData as Map<String, dynamic>;
         final id = (user['userId'] ?? '').toString();
         if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
-          _onlineUsers.add(OnlineUser(
-            id: id,
-            username: (user['userInfo']?['name'] ?? user['userInfo']?['username'] ?? 'User').toString(),
-            userAvatar: (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])?.toString(),
-            joinTime: DateTime.now(),
-          ));
+          _onlineUsers.add(
+            OnlineUser(
+              id: id,
+              username:
+                  (user['userInfo']?['name'] ??
+                          user['userInfo']?['username'] ??
+                          'User')
+                      .toString(),
+              userAvatar:
+                  (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])
+                      ?.toString(),
+              joinTime: DateTime.now(),
+            ),
+          );
           notifyListeners();
         }
       },
@@ -151,7 +165,7 @@ class LiveChatProvider with ChangeNotifier {
   Future<void> _subscribePublicOnce() async {
     if (_publicSubscribed) return;
     final rid = _currentRoomId ?? roomId;
-    
+
     _isLoading = true;
     notifyListeners();
 
@@ -161,24 +175,26 @@ class LiveChatProvider with ChangeNotifier {
         onMessageReceived: (channel, messageData) {
           try {
             final msg = LiveChatMessage.fromJson(
-              messageData is Map<String, dynamic> 
-                  ? messageData 
-                  : {'id': '${DateTime.now().millisecondsSinceEpoch}'}
+              messageData is Map<String, dynamic>
+                  ? messageData
+                  : {'id': '${DateTime.now().millisecondsSinceEpoch}'},
             );
-            
+
             // Avoid duplicates if history + realtime overlap
             if (_messages.any((m) => m.id == msg.id.toString())) return;
 
-            _messages.add(ChatMessage(
-              id: msg.id.toString(),
-              username: msg.name,
-              message: msg.message,
-              timestamp: msg.timestamp,
-              userAvatar: msg.avatar,
-            ));
+            _messages.add(
+              ChatMessage(
+                id: msg.id.toString(),
+                username: msg.name,
+                message: msg.message,
+                timestamp: msg.timestamp,
+                userAvatar: msg.avatar,
+              ),
+            );
             notifyListeners();
           } catch (e) {
-            debugPrint('Error processing message: $e');
+            rethrow;
           }
         },
       );
@@ -187,7 +203,6 @@ class LiveChatProvider with ChangeNotifier {
       await _svc.subscribeToChat(rid);
       _publicSubscribed = true;
     } catch (e) {
-      debugPrint('Error subscribing to public chat: $e');
       rethrow;
     } finally {
       _isLoading = false;
@@ -210,12 +225,16 @@ class LiveChatProvider with ChangeNotifier {
       if (data.isEmpty) {
         _hasMore = false;
       } else {
-        final newMsgs = data.map((m) => ChatMessage(
-          id: '${m['id']}',
-          username: m['name'] ?? 'Unknown',
-          message: m['message'] ?? '',
-          timestamp: DateTime.parse(m['timestamp']),
-        )).toList();
+        final newMsgs = data
+            .map(
+              (m) => ChatMessage(
+                id: '${m['id']}',
+                username: m['name'] ?? 'Unknown',
+                message: m['message'] ?? '',
+                timestamp: DateTime.parse(m['timestamp']),
+              ),
+            )
+            .toList();
 
         // older first → masukkan di atas list
         _messages.insertAll(0, newMsgs);
@@ -232,18 +251,53 @@ class LiveChatProvider with ChangeNotifier {
   Future<void> send(String text, {String username = 'Anda'}) async {
     final t = text.trim();
     if (t.isEmpty || !_isLive) return;
+    
+    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
+    final currentTime = DateTime.now();
 
     // Optimistic UI
-    _messages.add(ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      username: username,
-      message: t,
-      timestamp: DateTime.now(),
-    ));
+    _messages.add(
+      ChatMessage(
+        id: tempId,
+        username: username,
+        message: t,
+        timestamp: currentTime,
+      ),
+    );
     notifyListeners();
 
-    // TODO: kirim ke backend:
-    // await _svc.sendMessage(roomId: _currentRoomId ?? roomId, message: t);
+    try {
+      await _svc.sendMessage(
+        roomId: _currentRoomId ?? roomId,
+        message: t,
+        onSuccess: (sentMessage) {
+          // Update the message with the server's ID if needed
+          final index = _messages.indexWhere((m) => m.id == tempId);
+          if (index != -1) {
+            _messages[index] = ChatMessage(
+              id: sentMessage.id.toString(),
+              username: sentMessage.name,
+              message: sentMessage.message,
+              timestamp: sentMessage.timestamp,
+            );
+            notifyListeners();
+          }
+        },
+        onError: (error) {
+          // Remove the optimistic message if sending failed
+          _messages.removeWhere((m) => m.id == tempId);
+          notifyListeners();
+          
+          // Show error to user (you might want to use a snackbar or toast)
+          debugPrint('Failed to send message: $error');
+        },
+      );
+    } catch (e) {
+      // Remove the optimistic message if an exception occurs
+      _messages.removeWhere((m) => m.id == tempId);
+      notifyListeners();
+      debugPrint('Error sending message: $e');
+    }
   }
 
   // ==== FORMATTER (opsional dipakai Screen) ====
@@ -265,9 +319,17 @@ class LiveChatProvider with ChangeNotifier {
 
   // Panggil dari dispose() screen saat benar-benar keluar.
   Future<void> shutdown() async {
-    try { await _svc.unsubscribePublic(_currentRoomId ?? roomId); } catch (_) {}
-    try { await _svc.unsubscribePresence(roomId); } catch (_) {}
-    try { await _svc.unsubscribeStatus(); } catch (_) {}
-    try { await _svc.disconnect(); } catch (_) {}
+    try {
+      await _svc.unsubscribePublic(_currentRoomId ?? roomId);
+    } catch (_) {}
+    try {
+      await _svc.unsubscribePresence(roomId);
+    } catch (_) {}
+    try {
+      await _svc.unsubscribeStatus();
+    } catch (_) {}
+    try {
+      await _svc.disconnect();
+    } catch (_) {}
   }
 }

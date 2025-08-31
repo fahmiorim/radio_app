@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/live_chat_provider.dart';
+import '../../providers/user_provider.dart';
 import '../../widgets/chat/chat_message_item.dart';
 import '../../widgets/chat/message_input_field.dart';
 import '../../widgets/chat/unread_messages_label.dart';
@@ -28,15 +29,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   LiveChatProvider? _prov; // provider
 
   bool _isCurrentUser(String username) {
-    // TODO: replace dengan cek user login
-    return false;
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    return userProvider.user?.name.toLowerCase() == username.toLowerCase();
   }
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    debugPrint('🔄 LiveChatScreen diinisialisasi dengan roomId: ${widget.roomId}');
   }
 
   @override
@@ -44,25 +44,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     super.didChangeDependencies();
     // CHANGED: aman melakukan lookup di sini
     _prov ??= Provider.of<LiveChatProvider>(context, listen: false);
-    
+
     // Tambahkan listener untuk mendengarkan perubahan provider
     _prov?.addListener(_handleProviderUpdate);
-    
-    debugPrint('🔌 LiveChatProvider didapatkan untuk room: ${widget.roomId}');
-    debugPrint('   - Current Room ID: ${_prov?.currentRoomId}');
-    debugPrint('   - Status Live: ${_prov?.isLive}');
   }
-  
+
   void _handleProviderUpdate() {
     if (_prov == null) return;
-    
-    // Log ketika ada perubahan state
-    debugPrint('🔄 Update state di LiveChatScreen:');
-    debugPrint('   - Jumlah pesan: ${_prov!.messages.length}');
-    debugPrint('   - Status live: ${_prov!.isLive}');
-    debugPrint('   - Loading: ${_prov!.isLoading}');
-    debugPrint('   - Room ID saat ini: ${_prov!.currentRoomId}');
-    debugPrint('   - Jumlah user online: ${_prov!.onlineUsers.length}');
   }
 
   void _handleScroll() {
@@ -321,23 +309,20 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   void dispose() {
-    debugPrint('♻️ Membersihkan LiveChatScreen untuk room: ${widget.roomId}');
-    
     // Hapus listener
     _prov?.removeListener(_handleProviderUpdate);
     _scrollController.removeListener(_handleScroll);
-    
+
     // Hentikan timer
     _scrollTimer?.cancel();
-    
+
     // Bersihkan controller
     _scrollController.dispose();
     _messageController.dispose();
-    
+
     // Matikan provider
     _prov?.shutdown();
-    debugPrint('✅ LiveChatScreen berhasil dibersihkan');
-    
+
     super.dispose();
   }
 }

@@ -1,23 +1,13 @@
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:async';
-
-import 'package:flutter/foundation.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:dio/dio.dart' show Options;
 import '../config/pusher_config.dart';
 import '../models/live_message_model.dart';
 import '../config/api_client.dart';
 
 // Alias for developer.log
-void _log(String message, {String name = 'LiveChatSocketService'}) {
-  if (kDebugMode) {
-    developer.log(message, name: name);
-  } else {
-    // In release mode, you might want to use a different logging mechanism
-    // or disable logging completely
-    debugPrint('[$name] $message');
-  }
-}
+void _log(String message, {String name = 'LiveChatSocketService'}) {}
 
 class LiveChatSocketService {
   LiveChatSocketService._();
@@ -26,16 +16,45 @@ class LiveChatSocketService {
   final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
   bool _connected = false;
   
+  // Handle Pusher authentication
+  Future<Map<String, dynamic>> _authenticateChannel(String socketId, String channelName) async {
+    try {
+      // For presence channels, we need to get the auth token from the server
+      if (channelName.startsWith('presence-') || channelName.startsWith('private-')) {
+        final response = await ApiClient.I.dioRoot.post<Map<String, dynamic>>(
+          PusherConfig.authEndpoint,
+          data: {
+            'socket_id': socketId,
+            'channel_name': channelName,
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          return response.data ?? {};
+        } else {
+          throw Exception('Failed to authenticate: ${response.statusMessage}');
+        }
+      }
+      
+      // For public channels, we don't need authentication
+      return {};
+    } catch (e) {
+      _log('❌ Error authenticating channel $channelName: $e');
+      rethrow;
+    }
+  }
+
   bool get isConnected => _connected;
-  
+
   Future<void> ensureConnected() async {
     if (!_connected) {
       await connect();
     }
   }
+
   final Map<String, dynamic> _subscribedChannels = {};
   final Map<String, dynamic> _presenceChannels = {};
-  
+
   // Callbacks
   Function(String, Map<String, dynamic>)? _onUserJoined;
   Function(String, Map<String, dynamic>)? _onUserLeft;
@@ -44,7 +63,7 @@ class LiveChatSocketService {
   Function(String, Map<String, dynamic>)? _onMessageReceived;
   Function(Map<String, dynamic>)? _onStatusUpdated;
   Function(Map<String, dynamic>)? _onSystem;
-  
+
   // Set callbacks for various events
   void setCallbacks({
     Function(String, Map<String, dynamic>)? onUserJoined,
@@ -67,51 +86,86 @@ class LiveChatSocketService {
   // Initialize Pusher connection
   Future<void> _initializePusher() async {
     try {
-      // Configure Pusher with auth endpoint
+      _log('🚀 Initializing Pusher...');
+      _log('📡 Pusher Config - Key: ${PusherConfig.appKey}');
+      _log('📡 Pusher Config - Cluster: ${PusherConfig.cluster}');
+      _log('📡 Pusher Auth Endpoint: ${PusherConfig.authEndpoint}');
+      
+      // Initialize Pusher with your credentials
       await _pusher.init(
         apiKey: PusherConfig.appKey,
         cluster: PusherConfig.cluster,
-        onAuthorizer: (String channelName, String socketId, dynamic options) async {
-          _log('🔐 Authorizing channel: $channelName');
-          // For development, you can use a dummy token
-          // In production, make an API call to your backend to get a real token
-          return {
-            'auth': '${PusherConfig.appKey}:dummy_token_${DateTime.now().millisecondsSinceEpoch}',
-            'channel_data': jsonEncode({
-              'user_id': 'user_${DateTime.now().millisecondsSinceEpoch}',
-              'user_info': {
-                'name': 'User ${DateTime.now().millisecondsSinceEpoch % 1000}',
-              },
-            }),
-          };
+        onConnectionStateChange: (currentState, _) {
+          _log('🔄 Connection state changed: $currentState');
+          _connected = currentState == 'CONNECTED';
+          if (_connected) {
+            _log('✅ Pusher connected successfully');
+            _log('📡 Socket ID: ${_pusher.getSocketId()}');
+          } else {
+            _log('⚠️ Pusher disconnected or connecting');
+          }
         },
-        onConnectionStateChange: (String state, String currentState) {
-          _log('🔌 Connection state changed: $state (previous: $currentState)');
-          if (state == 'CONNECTED') {
-            _connected = true;
-          } else if (state == 'DISCONNECTED' || state == 'FAILED') {
-            _connected = false;
+        onAuthorizer: (String channelName, String socketId, dynamic options) async {
+          _log('🔑 Authorizing channel: $channelName');
+          try {
+            final authData = await _authenticateChannel(socketId, channelName);
+            _log('✅ Channel authorized: $channelName');
+            return authData;
+          } catch (e) {
+            _log('❌ Channel authorization failed: $e');
+            rethrow;
           }
         },
         onError: (String message, int? code, dynamic e) {
-          _log('❌ Pusher error: $message (code: $code, error: $e)', name: 'PusherError');
-        },
+          try {
+            _log(
+              '❌ Pusher error: $message (code: $code, error: $e)',
+              name: 'PusherError',
+            );
+            _log('❌ Pusher auth error: $e');
+          } catch (e) {
+            _log('❌ Error in Pusher error handler: $e');
+            rethrow;
+          }
+        } as dynamic Function(String, int?, dynamic)?,
         onEvent: (event) {
           _log('📨 Event received: ${event.eventName}');
-          if (event.eventName == 'message.sent') {
-            try {
-              final messageData = jsonDecode(event.data!);
+          try {
+            final dynamic decodedData = event.data != null ? jsonDecode(event.data!) : {};
+            
+            // Handle different event types
+            if (event.eventName == 'message.sent' || event.eventName.startsWith('client-')) {
+              // For chat messages
+              Map<String, dynamic> messageData = {};
+              
+              if (decodedData is Map<String, dynamic>) {
+                messageData = decodedData;
+                // If there's a nested message object, use that
+                if (messageData.containsKey('message') && messageData['message'] is Map) {
+                  messageData = Map<String, dynamic>.from(messageData['message']);
+                }
+              } else {
+                messageData = {'message': decodedData.toString()};
+              }
+              
+              // Ensure required fields exist
+              messageData['id'] = messageData['id'] ?? '${DateTime.now().millisecondsSinceEpoch}';
+              messageData['name'] = messageData['name'] ?? messageData['username'] ?? 'User';
+              messageData['message'] = messageData['message']?.toString() ?? '';
+              messageData['timestamp'] = messageData['timestamp'] ?? DateTime.now().toIso8601String();
+              
+              _log('📩 Dispatching message: ${messageData['message']}');
               _onMessageReceived?.call(event.channelName, messageData);
-            } catch (e) {
-              _log('❌ Error processing message: $e');
+            } else if (event.eventName == 'LiveRoomStatusUpdated') {
+              try {
+                final statusData = jsonDecode(event.data!);
+                _onStatusUpdated?.call(statusData);
+              } catch (e) {
+                _log('❌ Error processing status update: $e');
+              }
             }
-          } else if (event.eventName == 'LiveRoomStatusUpdated') {
-            try {
-              final statusData = jsonDecode(event.data!);
-              _onStatusUpdated?.call(statusData);
-            } catch (e) {
-              _log('❌ Error processing status update: $e');
-            }
+          } catch (e) {
+            _log('❌ Error processing event: $e');
           }
         },
         onDecryptionFailure: (String event, String reason) {
@@ -132,7 +186,7 @@ class LiveChatSocketService {
           });
         },
       );
-      
+
       _log('🚀 Pusher initialized');
       await _pusher.connect();
     } catch (e) {
@@ -150,7 +204,7 @@ class LiveChatSocketService {
     try {
       _log('🔄 Initializing WebSocket connection...');
       _subscribedChannels.clear();
-      
+
       await _initializePusher();
       await _pusher.connect();
       _connected = true;
@@ -165,7 +219,7 @@ class LiveChatSocketService {
     if (!_connected) return;
     try {
       final channelsToUnsubscribe = _subscribedChannels.keys.toList();
-      
+
       for (final channel in channelsToUnsubscribe) {
         try {
           _log('Unsubscribing from $channel...');
@@ -183,7 +237,7 @@ class LiveChatSocketService {
       rethrow;
     }
   }
-  
+
   Future<void> dispose() async {
     _log('🧹 Cleaning up WebSocket resources');
     try {
@@ -192,13 +246,13 @@ class LiveChatSocketService {
         await _pusher.unsubscribe(channelName: channel);
       }
       _subscribedChannels.clear();
-      
+
       // Unsubscribe from all presence channels
       for (final channel in _presenceChannels.keys.toList()) {
         await _pusher.unsubscribe(channelName: channel);
       }
       _presenceChannels.clear();
-      
+
       // Disconnect from Pusher
       await _pusher.disconnect();
       _connected = false;
@@ -209,17 +263,19 @@ class LiveChatSocketService {
     }
   }
 
-  
   // Handle presence channel subscription
-  Future<void> _handlePresenceSubscription(String channelName, {required int roomId}) async {
+  Future<void> _handlePresenceSubscription(
+    String channelName, {
+    required int roomId,
+  }) async {
     try {
       _log('👥 Setting up presence channel: $channelName');
-      
+
       if (_presenceChannels.containsKey(channelName)) {
         _log('ℹ️ Already subscribed to presence channel: $channelName');
         return;
       }
-      
+
       // Set up member added callback
       _pusher.onMemberAdded = (String channel, PusherMember member) {
         if (channel == channelName) {
@@ -232,7 +288,7 @@ class LiveChatSocketService {
           });
         }
       };
-      
+
       // Set up member removed callback
       _pusher.onMemberRemoved = (String channel, PusherMember member) {
         if (channel == channelName) {
@@ -244,21 +300,21 @@ class LiveChatSocketService {
           });
         }
       };
-      
+
       _presenceChannels[channelName] = true;
     } catch (e) {
       _log('❌ Error handling presence subscription: $e');
     }
   }
-  
+
   // Handle status events
   void _handleStatusEvents() {
     try {
       _log('🔄 Setting up status events');
-      
+
       // Save the original onEvent callback
       final originalOnEvent = _pusher.onEvent;
-      
+
       _pusher.onEvent = (PusherEvent event) {
         if (event.eventName == 'LiveRoomStatusUpdated') {
           try {
@@ -269,7 +325,7 @@ class LiveChatSocketService {
             _log('❌ Error processing status update: $e');
           }
         }
-        
+
         // Call the original callback if it exists
         if (originalOnEvent != null) {
           originalOnEvent(event);
@@ -279,17 +335,18 @@ class LiveChatSocketService {
       _log('❌ Error setting up status events: $e');
     }
   }
-  
+
   // Handle chat message events
   void _handleChatEvents(String channelName) {
     try {
       _log('💬 Setting up chat events for channel: $channelName');
-      
+
       // Save the original onEvent callback
       final originalOnEvent = _pusher.onEvent;
-      
+
       _pusher.onEvent = (PusherEvent event) {
-        if (event.channelName == channelName && event.eventName == 'message.sent') {
+        if (event.channelName == channelName &&
+            event.eventName == 'message.sent') {
           try {
             final messageData = jsonDecode(event.data!);
             _log('📩 Received message: ${messageData['id']}');
@@ -298,13 +355,13 @@ class LiveChatSocketService {
             _log('❌ Error processing message: $e');
           }
         }
-        
+
         // Call the original callback if it exists
         if (originalOnEvent != null) {
           originalOnEvent(event);
         }
       };
-      
+
       _subscribedChannels[channelName] = true;
     } catch (e) {
       _log('❌ Error setting up chat events: $e');
@@ -370,24 +427,25 @@ class LiveChatSocketService {
   }
 
   Future<void> subscribeToPresence(int roomId) async {
-    final channelName = 'presence-chat.room.$roomId';
-    
+    final channelName = 'chat.room.$roomId';
+
     try {
       // Check if already subscribed
-      if (_presenceChannels.containsKey(channelName) && _presenceChannels[channelName] == true) {
+      if (_presenceChannels.containsKey(channelName) &&
+          _presenceChannels[channelName] == true) {
         _log('ℹ️ Already subscribed to presence channel: $channelName');
         return;
       }
-      
+
       _log('🔔 Subscribing to presence channel: $channelName');
-      
+
       // Store the original callbacks
       final originalOnSubscriptionSucceeded = _pusher.onSubscriptionSucceeded;
-      
+
       // Override the subscriptionSucceeded callback temporarily
       _pusher.onSubscriptionSucceeded = (channel, data) async {
         _log('✅ Subscribed to presence channel: $channel');
-        
+
         // Handle presence data
         if (data != null && data is Map) {
           final presenceData = _asMap(data['presence']);
@@ -395,42 +453,40 @@ class LiveChatSocketService {
             final count = _toInt(presenceData['count']);
             final hash = _asMap(presenceData['hash']);
             final me = _asMap(presenceData['me']);
-            
+
             _log('👥 Presence data - Count: $count, Me: $me');
-            
+
             // Process all users in the channel
             final users = hash.entries.map((entry) {
               final userId = _intOrString(entry.key);
               final user = _asMap(entry.value);
-              return {
-                'id': userId,
-                'userInfo': user,
-              };
+              return {'id': userId, 'userInfo': user};
             }).toList();
-            
+
             _log('👥 Initial presence data: ${users.length} users');
-            
+
             // Notify about users already in the channel
             for (var user in users) {
               _onUserJoined?.call(channelName, user);
             }
           }
         }
-        
+
         // Call the original callback if it exists
         if (originalOnSubscriptionSucceeded != null) {
           originalOnSubscriptionSucceeded(channel, data);
         }
       };
-      
+
       // Subscribe to the channel
       await _pusher.subscribe(channelName: channelName);
       _log('✅ Successfully subscribed to presence channel: $channelName');
       _presenceChannels[channelName] = true;
-      
     } catch (e) {
       _log('❌ Error subscribing to presence channel: $e');
-      _presenceChannels.remove(channelName); // Remove from tracking if subscription fails
+      _presenceChannels.remove(
+        channelName,
+      ); // Remove from tracking if subscription fails
       rethrow;
     }
   }
@@ -444,19 +500,19 @@ class LiveChatSocketService {
 
     try {
       _log('🔔 Subscribing to chat channel: $channelName');
-      
+
       // Single subscription with both channel subscription and event handling
       await _pusher.subscribe(
         channelName: channelName,
         onEvent: (event) {
           try {
             _log('📨 Received event on $channelName: ${event.eventName}');
-            
+
             try {
               // Safely parse the event data
               final payload = _eventMap(event.data);
               _log('📦 Payload: $payload');
-              
+
               // Handle different event types
               switch (event.eventName) {
                 case 'message.sent':
@@ -474,8 +530,10 @@ class LiveChatSocketService {
                   _onSystem?.call(payload);
               }
             } catch (e, stackTrace) {
-              _log('❌ Error processing event: $e\n$stackTrace', 
-                  name: 'EventProcessingError');
+              _log(
+                '❌ Error processing event: $e\n$stackTrace',
+                name: 'EventProcessingError',
+              );
             }
           } catch (e) {
             _log('❌ Error processing chat event: $e');
@@ -483,7 +541,7 @@ class LiveChatSocketService {
           }
         },
       );
-      
+
       _log('✅ Successfully subscribed to chat channel: $channelName');
       _subscribedChannels[channelName] = true;
     } catch (e) {
@@ -516,28 +574,27 @@ class LiveChatSocketService {
 
     try {
       _log('🔔 Subscribing to status channel');
-      
+
       // Save the original onSubscriptionSucceeded callback
       final originalOnSubscriptionSucceeded = _pusher.onSubscriptionSucceeded;
-      
+
       // Set up subscription succeeded callback
       _pusher.onSubscriptionSucceeded = (String channel, dynamic data) {
         _log('📡 Status subscription succeeded: $channel');
-        
+
         // Call the original callback if it exists
         if (originalOnSubscriptionSucceeded != null) {
           originalOnSubscriptionSucceeded(channel, data);
         }
       };
-      
+
       // Subscribe to the channel
       await _pusher.subscribe(channelName: channelName);
       _log('✅ Subscribed to status channel');
       _subscribedChannels[channelName] = true;
-      
+
       // Set up status event handler
       _handleStatusEvents();
-      
     } catch (e) {
       _log('❌ Error subscribing to status channel: $e');
       rethrow;
@@ -662,34 +719,34 @@ class LiveChatSocketService {
     try {
       // Handle num types
       if (v is num) return v;
-      
+
       // Handle String
       if (v is String) {
         if (v.isEmpty) return v;
-        
+
         // Try parsing as int
         final intVal = int.tryParse(v);
         if (intVal != null) return intVal;
-        
+
         // Try parsing as double
         final doubleVal = double.tryParse(v);
         if (doubleVal != null) return doubleVal;
-        
+
         // Check for boolean strings
         final lowerV = v.toLowerCase();
         if (lowerV == 'true') return true;
         if (lowerV == 'false') return false;
-        
+
         // Return original string if no conversion possible
         return v;
       }
-      
+
       // Handle bool
       if (v is bool) return v;
-      
+
       // For any other type, try to convert to string and parse
       if (v is Map || v is List) return v;
-      
+
       // For other types, return string representation
       return v.toString();
     } catch (e) {
@@ -703,46 +760,60 @@ class LiveChatSocketService {
     try {
       // Handle different message formats
       final Map<String, dynamic> msgMap;
-      
+
       // Case 1: Message is nested under 'message' key
       if (payload.containsKey('message')) {
         msgMap = _asMap(payload['message']);
-      } 
+      }
       // Case 2: Payload is the message itself
       else {
         msgMap = Map<String, dynamic>.from(payload);
       }
-      
+
       // Ensure required fields with proper type conversion
       final processedMsg = <String, dynamic>{
-        'id': msgMap['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'id':
+            msgMap['id']?.toString() ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         'message': msgMap['message']?.toString() ?? '',
         'user_id': _toInt(msgMap['user_id'] ?? msgMap['userId']).toString(),
-        'name': msgMap['name']?.toString() ?? msgMap['username']?.toString() ?? 'Unknown',
+        'name':
+            msgMap['name']?.toString() ??
+            msgMap['username']?.toString() ??
+            'Unknown',
         'avatar': msgMap['avatar']?.toString(),
-        'timestamp': msgMap['timestamp'] ?? msgMap['created_at'] ?? DateTime.now().toIso8601String(),
+        'timestamp':
+            msgMap['timestamp'] ??
+            msgMap['created_at'] ??
+            DateTime.now().toIso8601String(),
       };
-      
+
       _log('💬 Processing message: ${processedMsg['id']}');
       _onMessage?.call('message.sent', processedMsg);
       _onMessageReceived?.call(channelName, processedMsg);
-      
     } catch (e, stackTrace) {
-      _log('❌ Error processing message: $e\n$stackTrace', name: 'MessageProcessingError');
+      _log(
+        '❌ Error processing message: $e\n$stackTrace',
+        name: 'MessageProcessingError',
+      );
     }
   }
-  
+
   /// Handles presence events (user joined/left)
-  void _handlePresenceEvent(String eventType, String channelName, Map<String, dynamic> payload) {
+  void _handlePresenceEvent(
+    String eventType,
+    String channelName,
+    Map<String, dynamic> payload,
+  ) {
     try {
       _log('👤 $eventType: $payload');
-      
+
       // Extract user data with null safety
       final userData = _asMap(payload['user'] ?? payload['data'] ?? payload);
-      
+
       // Process user data with proper type conversion
       final userInfo = _asMap(userData['userInfo'] ?? userData);
-      
+
       final processedUser = <String, dynamic>{
         'userId': _toInt(userData['userId'] ?? userData['id']).toString(),
         'userInfo': {
@@ -751,18 +822,20 @@ class LiveChatSocketService {
           'email': userInfo['email']?.toString(),
         },
       };
-      
+
       if (eventType == 'user.joined') {
         _onUserJoined?.call(channelName, processedUser);
       } else {
         _onUserLeft?.call(channelName, processedUser);
       }
-      
     } catch (e, stackTrace) {
-      _log('❌ Error processing $eventType event: $e\n$stackTrace', name: 'PresenceEventError');
+      _log(
+        '❌ Error processing $eventType event: $e\n$stackTrace',
+        name: 'PresenceEventError',
+      );
     }
   }
-  
+
   /// Handles message deletion events
   void _handleMessageDeleted(String channelName, Map<String, dynamic> payload) {
     try {
@@ -772,43 +845,191 @@ class LiveChatSocketService {
         _onMessage?.call('message.deleted', {'id': messageId});
       }
     } catch (e, stackTrace) {
-      _log('❌ Error processing message deletion: $e\n$stackTrace', name: 'MessageDeletionError');
+      _log(
+        '❌ Error processing message deletion: $e\n$stackTrace',
+        name: 'MessageDeletionError',
+      );
     }
   }
 
   /// Sends a chat message to the specified room
-  /// 
+  ///
   /// [roomId] The ID of the room to send the message to
+  /// Sends a chat message to the specified room
+  /// [roomId] The ID of the chat room
   /// [message] The message text to send
   /// [onSuccess] Callback when the message is successfully sent
   /// [onError] Callback when there's an error sending the message
   Future<void> sendMessage({
     required int roomId,
     required String message,
-    required Function(LiveChatMessage) onSuccess,
+    Function(LiveChatMessage)? onSuccess,
     required Function(String) onError,
   }) async {
     try {
-      // First, send the message to the server
-      final response = await ApiClient.I.dioRoot.post(
-        '/live-chat/$roomId/send',
-        data: {'message': message},
+      _log('📤 Attempting to send message to room $roomId: $message');
+      
+      // Get the current user's info
+      final currentUser = _getCurrentUserInfo();
+      
+      // Create a temporary message for optimistic UI update
+      final tempMessage = LiveChatMessage(
+        id: DateTime.now().millisecondsSinceEpoch,
+        name: currentUser['name'] ?? 'You',
+        message: message,
+        timestamp: DateTime.now(),
+        userId: int.tryParse(currentUser['id']?.toString() ?? '0') ?? 0,
+        avatar: currentUser['avatar']?.toString() ?? '',
       );
+      
+      // Show the message optimistically
+      onSuccess?.call(tempMessage);
+      
+      // Send the message via HTTP
+      await _sendMessageViaHttp(roomId, message, onSuccess, onError);
+    } catch (e, stackTrace) {
+      _log('❌ Error in sendMessage: $e\n$stackTrace', name: 'SendMessageError');
+      onError('Failed to send message: ${e.toString()}');
+    }
+  }
+  
+  // Helper method to get current user info
+  Map<String, dynamic> _getCurrentUserInfo() {
+    // Replace this with actual user info from your auth system
+    return {
+      'id': 'user_${DateTime.now().millisecondsSinceEpoch}',
+      'name': 'User',
+      'avatar': null,
+    };
+  }
+  
+  // Get CSRF token from cookies
+  Future<Map<String, String>> _getCsrfHeaders() async {
+    try {
+      // First, get the CSRF cookie
+      final response = await ApiClient.I.dioRoot.get(
+        '/sanctum/csrf-cookie',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+          },
+          followRedirects: false,
+          validateStatus: (status) => status! < 400,
+        ),
+      );
+
+      // Extract cookies from response
+      final cookies = response.headers['set-cookie'];
+      String? xsrfToken;
+      String? sessionCookie;
+
+      if (cookies != null) {
+        for (final cookie in cookies) {
+          if (cookie.contains('XSRF-TOKEN')) {
+            final match = RegExp('XSRF-TOKEN=([^;]+)').firstMatch(cookie);
+            if (match != null) {
+              xsrfToken = Uri.decodeComponent(match.group(1)!);
+            }
+          } else if (cookie.contains('laravel_session') || cookie.contains('session')) {
+            sessionCookie = cookie.split(';').first;
+          }
+        }
+      }
+
+      _log('🔑 CSRF Token: ${xsrfToken != null ? 'Found' : 'Not found'}');
+      _log('🍪 Session Cookie: ${sessionCookie != null ? 'Found' : 'Not found'}');
+
+      // Return headers for the next request
+      return {
+        'X-XSRF-TOKEN': xsrfToken ?? '',
+        'Cookie': sessionCookie ?? '',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'Referer': 'https://your-domain.com', // Replace with your actual domain
+      };
+    } catch (e) {
+      _log('❌ Error getting CSRF token: $e');
+      return {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+    }
+  }
+  
+  // Fallback method to send message via HTTP
+  Future<void> _sendMessageViaHttp(
+    int roomId,
+    String message,
+    Function(LiveChatMessage)? onSuccess,
+    Function(String) onError,
+  ) async {
+    try {
+      _log('🔄 Sending message via HTTP to room $roomId');
+      
+      // Get current user info
+      final currentUser = _getCurrentUserInfo();
+      
+      // Prepare the request data to match Laravel's expected format
+      final requestData = {
+        'message': message,
+        'user_id': currentUser['id'],
+        'name': currentUser['name'],
+        'avatar': currentUser['avatar'],
+      };
+      
+      _log('📤 Sending request to /admin/live-chat/$roomId/send with data: $requestData');
+      
+      // Get CSRF headers including cookies
+      final headers = await _getCsrfHeaders();
+      
+      _log('🔑 Using headers: $headers');
+      
+      // Make the HTTP request with proper headers
+      final response = await ApiClient.I.dioRoot.post(
+        '/admin/live-chat/$roomId/send',
+        data: requestData,
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status! < 500, // Don't throw for 4xx errors
+          followRedirects: false,
+        ),
+      );
+
+      _log('📥 Received response: ${response.statusCode} - ${response.data}');
 
       if (response.statusCode == 200) {
         final responseData = response.data as Map<String, dynamic>;
         if (responseData['success'] == true) {
           final messageData = responseData['data'] as Map<String, dynamic>;
-          final sentMessage = LiveChatMessage.fromJson(messageData);
-          onSuccess(sentMessage);
+          _log('✅ Message sent successfully: $messageData');
+          
+          // Create a LiveChatMessage from the response
+          final sentMessage = LiveChatMessage(
+            id: messageData['id'] as int? ?? 0,
+            message: message,
+            userId: int.tryParse(messageData['user_id']?.toString() ?? '0') ?? 0,
+            name: messageData['name']?.toString() ?? 'User',
+            avatar: messageData['avatar']?.toString() ?? '',
+            timestamp: DateTime.parse(messageData['created_at'] ?? DateTime.now().toIso8601String()),
+          );
+          
+          onSuccess?.call(sentMessage);
           return;
         }
       }
       
-      // If we get here, there was an error
-      onError(response.data?['message']?.toString() ?? 'Failed to send message');
-    } catch (e) {
-      onError(e.toString());
+      // If we get here, something went wrong
+      final errorMessage = response.data is Map 
+          ? response.data['message']?.toString() 
+          : 'Failed to send message. Status: ${response.statusCode}';
+      
+      _log('❌ Failed to send message: $errorMessage');
+      onError(errorMessage ?? 'Failed to send message');
+    } catch (e, stackTrace) {
+      _log('❌ HTTP send message failed: $e\n$stackTrace');
+      onError('Failed to send message: ${e.toString()}');
     }
   }
 }
