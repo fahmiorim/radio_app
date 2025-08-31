@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
-
 import '../config/api_client.dart';
 import '../config/pusher_config.dart';
 import '../models/live_chat_message.dart';
@@ -16,21 +14,25 @@ class LiveChatSocketService {
   Future<void> connect() async {
     if (_connected) return;
     ApiClient.I.ensureInterceptors();
+
     await _pusher.init(
       apiKey: PusherConfig.appKey,
       cluster: PusherConfig.cluster,
       useTLS: true,
       onAuthorizer: (channelName, socketId, options) async {
         final res = await ApiClient.I.dio.post(
-          PusherConfig.authEndpoint,
+          PusherConfig.authEndpoint, // ex: /broadcasting/auth
           data: {
             'channel_name': channelName,
             'socket_id': socketId,
           },
         );
-        return res.data;
+        return res.data; // {auth: "...", channel_data?: "..."}
       },
+      onError: (e) => print('Pusher error: ${e.message}'),
+      onConnectionStateChange: (c) => print('Pusher: ${c.currentState}'),
     );
+
     await _pusher.connect();
     _connected = true;
   }
@@ -41,28 +43,59 @@ class LiveChatSocketService {
     _connected = false;
   }
 
+  // ---------- Presence: presence-chat.room.{id}
   Future<void> subscribePresence({
     required int roomId,
-    required void Function(List<dynamic> users) onHere,
-    required void Function(dynamic user) onJoining,
-    required void Function(dynamic user) onLeaving,
+    required void Function(List<Map<String, dynamic>> users) onHere,
+    required void Function(Map<String, dynamic> user) onJoining,
+    required void Function(Map<String, dynamic> user) onLeaving,
   }) async {
     await _pusher.subscribe(
       channelName: 'presence-chat.room.$roomId',
       onSubscriptionSucceeded: (data) {
-        if (data is Map && data['members'] is List) {
-          onHere(List<dynamic>.from(data['members']));
+        // Bentuk umum dari plugin: { presence: { count, ids, hash: { "<id>": {name:..} } } }
+        // Beberapa build custom mungkin { members: [ ... ] }.
+        final users = <Map<String, dynamic>>[];
+
+        if (data is Map) {
+          // format presence.hash
+          final presence = _asMap(data['presence']);
+          final hash = _asMap(presence['hash']);
+          if (hash.isNotEmpty) {
+            for (final entry in hash.entries) {
+              final info = _asMap(entry.value);
+              users.add({
+                'id': _intOrString(entry.key),
+                ...info,
+              });
+            }
+          } else if (data['members'] is List) {
+            // fallback format members: []
+            for (final m in (data['members'] as List)) {
+              users.add(_asMap(m));
+            }
+          }
         } else if (data is List) {
-          onHere(List<dynamic>.from(data));
-        } else {
-          onHere(const []);
+          for (final m in data) {
+            users.add(_asMap(m));
+          }
         }
+
+        onHere(users);
       },
-      onMemberAdded: (member) => onJoining(member),
-      onMemberRemoved: (member) => onLeaving(member),
+      onMemberAdded: (member) {
+        // member.userId, member.userInfo
+        final info = _asMap(member.userInfo);
+        onJoining({'id': _intOrString(member.userId), ...info});
+      },
+      onMemberRemoved: (member) {
+        final info = _asMap(member.userInfo);
+        onLeaving({'id': _intOrString(member.userId), ...info});
+      },
     );
   }
 
+  // ---------- Public chat: chat.room.{id}
   Future<void> subscribePublic({
     required int roomId,
     required void Function(LiveChatMessage message) onMessage,
@@ -71,17 +104,10 @@ class LiveChatSocketService {
     await _pusher.subscribe(
       channelName: 'chat.room.$roomId',
       onEvent: (event) {
-        Map<String, dynamic> payload;
-        if (event.data is String) {
-          payload = jsonDecode(event.data as String) as Map<String, dynamic>;
-        } else {
-          payload = Map<String, dynamic>.from(event.data ?? {});
-        }
+        final payload = _eventMap(event.data);
         if (event.eventName == 'message.sent') {
-          final map = payload['message'] is Map
-              ? Map<String, dynamic>.from(payload['message'])
-              : payload;
-          onMessage(LiveChatMessage.fromJson(map));
+          final msgMap = _asMap(payload['message']).isNotEmpty ? _asMap(payload['message']) : payload;
+          onMessage(LiveChatMessage.fromJson(msgMap));
         } else {
           onSystem(payload);
         }
@@ -89,6 +115,7 @@ class LiveChatSocketService {
     );
   }
 
+  // ---------- Like: like-room-{id}
   Future<void> subscribeLike({
     required int roomId,
     required void Function(int likeCount) onUpdated,
@@ -96,42 +123,68 @@ class LiveChatSocketService {
     await _pusher.subscribe(
       channelName: 'like-room-$roomId',
       onEvent: (event) {
-        Map<String, dynamic> payload;
-        if (event.data is String) {
-          payload = jsonDecode(event.data as String) as Map<String, dynamic>;
-        } else {
-          payload = Map<String, dynamic>.from(event.data ?? {});
-        }
-        if (event.eventName == 'LikeUpdated') {
-          final count = payload['likeCount'] is int
-              ? payload['likeCount']
-              : int.tryParse(payload['likeCount']?.toString() ?? '') ?? 0;
-          onUpdated(count);
-        }
+        if (event.eventName != 'LikeUpdated') return;
+        final payload = _eventMap(event.data);
+        final count = _toInt(payload['likeCount']);
+        onUpdated(count);
       },
     );
   }
 
+  // ---------- Status global: live-room-status
   Future<void> subscribeStatus({
     required void Function(int roomId, String status) onUpdated,
   }) async {
     await _pusher.subscribe(
       channelName: 'live-room-status',
       onEvent: (event) {
-        if (event.eventName == 'LiveRoomStatusUpdated') {
-          Map<String, dynamic> payload;
-          if (event.data is String) {
-            payload = jsonDecode(event.data as String) as Map<String, dynamic>;
-          } else {
-            payload = Map<String, dynamic>.from(event.data ?? {});
-          }
-          final id = payload['liveRoomId'] is int
-              ? payload['liveRoomId']
-              : int.tryParse(payload['liveRoomId']?.toString() ?? '') ?? 0;
-          final status = payload['status']?.toString() ?? '';
-          onUpdated(id, status);
-        }
+        if (event.eventName != 'LiveRoomStatusUpdated') return;
+        final payload = _eventMap(event.data);
+        final id = _toInt(payload['liveRoomId']);
+        final status = (payload['status'] ?? '').toString();
+        onUpdated(id, status);
       },
     );
+  }
+
+  // ---------- Unsubscribe helpers (opsional)
+  Future<void> unsubscribePresence(int roomId) async {
+    await _pusher.unsubscribe(channelName: 'presence-chat.room.$roomId');
+  }
+
+  Future<void> unsubscribePublic(int roomId) async {
+    await _pusher.unsubscribe(channelName: 'chat.room.$roomId');
+  }
+
+  Future<void> unsubscribeLike(int roomId) async {
+    await _pusher.unsubscribe(channelName: 'like-room-$roomId');
+  }
+
+  Future<void> unsubscribeStatus() async {
+    await _pusher.unsubscribe(channelName: 'live-room-status');
+  }
+
+  // ---------- Utils
+  static Map<String, dynamic> _eventMap(dynamic raw) {
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    if (raw is String && raw.isNotEmpty) {
+      try { return Map<String, dynamic>.from(jsonDecode(raw)); } catch (_) {}
+    }
+    return {};
+  }
+
+  static Map<String, dynamic> _asMap(dynamic raw) {
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return {};
+  }
+
+  static int _toInt(dynamic v) {
+    if (v is int) return v;
+    return int.tryParse(v?.toString() ?? '') ?? 0;
+    }
+
+  static dynamic _intOrString(dynamic v) {
+    final n = int.tryParse(v?.toString() ?? '');
+    return n ?? v;
   }
 }
