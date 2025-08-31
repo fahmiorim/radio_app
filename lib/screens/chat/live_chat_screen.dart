@@ -96,9 +96,10 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   Future<void> _sendMessage(LiveChatProvider prov) async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
+    final userName = context.read<UserProvider>().user?.name ?? 'Anda';
 
     try {
-      await prov.send(text);
+      await prov.send(text, username: userName);
       _messageController.clear();
       _scrollToBottom();
     } catch (e) {
