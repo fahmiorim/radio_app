@@ -910,7 +910,7 @@ class LiveChatSocketService {
         'avatar': currentUser['avatar'],
       };
       
-      _log('📤 Sending request to /admin/live-chat/$roomId/send');
+      _log('📤 Sending request to /live-chat/$roomId/send');
       _log('📝 Request data: $requestData');
       
       // Log the headers we're about to send
@@ -924,8 +924,8 @@ class LiveChatSocketService {
       
       // Make the HTTP request with proper headers
       _log('🚀 Sending POST request...');
-      final response = await ApiClient.I.dioRoot.post(
-        '/admin/live-chat/$roomId/send',
+      final response = await ApiClient.I.dio.post(
+        '/live-chat/$roomId/send',
         data: requestData,
         options: Options(
           headers: headers,
