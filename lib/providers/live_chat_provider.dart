@@ -290,27 +290,35 @@ class LiveChatProvider with ChangeNotifier {
 
     try {
       final sent = await _http.sendMessage(_currentRoomId ?? roomId, t);
-      
+
       // Remove the temporary message
       _messages.removeWhere((m) => m.id == tempId);
-      
+      // Check if the confirmed message already exists
+      final finalId = sent.id.toString();
+      if (_messages.any((m) => m.id == finalId)) {
+        _pendingMessageIds.remove(tempId);
+        _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        notifyListeners();
+        return;
+      }
+
       // Add the confirmed message from server
       _messages.add(
         ChatMessage(
-          id: sent.id.toString(),
+          id: finalId,
           username: sent.name,
           message: sent.message,
           timestamp: sent.timestamp,
           userAvatar: sent.avatar,
         ),
       );
-      
+
       // Remove from pending set
       _pendingMessageIds.remove(tempId);
-      
+
       // Sort messages by timestamp to maintain order
       _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      
+
       notifyListeners();
     } catch (e) {
       // rollback optimistic update
