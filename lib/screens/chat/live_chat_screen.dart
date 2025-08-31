@@ -164,7 +164,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => LiveChatProvider(roomId: widget.roomId),
+      create: (_) => LiveChatProvider(roomId: widget.roomId)..init(),
       child: Consumer<LiveChatProvider>(
         builder: (context, prov, _) {
           if (prov.isLoading) {
@@ -292,6 +292,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _scrollTimer?.cancel();
+    context.read<LiveChatProvider>().shutdown();
     super.dispose();
   }
 }
