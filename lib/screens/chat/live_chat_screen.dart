@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:async';
 import '../../models/chat_model.dart';
-import '../../data/dummy_chat.dart'; // Import the data file
+import '../../models/live_chat_message.dart';
+import '../../models/live_chat_status.dart';
+import '../../services/live_chat_service.dart';
+import '../../services/live_chat_socket_service.dart';
+import '../../config/api_client.dart';
 
 class LiveChatScreen extends StatefulWidget {
   const LiveChatScreen({super.key});
@@ -16,19 +19,136 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   final List<OnlineUser> _onlineUsers = [];
-  final Random _random = Random();
 
   int _firstUnreadIndex = -1;
   bool _isUserScrolledUp = false;
   Timer? _scrollTimer;
-  Timer? _chatSimulationTimer;
+
+  final int _roomId = 1;
+  int? _listenerId;
+  LiveChatStatus? _status;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    _simulateLiveChat();
+    ApiClient.I.ensureInterceptors();
+    _initChat();
   }
+
+  Future<void> _initChat() async {
+    await _loadInitial();
+    await _setupSockets();
+  }
+
+  Future<void> _loadInitial() async {
+    try {
+      final msgs = await LiveChatService.I.fetchMessages(_roomId);
+      final status = await LiveChatService.I.fetchStatus(_roomId);
+      final joinInfo = await LiveChatService.I.joinListener(_roomId);
+      setState(() {
+        _messages.addAll(msgs.map(_mapMessage));
+        _status = status.copyWith(listenerCount: joinInfo['listenerCount'] ?? 0);
+        _listenerId = joinInfo['listenerId'] as int?;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _setupSockets() async {
+    await LiveChatSocketService.I.connect();
+    await LiveChatSocketService.I.subscribePresence(
+      roomId: _roomId,
+      onHere: (users) {
+        setState(() {
+          _onlineUsers
+            ..clear()
+            ..addAll(users.map((u) => OnlineUser(
+                  username: u['name']?.toString() ?? '',
+                  joinTime: DateTime.now(),
+                  userAvatar: u['avatar']?.toString(),
+                )));
+        });
+      },
+      onJoining: (user) {
+        setState(() {
+          _onlineUsers.add(OnlineUser(
+            username: user['name']?.toString() ?? '',
+            joinTime: DateTime.now(),
+            userAvatar: user['avatar']?.toString(),
+          ));
+        });
+        _addMessage(
+          ChatMessage(
+            id: 'join-${DateTime.now().millisecondsSinceEpoch}',
+            username: user['name']?.toString() ?? '',
+            message: '🎉 ${user['name'] ?? ''} telah bergabung ke siaran!',
+            timestamp: DateTime.now(),
+            isSystemMessage: true,
+            isJoinNotification: true,
+            userAvatar: user['avatar']?.toString(),
+          ),
+        );
+      },
+      onLeaving: (user) {
+        setState(() {
+          _onlineUsers.removeWhere((u) => u.username == user['name']);
+        });
+      },
+    );
+
+    await LiveChatSocketService.I.subscribePublic(
+      roomId: _roomId,
+      onMessage: (msg) => _addMessage(_mapMessage(msg)),
+      onSystem: (data) {
+        if (data['type'] == 'system') {
+          final user = data['user'] as Map<String, dynamic>?;
+          _addMessage(
+            ChatMessage(
+              id: 'sys-${DateTime.now().millisecondsSinceEpoch}',
+              username: user?['name']?.toString() ?? '',
+              message: data['message']?.toString() ?? '',
+              timestamp: DateTime.now(),
+              isSystemMessage: true,
+              userAvatar: user?['avatar']?.toString(),
+              isJoinNotification:
+                  (data['message']?.toString() ?? '').contains('bergabung'),
+            ),
+          );
+        }
+      },
+    );
+
+    await LiveChatSocketService.I.subscribeLike(
+      roomId: _roomId,
+      onUpdated: (count) {
+        setState(() {
+          if (_status != null) {
+            _status = _status!.copyWith(likes: count);
+          }
+        });
+      },
+    );
+
+    await LiveChatSocketService.I.subscribeStatus(
+      onUpdated: (roomId, status) {
+        if (roomId == _roomId) {
+          setState(() {
+            if (_status != null) {
+              _status = _status!.copyWith(isLive: status == 'started');
+            }
+          });
+        }
+      },
+    );
+  }
+
+  ChatMessage _mapMessage(LiveChatMessage m) => ChatMessage(
+        id: m.id.toString(),
+        username: m.name,
+        message: m.message,
+        timestamp: m.timestamp,
+        userAvatar: m.avatar,
+      );
 
   void _handleScroll() {
     if (_scrollTimer != null) {
@@ -49,20 +169,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         }
       });
     });
-  }
-
-  void _simulateLiveChat() {
-    // User join every 3-8 seconds
-    _chatSimulationTimer = Timer.periodic(
-      Duration(seconds: 3 + _random.nextInt(5)),
-      (timer) => _addRandomUserJoin(),
-    );
-
-    // Random messages every 2-5 seconds
-    _chatSimulationTimer = Timer.periodic(
-      Duration(seconds: 2 + _random.nextInt(3)),
-      (timer) => _addRandomMessage(),
-    );
   }
 
   void _addMessage(ChatMessage message) {
@@ -101,54 +207,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
-  void _addRandomUserJoin() {
-    final username = ChatData.getRandomUsername(_random);
-
-    _addMessage(
-      ChatMessage(
-        id: 'join-${DateTime.now().millisecondsSinceEpoch}',
-        username: username,
-        message: 'telah bergabung ke chat',
-        timestamp: DateTime.now(),
-        isSystemMessage: true,
-        isJoinNotification: true,
-      ),
-    );
-
-    // Add to online users
-    setState(() {
-      _onlineUsers.add(
-        OnlineUser(username: username, joinTime: DateTime.now()),
-      );
-    });
-  }
-
-  void _addRandomMessage() {
-    final username = ChatData.getRandomUsername(_random);
-    final message = ChatData.getRandomMessage(_random);
-
-    _addMessage(
-      ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        username: username,
-        message: message,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
-
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-
-    _addMessage(
-      ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        username: 'Anda',
-        message: _messageController.text,
-        timestamp: DateTime.now(),
-      ),
-    );
-    _messageController.clear();
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    try {
+      await LiveChatService.I.sendMessage(_roomId, text);
+      _messageController.clear();
+    } catch (_) {}
   }
 
   @override
@@ -479,7 +544,10 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   void dispose() {
     _scrollTimer?.cancel();
-    _chatSimulationTimer?.cancel();
+    if (_listenerId != null) {
+      LiveChatService.I.leaveListener(_listenerId!);
+    }
+    LiveChatSocketService.I.disconnect();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
