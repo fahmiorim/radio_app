@@ -96,7 +96,10 @@ class LiveChatService {
 
   Future<LiveChatMessage> sendMessage(int id, String text) async {
     ApiClient.I.ensureInterceptors();
-    final res = await _dio.post('/live-chat/$id/send', data: {'message': text});
+    final res = await _dio.post(
+      '/admin/live-chat/$id/send',
+      data: {'message': text},
+    );
     final body = Map<String, dynamic>.from(res.data);
     return LiveChatMessage.fromJson(
       Map<String, dynamic>.from(body['data'] ?? {}),
