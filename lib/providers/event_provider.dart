@@ -13,7 +13,6 @@ class EventProvider with ChangeNotifier {
   bool _hasMore = false;
   String? _error;
   int _currentPage = 1;
-  int _totalItems = 0;
   int _lastPage = 1;
   bool _initialized = false;
 
@@ -31,6 +30,7 @@ class EventProvider with ChangeNotifier {
     await load(cacheFirst: true);
   }
 
+  /// Initial load → pakai recent events
   Future<void> load({bool cacheFirst = true}) async {
     if (_isLoading) return;
     _isLoading = true;
@@ -39,7 +39,6 @@ class EventProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // For initial load, use fetchRecentEvents
       final recentEvents = await _svc.fetchRecentEvents(
         forceRefresh: !cacheFirst,
       );
@@ -47,9 +46,7 @@ class EventProvider with ChangeNotifier {
       _events = recentEvents;
       _currentPage = 1;
       _lastPage = 1;
-      _totalItems = recentEvents.length;
-      _hasMore =
-          recentEvents.length >= 10; // If we got 10 items, there might be more
+      _hasMore = recentEvents.length >= 10;
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -58,8 +55,12 @@ class EventProvider with ChangeNotifier {
     }
   }
 
-  Future<void> refresh() => load(cacheFirst: false);
+  Future<void> refresh() async {
+    await load(cacheFirst: false);
+    _lastRefreshTime = DateTime.now();
+  }
 
+  /// Load next page → pakai paginated service
   Future<void> loadMore() async {
     if (_isLoadingMore || !_hasMore || _currentPage >= _lastPage) return;
     _isLoadingMore = true;
@@ -67,18 +68,16 @@ class EventProvider with ChangeNotifier {
 
     try {
       final nextPage = _currentPage + 1;
-      final response = await _svc.fetchPaginatedEvents(
+      final pageData = await _svc.fetchPaginatedEvents(
         page: nextPage,
         perPage: 10,
         forceRefresh: true,
       );
 
-      final newEvents = List<Event>.from(response['events']);
-      _events.addAll(newEvents);
-      _currentPage = response['currentPage'] ?? nextPage;
-      _lastPage = response['lastPage'] ?? _lastPage;
-      _totalItems = response['total'] ?? _totalItems;
-      _hasMore = response['hasMore'] ?? false;
+      _events.addAll(pageData.items);
+      _currentPage = pageData.currentPage;
+      _lastPage = pageData.lastPage;
+      _hasMore = pageData.hasMore;
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -97,6 +96,16 @@ class EventProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Tracks the last refresh time for cooldown
+  DateTime? _lastRefreshTime;
+  static const _refreshCooldown = Duration(minutes: 5);
+
+  /// Check if enough time has passed since the last refresh
+  bool shouldRefreshOnResume() {
+    if (_lastRefreshTime == null) return true;
+    return DateTime.now().difference(_lastRefreshTime!) > _refreshCooldown;
+  }
+
   void clearAll() {
     _events = [];
     _selectedEvent = null;
@@ -104,7 +113,6 @@ class EventProvider with ChangeNotifier {
     _hasMore = false;
     _currentPage = 1;
     _lastPage = 1;
-    _totalItems = 0;
     notifyListeners();
   }
 }

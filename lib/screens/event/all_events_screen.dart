@@ -66,7 +66,8 @@ class _AllEventsScreenState extends State<AllEventsScreen>
 
     final provider = context.read<EventProvider>();
     final currentItems = provider.events;
-    final shouldRefresh = _lastItems == null ||
+    final shouldRefresh =
+        _lastItems == null ||
         !const DeepCollectionEquality().equals(_lastItems, currentItems);
 
     if (shouldRefresh) {

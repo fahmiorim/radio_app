@@ -3,9 +3,10 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+
 import 'config/app_theme.dart';
 import 'config/app_routes.dart';
-import 'screens/auth/auth_wrapper.dart';
+import 'providers/auth_provider.dart';
 import 'providers/program_provider.dart';
 import 'providers/penyiar_provider.dart';
 import 'providers/event_provider.dart';
@@ -14,16 +15,22 @@ import 'providers/user_provider.dart';
 import 'providers/video_provider.dart';
 import 'providers/album_provider.dart';
 import 'providers/radio_station_provider.dart';
+
 import 'config/api_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables
   await dotenv.load(fileName: '.env');
 
+  // Setup API client interceptors (auth header, cookies, csrf, etc)
   ApiClient.I.ensureInterceptors();
 
+  // Locale for dates
   await initializeDateFormatting('id_ID', null);
+
+  // Background audio channel
   await JustAudioBackground.init(
     androidNotificationChannelId: 'id.go.batubarakab.odanfm.channel.audio',
     androidNotificationChannelName: 'Odan FM Playback',
@@ -43,8 +50,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   void dispose() {
-    // No need to dispose the audio manager here as it's a singleton
-    // and should live for the entire app lifecycle
+    // Singleton managers live across app lifecycle; nothing to dispose here.
     super.dispose();
   }
 
@@ -52,6 +58,13 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(
+          create: (_) {
+            final p = AuthProvider();
+            p.init();
+            return p;
+          },
+        ),
         ChangeNotifierProvider(
           create: (_) {
             final p = UserProvider();
@@ -109,8 +122,8 @@ class _MyAppState extends State<MyApp> {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.dark,
-        builder: (context, child) => AuthWrapper(child: child!),
-        routes: AppRoutes.routes,
+
+        // Semua rute melewati satu gerbang (onGenerateRoute) → aman dari bypass auth
         initialRoute: AppRoutes.splash,
         onGenerateRoute: AppRoutes.onGenerateRoute,
       ),

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:collection/collection.dart';
 
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/program_skeleton.dart';
 import '../../../models/program_model.dart';
 import '../../../providers/program_provider.dart';
 import '../../../screens/program/all_programs_screen.dart';
+import '../../../screens/program/program_detail_screen.dart';
 
 class ProgramList extends StatefulWidget {
   const ProgramList({super.key});
@@ -21,81 +21,34 @@ class _ProgramListState extends State<ProgramList>
   @override
   bool get wantKeepAlive => true;
 
-  bool _isMounted = false;
-  List<Program>? _lastItems;
-
   @override
   void initState() {
     super.initState();
-    _isMounted = true;
-
     WidgetsBinding.instance.addObserver(this);
 
-    // Load data setelah frame pertama supaya aman dari context issues
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadData();
-      }
-    });
-  }
-
-  Future<void> _loadData({bool forceRefresh = false}) async {
-    await context.read<ProgramProvider>().fetchTodaysPrograms(
-      forceRefresh: forceRefresh,
-    );
-    if (mounted) {
-      setState(() {
-        _lastItems = List<Program>.from(
-          context.read<ProgramProvider>().todaysPrograms,
-        );
-      });
-    }
-  }
-
-  // Public method: bisa dipanggil parent untuk hard refresh
-  Future<void> refreshData() async {
-    await _loadData(forceRefresh: true);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _checkAndRefresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prov = context.read<ProgramProvider>();
+      if (prov.todaysPrograms.isEmpty) {
+        await prov.loadToday(cacheFirst: true);
+      } else if (prov.shouldRefreshTodayOnResume()) {
+        await prov.refreshToday();
       }
     });
   }
 
   @override
   void dispose() {
-    _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  Future<void> _checkAndRefresh() async {
-    if (!mounted) return;
-
-    final provider = context.read<ProgramProvider>();
-    final currentItems = provider.todaysPrograms;
-    final shouldRefresh = _lastItems == null ||
-        !const DeepCollectionEquality().equals(_lastItems, currentItems);
-
-    if (shouldRefresh) {
-      await provider.fetchTodaysPrograms(forceRefresh: true);
-      if (mounted) {
-        setState(() {
-          _lastItems = List<Program>.from(provider.todaysPrograms);
-        });
-      }
-    }
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isMounted) {
-      _checkAndRefresh();
+    if (state == AppLifecycleState.resumed && mounted) {
+      final prov = context.read<ProgramProvider>();
+      if (prov.shouldRefreshTodayOnResume()) {
+        prov.refreshToday();
+      }
     }
   }
 
@@ -104,35 +57,37 @@ class _ProgramListState extends State<ProgramList>
     super.build(context);
 
     final prov = context.watch<ProgramProvider>();
-    final isLoading = prov.isLoadingTodays;
-    final List<Program> programList = prov.todaysPrograms;
-    final error = prov.todaysError;
+    final bool isLoading = prov.isLoadingTodays;
+    final List<ProgramModel> programList = prov.todaysPrograms;
+    final String? error = prov.todaysError;
 
     if (error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Text(
-            'Gagal memuat data program. Silakan coba lagi.',
-            style: Theme.of(context).textTheme.bodyMedium,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(
+            title: 'Program Hari Ini',
+            onSeeAll: () => _openAll(context),
           ),
-        ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Gagal memuat data program. Silakan tarik untuk refresh.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
       );
     }
 
-    final seeAll = () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const AllProgramsScreen()),
-      );
-    };
-
-    // Empty state (tidak ada program hari ini)
     if (programList.isEmpty && !isLoading) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(title: 'Program Hari Ini', onSeeAll: seeAll),
+          SectionTitle(
+            title: 'Program Hari Ini',
+            onSeeAll: () => _openAll(context),
+          ),
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
@@ -148,7 +103,10 @@ class _ProgramListState extends State<ProgramList>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(title: 'Program Hari Ini', onSeeAll: seeAll),
+        SectionTitle(
+          title: 'Program Hari Ini',
+          onSeeAll: () => _openAll(context),
+        ),
         const SizedBox(height: 8),
         if (isLoading)
           const ProgramSkeleton()
@@ -156,36 +114,42 @@ class _ProgramListState extends State<ProgramList>
           const SizedBox.shrink()
         else
           SizedBox(
-            height: 300,
+            height: 260,
             child: ListView.builder(
               key: const PageStorageKey('programs_list'),
               scrollDirection: Axis.horizontal,
               physics: const BouncingScrollPhysics(),
               shrinkWrap: true,
               itemCount: programList.length,
-              padding: const EdgeInsets.only(left: 16),
+              padding: const EdgeInsets.only(left: 12),
               itemBuilder: (context, index) {
                 final program = programList[index];
                 final url = program.gambarUrl;
 
                 return GestureDetector(
-                  onTap: () => context.read<ProgramProvider>().selectProgram(
-                        program,
-                        context,
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProgramDetailScreen(),
+                        settings: RouteSettings(arguments: program.id),
                       ),
+                    );
+                    if (mounted) {}
+                  },
                   child: Container(
                     width: 160,
-                    margin: const EdgeInsets.only(right: 16),
+                    margin: const EdgeInsets.only(right: 12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(6),
                           child: url.isEmpty
                               ? _buildPlaceholderImage()
                               : CachedNetworkImage(
                                   imageUrl: url,
-                                  height: 225,
+                                  height: 200,
                                   width: 160,
                                   fit: BoxFit.cover,
                                   placeholder: (_, __) => _buildLoadingThumb(),
@@ -200,16 +164,7 @@ class _ProgramListState extends State<ProgramList>
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          program.penyiarName ?? '-',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
                             color: Colors.white,
                           ),
                         ),
@@ -221,6 +176,13 @@ class _ProgramListState extends State<ProgramList>
             ),
           ),
       ],
+    );
+  }
+
+  void _openAll(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AllProgramsScreen()),
     );
   }
 

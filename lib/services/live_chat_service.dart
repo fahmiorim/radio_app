@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import '../config/api_client.dart';
 import '../models/live_message_model.dart';
 import '../models/live_status_model.dart';
@@ -24,7 +23,7 @@ class LiveChatService {
   void _ensure() => ApiClient.I.ensureInterceptors();
 
   Map<String, dynamic> _asMap(dynamic raw) {
-    if (raw is Map) return Map<String, dynamic>.from(raw as Map);
+    if (raw is Map) return Map<String, dynamic>.from(raw);
     return <String, dynamic>{};
   }
 

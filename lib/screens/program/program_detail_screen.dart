@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:html/parser.dart' show parse;
 
 import '../../providers/program_provider.dart';
 import '../../config/app_colors.dart';
@@ -23,36 +23,25 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       _isInitialized = true;
-      _loadProgramData();
+      // Use addPostFrameCallback to ensure we're not in the build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadProgramData();
+      });
     }
   }
 
   Future<void> _loadProgramData() async {
-    final programProvider = Provider.of<ProgramProvider>(
-      context,
-      listen: false,
-    );
-
-    // kalau sudah ada selectedProgram (dipilih dari list), gak usah fetch
-    if (programProvider.selectedProgram != null) return;
-
-    // kalau datang via route arguments (id)
+    final prov = Provider.of<ProgramProvider>(context, listen: false);
     final programId = ModalRoute.of(context)?.settings.arguments as int?;
+
     if (programId == null) return;
 
     try {
-      await programProvider.fetchProgramById(programId);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  String _parseHtmlString(String htmlString) {
-    try {
-      final document = parse(htmlString);
-      return document.body?.text.trim() ?? htmlString;
+      // Always fetch fresh data when the screen loads
+      await prov.fetchDetail(programId);
     } catch (_) {
-      return htmlString;
+      // Error will be handled by the UI through the provider's error state
+      debugPrint('Error loading program details');
     }
   }
 
@@ -66,7 +55,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (icon != null) ...[
+            if (icon != null)
               Row(
                 children: [
                   Icon(icon, color: AppColors.textSecondary, size: 20),
@@ -75,31 +64,46 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                     title,
                     style: const TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-            ] else
+              )
+            else
               Text(
                 title,
                 style: const TextStyle(
                   color: AppColors.textSecondary,
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                height: 1.5,
-              ),
-            ),
+            const SizedBox(height: 8),
+            value.trim().isNotEmpty
+                ? Html(
+                    data: value,
+                    style: {
+                      "body": Style(
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.zero,
+                        color: AppColors.textPrimary,
+                        fontSize: FontSize(14.0),
+                        lineHeight: LineHeight(1.5),
+                      ),
+                      "p": Style(
+                        margin: Margins.zero,
+                        padding: HtmlPaddings.only(bottom: 8.0),
+                      ),
+                      "a": Style(
+                        color: AppColors.primary,
+                        textDecoration: TextDecoration.none,
+                      ),
+                      "strong": Style(fontWeight: FontWeight.bold),
+                      "em": Style(fontStyle: FontStyle.italic),
+                    },
+                  )
+                : const SizedBox.shrink(),
           ],
         ),
       ),
@@ -107,7 +111,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
   }
 
   Widget _detailImage(String url) {
-    // aspect ratio 2:3 sesuai kode kamu
+    // Rasio 2:3 sesuai kebutuhan
     return AspectRatio(
       aspectRatio: 2 / 3,
       child: ClipRRect(
@@ -151,10 +155,10 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Consumer<ProgramProvider>(
-      builder: (context, programProvider, _) {
-        final program = programProvider.selectedProgram;
-        final isLoading = programProvider.isLoadingDetail && program == null;
-        final error = programProvider.detailError;
+      builder: (context, prov, _) {
+        final program = prov.selectedProgram;
+        final isLoading = prov.isLoadingDetail && program == null;
+        final error = prov.detailError;
 
         return Scaffold(
           backgroundColor: AppColors.backgroundDark,
@@ -166,7 +170,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
                 if (Navigator.canPop(context)) {
-                  programProvider.clearSelectedProgram();
+                  prov.clearSelected();
                   Navigator.of(context).pop();
                 }
               },
@@ -194,10 +198,10 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                 ),
               ),
 
-              // Content
+              // Content states
               if (isLoading)
                 const Center(child: CircularProgressIndicator())
-              else if (error != null)
+              else if (error != null && program == null)
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -254,20 +258,14 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
               else
                 CustomScrollView(
                   slivers: [
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 0.0),
-                        child: _detailImage(
-                          program.gambarUrl,
-                        ), // ⬅️ pakai getter
-                      ),
-                    ),
+                    SliverToBoxAdapter(child: _detailImage(program.gambarUrl)),
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Title
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24.0,
@@ -284,43 +282,20 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            if (program.penyiarName != null &&
-                                program.penyiarName!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24.0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.person_outline,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      program.penyiarName!,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
+                            // (Opsional) Penyiar — hanya tampilkan jika field nanti ditambahkan
+                            // if (program.penyiarName != null && program.penyiarName!.isNotEmpty) ...
                             const SizedBox(height: 24),
 
-                            if (program.deskripsi.isNotEmpty)
+                            // Deskripsi (strip HTML aman)
+                            if ((program.deskripsiHtml ?? '').isNotEmpty)
                               _buildInfoCard(
                                 'Tentang Program',
-                                // deskripsi di model sudah di-strip HTML, ini jaga-jaga
-                                _parseHtmlString(program.deskripsi),
+                                program.deskripsiHtml!,
                                 icon: Icons.info_outline,
                               ),
 
-                            if (program.jadwal != null &&
-                                program.jadwal!.isNotEmpty)
+                            // Jadwal
+                            if ((program.jadwal ?? '').isNotEmpty)
                               _buildInfoCard(
                                 'Jadwal Siaran',
                                 program.jadwal!,

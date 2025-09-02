@@ -172,7 +172,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Provider dibuat di atas (ChangeNotifierProvider), jadi tidak perlu init di sini
     return WillPopScope(
       onWillPop: () async {
         await context.read<LiveChatProvider>().shutdown();

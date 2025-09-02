@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:collection/collection.dart';
 
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/program_model.dart';
@@ -9,6 +8,9 @@ import 'package:radio_odan_app/providers/program_provider.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
 import 'package:radio_odan_app/widgets/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/all_programs_skeleton.dart';
+
+// ⬇️ Import detail screen
+import 'package:radio_odan_app/screens/program/program_detail_screen.dart';
 
 class AllProgramsScreen extends StatefulWidget {
   const AllProgramsScreen({super.key});
@@ -21,79 +23,52 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
-  bool _isMounted = false;
-  List<Program>? _lastItems;
 
   @override
   void initState() {
     super.initState();
-    _isMounted = true;
+    WidgetsBinding.instance.addObserver(this);
+
     _scrollController.addListener(_onScroll);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadData();
-      }
-    });
-
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  Future<void> _loadData() async {
-    final provider = context.read<ProgramProvider>();
-    await provider.fetchAllPrograms(forceRefresh: true);
-    _lastItems = List<Program>.from(provider.allPrograms);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _checkAndRefresh();
+    // Load awal setelah frame pertama agar aman.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prov = context.read<ProgramProvider>();
+      // Kalau list kosong → load, kalau sudah ada & stale → refresh.
+      if (prov.allPrograms.isEmpty) {
+        await prov.loadList(cacheFirst: true);
+      } else if (prov.shouldRefreshListOnResume()) {
+        await prov.refreshList();
       }
     });
   }
 
   @override
   void dispose() {
-    _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _checkAndRefresh() async {
-    if (!mounted) return;
-
-    final provider = context.read<ProgramProvider>();
-    final currentItems = provider.allPrograms;
-    final shouldRefresh =
-        _lastItems == null ||
-        !const DeepCollectionEquality().equals(_lastItems, currentItems);
-
-    if (shouldRefresh) {
-      await provider.fetchAllPrograms(forceRefresh: true);
-      if (mounted) {
-        setState(() {
-          _lastItems = List<Program>.from(provider.allPrograms);
-        });
+  // Auto-refresh hemat saat balik dari background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      final prov = context.read<ProgramProvider>();
+      if (prov.shouldRefreshListOnResume()) {
+        prov.refreshList();
       }
     }
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isMounted) {
-      _checkAndRefresh();
-    }
-  }
-
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent) {
-      _loadMorePrograms();
-    }
+    if (!_scrollController.hasClients) return;
+
+    // Prefetch saat 200px menjelang akhir
+    final position = _scrollController.position;
+    final trigger = position.maxScrollExtent - 200;
+
+    if (position.pixels >= trigger) _loadMorePrograms();
   }
 
   Future<void> _loadMorePrograms() async {
@@ -101,15 +76,13 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     if (_isLoadingMore || !provider.hasMore) return;
 
     setState(() => _isLoadingMore = true);
-
     try {
-      await provider.loadMorePrograms();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat program tambahan')),
-        );
-      }
+      await provider.loadMore();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memuat program tambahan')),
+      );
     } finally {
       if (mounted) setState(() => _isLoadingMore = false);
     }
@@ -172,12 +145,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     return Consumer<ProgramProvider>(
       builder: (context, provider, _) {
         // Loading awal
-        if (provider.isLoadingAll && provider.allPrograms.isEmpty) {
+        if (provider.isLoadingList && provider.allPrograms.isEmpty) {
           return const AllProgramsSkeleton();
         }
 
         // Error & kosong
-        if (provider.allProgramsError != null && provider.allPrograms.isEmpty) {
+        if (provider.listError != null && provider.allPrograms.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -192,13 +165,13 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    provider.allProgramsError!,
+                    provider.listError!,
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _loadData,
+                    onPressed: () => provider.loadList(cacheFirst: false),
                     child: const Text('Coba Lagi'),
                   ),
                 ],
@@ -207,7 +180,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
           );
         }
 
-        // Kosong
+        // Kosong tanpa error
         if (provider.allPrograms.isEmpty) {
           return Center(
             child: Column(
@@ -228,7 +201,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
         // List
         return RefreshIndicator(
-          onRefresh: () => provider.fetchAllPrograms(forceRefresh: true),
+          onRefresh: () => provider.refreshList(),
           child: _buildProgramList(provider),
         );
       },
@@ -239,11 +212,17 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     return ListView.builder(
       controller: _scrollController,
       addAutomaticKeepAlives: true,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96), // ruang MiniPlayer
       itemCount: provider.allPrograms.length + (provider.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= provider.allPrograms.length) {
-          return _buildLoader();
+          // Loader untuk infinite scroll
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
         final program = provider.allPrograms[index];
         return _buildProgramItem(program);
@@ -251,20 +230,8 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     );
   }
 
-  Widget _buildLoader() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
-
-  Widget _buildProgramItem(Program program) {
-    final programProvider = Provider.of<ProgramProvider>(
-      context,
-      listen: false,
-    );
+  Widget _buildProgramItem(ProgramModel program) {
+    final prov = context.read<ProgramProvider>();
     final url = program.gambarUrl;
 
     return Container(
@@ -283,7 +250,24 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => programProvider.selectProgram(program, context),
+          onTap: () {
+            // 1) set selected di provider (hemat fetch kalau detail butuh data)
+            prov.selectProgram(program);
+
+            // 2) navigasi ke ProgramDetailScreen dengan program ID
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ProgramDetailScreen(),
+                settings: RouteSettings(arguments: program.id),
+              ),
+            );
+
+            // Catatan:
+            // Jika kamu ingin TIDAK set selected (dan selalu fetch by id),
+            // gunakan:
+            // Navigator.pushNamed(context, '/program/detail', arguments: program.id);
+          },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -336,7 +320,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 class _ProgramTexts extends StatelessWidget {
   const _ProgramTexts({required this.program});
 
-  final Program program;
+  final ProgramModel program;
 
   @override
   Widget build(BuildContext context) {
@@ -353,34 +337,22 @@ class _ProgramTexts extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        if (program.penyiarName != null && program.penyiarName!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            program.penyiarName!,
-            style: const TextStyle(fontSize: 14, color: Colors.white),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-        if (program.jadwal != null && program.jadwal!.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 150),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.schedule, size: 14, color: Colors.white),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    program.jadwal!,
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+        if ((program.jadwal ?? '').isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.schedule, size: 14, color: Colors.white70),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  program.jadwal!,
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ],

@@ -1,189 +1,256 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/models/program_model.dart';
-import 'package:radio_odan_app/services/program_service.dart';
+import 'package:flutter/foundation.dart';
+import '../../../models/program_model.dart';
+import '../../../services/program_service.dart';
 
 class ProgramProvider with ChangeNotifier {
   final ProgramService _svc = ProgramService.I;
+  
 
-  List<Program> _todaysPrograms = [];
-  bool _isLoadingTodays = false;
-  String? _todaysError;
+  // ===== Today =====
+  List<ProgramModel> _today = [];
+  bool _loadingToday = false;
+  String? _errorToday;
+  DateTime? _lastUpdatedToday;
 
-  List<Program> _allPrograms = [];
-  bool _isLoadingAll = false;
-  bool _isLoadingMore = false;
-  bool _hasMore = false;
-  int _currentPage = 1;
-  final int _perPage = 10;
-  String? _allProgramsError;
+  // ===== All + Paging =====
+  List<ProgramModel> _list = [];
+  bool _loadingList = false;
+  bool _loadingMore = false;
+  String? _errorList;
+  int _page = 1;
+  int _lastPage = 1;
+  bool _hasMore = true;
+  DateTime? _lastUpdatedList;
 
-  Program? _selectedProgram;
-  bool _isLoadingDetail = false;
-  String? _detailError;
+  // ===== Detail =====
+  ProgramModel? _selected;
+  bool _loadingDetail = false;
+  String? _errorDetail;
 
+  // ===== Guards =====
   bool _initialized = false;
+  static const Duration _refreshCooldown = Duration(seconds: 45);
+  Completer<void>? _inFlightToday;
+  Completer<void>? _inFlightList;
+  Completer<void>? _inFlightMore;
 
-  List<Program> get todaysPrograms => _todaysPrograms;
-  List<Program> get allPrograms => _allPrograms;
-  Program? get selectedProgram => _selectedProgram;
+  // In-flight detail per-ID, agar klik cepat antar item tidak ke-block
+  final Map<int, Completer<void>> _detailInFlight = {};
 
-  bool get isLoadingTodays => _isLoadingTodays;
-  bool get isLoadingAll => _isLoadingAll;
-  bool get isLoadingMore => _isLoadingMore;
+  Timer? _debounce;
+
+  // ===== Getters =====
+  List<ProgramModel> get todaysPrograms => _today;
+  List<ProgramModel> get allPrograms => _list;
+  ProgramModel? get selectedProgram => _selected;
+
+  bool get isLoadingTodays => _loadingToday;
+  bool get isLoadingList => _loadingList;
+  bool get isLoadingMore => _loadingMore;
+  bool get isLoadingDetail => _loadingDetail;
   bool get hasMore => _hasMore;
-  bool get isLoadingDetail => _isLoadingDetail;
 
-  String? get todaysError => _todaysError;
-  String? get allProgramsError => _allProgramsError;
-  String? get detailError => _detailError;
+  String? get todaysError => _errorToday;
+  String? get listError => _errorList;
+  String? get detailError => _errorDetail;
 
+  // Meta & timestamps (untuk UI)
+  int get currentPage => _page;
+  int get lastPage => _lastPage;
+  DateTime? get lastUpdatedToday => _lastUpdatedToday;
+  DateTime? get lastUpdatedList => _lastUpdatedList;
+
+  /// Dipakai di `didChangeAppLifecycleState` (home) untuk auto-refresh
+  bool shouldRefreshTodayOnResume([Duration min = _refreshCooldown]) {
+    if (_lastUpdatedToday == null) return true;
+    return DateTime.now().difference(_lastUpdatedToday!) > min;
+  }
+
+  /// Dipakai di halaman list semua program untuk auto-refresh
+  bool shouldRefreshListOnResume([Duration min = _refreshCooldown]) {
+    if (_lastUpdatedList == null) return true;
+    return DateTime.now().difference(_lastUpdatedList!) > min;
+  }
+
+  /// Init awal (load today + list) — aman dipanggil berkali-kali
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
-
-    // Load cached data first
-    await fetchTodaysPrograms(forceRefresh: false);
-
-    // Then refresh in background
-    unawaited(refreshAll());
+    await Future.wait([
+      loadToday(cacheFirst: true),
+      loadList(cacheFirst: true),
+    ]);
   }
 
-  DateTime? _lastFetchAttempt;
-  static const Duration _minFetchInterval = Duration(seconds: 30);
+  // ===== Today =====
+  Future<void> loadToday({bool cacheFirst = true}) async {
+    if (_inFlightToday != null) return _inFlightToday!.future;
+    _inFlightToday = Completer<void>();
 
-  Future<void> fetchTodaysPrograms({bool forceRefresh = false}) async {
-    final now = DateTime.now();
+    _loadingToday = true;
+    _errorToday = null;
+    notifyListeners();
 
-    // Prevent too frequent requests
-    if (_lastFetchAttempt != null &&
-        now.difference(_lastFetchAttempt!) < _minFetchInterval &&
-        !forceRefresh) {
+    try {
+      _today = await _svc.fetchToday(forceRefresh: !cacheFirst);
+      _errorToday = null;
+    } catch (_) {
+      _errorToday = 'Gagal memuat program hari ini.';
+    } finally {
+      _loadingToday = false;
+      _lastUpdatedToday = DateTime.now();
+      notifyListeners();
+      _inFlightToday?.complete();
+      _inFlightToday = null;
+    }
+  }
+
+  Future<void> refreshToday() => loadToday(cacheFirst: false);
+
+  // ===== All + Paging =====
+  Future<void> loadList({bool cacheFirst = true}) async {
+    if (_inFlightList != null) return _inFlightList!.future;
+    _inFlightList = Completer<void>();
+
+    // Cooldown hanya berlaku jika sudah ada data & masih segar
+    if (cacheFirst &&
+        _list.isNotEmpty &&
+        _lastUpdatedList != null &&
+        DateTime.now().difference(_lastUpdatedList!) < _refreshCooldown) {
+      _inFlightList!.complete();
+      _inFlightList = null;
       return;
     }
 
-    if (_isLoadingTodays) {
-      if (!forceRefresh) return;
-      // If force refresh is true, we'll let it proceed even if already loading
-    }
-
-    _lastFetchAttempt = now;
-    _isLoadingTodays = true;
-    _todaysError = null;
+    _loadingList = true;
+    _errorList = null;
+    _page = 1;
+    _hasMore = true;
     notifyListeners();
 
     try {
-      final programs = await _svc.fetchTodaysPrograms(
-        forceRefresh: forceRefresh,
+      final res = await _svc.fetchAll(
+        page: _page,
+        perPage: 10,
+        forceRefresh: !cacheFirst,
       );
-      _todaysPrograms = programs;
-      _todaysError = null;
-    } catch (e) {
-      _todaysError = e.toString();
-
-      // If we have cached data, don't show the error to the user
-      if (_todaysPrograms.isNotEmpty) {
-        _todaysError = null;
-      }
+      _list = (res['data'] as List<ProgramModel>);
+      _page = res['currentPage'] as int;
+      _lastPage = res['lastPage'] as int;
+      _hasMore = _page < _lastPage;
+    } catch (_) {
+      _errorList = 'Gagal memuat daftar program.';
     } finally {
-      _isLoadingTodays = false;
+      _loadingList = false;
+      _lastUpdatedList = DateTime.now();
       notifyListeners();
+      _inFlightList?.complete();
+      _inFlightList = null;
     }
   }
 
-  Future<void> fetchAllPrograms({
-    bool loadMore = false,
-    bool forceRefresh = false,
-  }) async {
-    if ((!loadMore && _isLoadingAll) || (loadMore && _isLoadingMore)) return;
+  Future<void> refreshList() => loadList(cacheFirst: false);
 
-    if (loadMore) {
-      if (!_hasMore) return;
-      _isLoadingMore = true;
-    } else {
-      _isLoadingAll = true;
-      _currentPage = 1;
-      _allProgramsError = null;
-    }
+  Future<void> loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    if (_inFlightMore != null) return _inFlightMore!.future;
+    _inFlightMore = Completer<void>();
+
+    _loadingMore = true;
+    _errorList = null; // reset error loadMore agar UI bersih
     notifyListeners();
 
     try {
-      final result = await _svc.fetchAllPrograms(
-        page: _currentPage,
-        perPage: _perPage,
-        forceRefresh: forceRefresh,
-      );
-
-      final List<Program> fetched = (result['programs'] as List<Program>);
-      final bool hasMore = (result['hasMore'] as bool?) ?? false;
-      final int currentPage = (result['currentPage'] as int?) ?? 1;
-
-      if (loadMore) {
-        _allPrograms.addAll(fetched);
-      } else {
-        _allPrograms = fetched;
-      }
-
-      _hasMore = hasMore;
-      _currentPage = currentPage;
-      _allProgramsError = null;
-    } catch (e) {
-      _allProgramsError = e.toString();
-      if (loadMore) {
-        _currentPage = (_currentPage > 1) ? _currentPage - 1 : 1;
-      }
+      final next = _page + 1;
+      final res = await _svc.fetchAll(page: next, perPage: 10);
+      final newItems = (res['data'] as List<ProgramModel>);
+      if (newItems.isNotEmpty) _list.addAll(newItems);
+      _page = res['currentPage'] as int;
+      _lastPage = res['lastPage'] as int;
+      _hasMore = _page < _lastPage;
+    } catch (_) {
+      _errorList = 'Gagal memuat data tambahan.';
     } finally {
-      _isLoadingAll = false;
-      _isLoadingMore = false;
+      _loadingMore = false;
+      _lastUpdatedList = DateTime.now();
       notifyListeners();
+      _inFlightMore?.complete();
+      _inFlightMore = null;
     }
   }
 
-  Future<void> loadMorePrograms() async {
-    if (_isLoadingMore || !_hasMore) return;
-    _currentPage++;
-    await fetchAllPrograms(loadMore: true);
+  /// Reset state list (untuk hard refresh dari UI jika diperlukan)
+  void resetListState() {
+    _list = [];
+    _page = 1;
+    _lastPage = 1;
+    _hasMore = true;
+    _errorList = null;
+    notifyListeners();
   }
 
-  Future<Program> fetchProgramById(int id, {bool forceRefresh = false}) async {
-    _isLoadingDetail = true;
-    _detailError = null;
+  // ===== Detail (per-ID in-flight) =====
+  Future<void> fetchDetail(int id, {bool forceRefresh = false}) async {
+    final existing = _detailInFlight[id];
+    if (existing != null) return existing.future;
+
+    final c = Completer<void>();
+    _detailInFlight[id] = c;
+
+    // Update loading state
+    _loadingDetail = true;
+    _errorDetail = null;
+    _selected = null;
     notifyListeners();
 
     try {
-      final program = await _svc.fetchProgramById(
-        id,
-        forceRefresh: forceRefresh,
-      );
-      _selectedProgram = program;
-      _detailError = null;
-      return program;
-    } catch (e) {
-      _detailError = e.toString();
-      rethrow;
-    } finally {
-      _isLoadingDetail = false;
+      final response = await _svc.fetchById(id, forceRefresh: forceRefresh);
+      _selected = response;
       notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching program detail: $e');
+      _errorDetail = 'Gagal memuat detail program.';
+      notifyListeners();
+    } finally {
+      _loadingDetail = false;
+      _detailInFlight[id]?.complete();
+      _detailInFlight.remove(id);
     }
   }
 
-  void selectProgram(Program program, BuildContext context) {
-    _selectedProgram = program;
-    notifyListeners();
-    Navigator.of(context).pushNamed(AppRoutes.programDetail);
-  }
-
-  void clearSelectedProgram() {
-    _selectedProgram = null;
-    _detailError = null;
+  void selectProgram(ProgramModel p) {
+    _selected = p;
     notifyListeners();
   }
 
-  Future<void> refreshAll() async {
-    await Future.wait([
-      fetchTodaysPrograms(forceRefresh: true),
-      fetchAllPrograms(forceRefresh: true),
-    ]);
+  void clearSelected() {
+    _selected = null;
+    _errorDetail = null;
+    notifyListeners();
+  }
+
+  // ===== Debounced refresh (opsional) =====
+  Future<void> debouncedRefresh() {
+    _debounce?.cancel();
+    final c = Completer<void>();
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        await Future.wait([
+          loadToday(cacheFirst: false),
+          loadList(cacheFirst: false),
+        ]);
+        c.complete();
+      } catch (e) {
+        c.completeError(e);
+      }
+    });
+    return c.future;
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 }

@@ -1,9 +1,7 @@
-// lib/config/api_client.dart
-import 'dart:io';
-
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'app_api_config.dart';
@@ -15,8 +13,7 @@ class ApiClient {
   // API (punya /api/mobile)
   final Dio dio = Dio(
     BaseOptions(
-      baseUrl:
-          AppApiConfig.apiBaseUrl, // ex: http://192.168.1.7:8000/api/mobile
+      baseUrl: AppApiConfig.apiBaseUrl,
       connectTimeout: const Duration(seconds: 120),
       receiveTimeout: const Duration(seconds: 120),
       sendTimeout: const Duration(seconds: 120),
@@ -24,10 +21,9 @@ class ApiClient {
     ),
   );
 
-  // ROOT (tanpa /api/mobile) — untuk live-chat & broadcasting/auth
   final Dio dioRoot = Dio(
     BaseOptions(
-      baseUrl: AppApiConfig.assetBaseUrl, // ex: http://192.168.1.7:8000
+      baseUrl: AppApiConfig.assetBaseUrl,
       connectTimeout: const Duration(seconds: 120),
       receiveTimeout: const Duration(seconds: 120),
       sendTimeout: const Duration(seconds: 120),
@@ -49,21 +45,58 @@ class ApiClient {
         if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+        // Tambahkan header untuk mencegah caching
+        options.headers['Cache-Control'] = 'no-cache';
+        options.headers['Pragma'] = 'no-cache';
         handler.next(options);
       },
       onResponse: (response, handler) => handler.next(response),
-      onError: (e, handler) => handler.next(e),
+      onError: (DioException e, handler) async {
+        // Handle unauthorized (401) error
+        if (e.response?.statusCode == 401) {
+          // Hapus token yang tidak valid
+          await _storage.delete(key: 'user_token');
+
+          // Navigasi ke halaman login jika diperlukan
+          // Catatan: Anda perlu menggunakan navigator key atau event bus untuk ini
+          // Contoh: navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+        }
+        handler.next(e);
+      },
     );
 
-    dio.interceptors.add(authInterceptor);
-    dioRoot.interceptors.add(authInterceptor); // << penting: ROOT juga bawa Bearer
+    // Tambahkan interceptor untuk menangani error
+    final errorInterceptor = InterceptorsWrapper(
+      onError: (DioException e, handler) async {
+        // Log error untuk debugging
+        debugPrint('API Error: ${e.message}');
+        debugPrint('URL: ${e.requestOptions.uri}');
+        debugPrint('Response: ${e.response?.data}');
 
-    // Cookie management
+        // Handle network errors
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          // Handle timeout errors
+          return handler.reject(
+            DioException(
+              requestOptions: e.requestOptions,
+              error: 'Koneksi timeout. Silakan coba lagi.',
+            ),
+          );
+        }
+
+        return handler.next(e);
+      },
+    );
+
+    dio.interceptors.addAll([authInterceptor, errorInterceptor]);
+    dioRoot.interceptors.addAll([authInterceptor, errorInterceptor]);
+
     final cookieManager = CookieManager(_cookieJar);
     dio.interceptors.add(cookieManager);
     dioRoot.interceptors.add(CookieManager(_cookieJar));
 
-    // CSRF token handling for ROOT requests
     dioRoot.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
@@ -74,8 +107,10 @@ class ApiClient {
 
           var token = await _getCsrfToken();
           if (token == null) {
-            await dioRoot.get('/sanctum/csrf-cookie',
-                options: Options(extra: {'skipCsrf': true}));
+            await dioRoot.get(
+              '/sanctum/csrf-cookie',
+              options: Options(extra: {'skipCsrf': true}),
+            );
             token = await _getCsrfToken();
           }
           if (token != null) {
@@ -91,8 +126,7 @@ class ApiClient {
     final uri = Uri.parse(AppApiConfig.assetBaseUrl);
     final cookies = await _cookieJar.loadForRequest(uri);
     try {
-      final tokenCookie =
-          cookies.firstWhere((c) => c.name == 'XSRF-TOKEN');
+      final tokenCookie = cookies.firstWhere((c) => c.name == 'XSRF-TOKEN');
       return Uri.decodeComponent(tokenCookie.value);
     } catch (_) {
       return null;

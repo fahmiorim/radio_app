@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/event_skeleton.dart';
 import '../../../providers/event_provider.dart';
@@ -10,99 +11,49 @@ class EventList extends StatefulWidget {
   const EventList({super.key});
 
   @override
-  State<EventList> createState() => EventListState();
+  State<EventList> createState() => _EventListState();
 }
 
-class EventListState extends State<EventList>
+class _EventListState extends State<EventList>
     with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
   bool get wantKeepAlive => true;
 
-  bool _isMounted = false;
-
   @override
   void initState() {
     super.initState();
-    _isMounted = true;
-
     WidgetsBinding.instance.addObserver(this);
 
-    // Jalankan setelah frame pertama agar aman untuk akses context
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadData();
-      }
-    });
-  }
+    // Load awal setelah frame pertama (aman dari context issues).
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prov = context.read<EventProvider>();
 
-  Future<void> _loadData({bool forceRefresh = false}) async {
-    final prov = context.read<EventProvider>();
-
-    await prov.init();
-    if (forceRefresh) {
-      await prov.refresh();
-    } else {
-      await prov.load(cacheFirst: true);
-    }
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  // Bisa dipanggil parent untuk memaksa refresh
-  Future<void> refreshData() async {
-    await _loadData(forceRefresh: true);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _checkAndRefresh();
-      }
+      await prov.init();
     });
   }
 
   @override
   void dispose() {
-    _isMounted = false;
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  bool _isChecking = false;
-
-  Future<void> _checkAndRefresh() async {
-    if (!mounted || _isChecking) return;
-
-    _isChecking = true;
-
-    try {
-      final provider = context.read<EventProvider>();
-      final currentItems = provider.events;
-
-      // Only refresh if we don't have any items yet
-      if (currentItems.isEmpty) {
-        await provider.refresh();
-      }
-
-      if (mounted) {
-        setState(() {});
-      }
-    } finally {
-      if (mounted) {
-        _isChecking = false;
+  // Auto-refresh saat kembali dari background (hemat dengan cooldown)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      final prov = context.read<EventProvider>();
+      if (prov.shouldRefreshOnResume()) {
+        prov.refresh();
       }
     }
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _isMounted) {
-      _checkAndRefresh();
-    }
+  void _openAllEvents() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AllEventsScreen()),
+    );
   }
 
   @override
@@ -115,40 +66,71 @@ class EventListState extends State<EventList>
     final error = prov.error;
 
     if (error != null && events.isEmpty) {
-      return _errorView(onRetry: () => prov.refresh());
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(title: 'Event', onSeeAll: null),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 12),
+                Text(
+                  'Gagal memuat data event',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: prov.refresh,
+                  child: const Text('Coba Lagi'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SectionTitle(
-          title: 'Event',
-          onSeeAll: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AllEventsScreen()),
-            );
-          },
-        ),
-        const SizedBox(height: 8),
-        if (isLoading && events.isEmpty)
-          const EventSkeleton()
-        else if (events.isEmpty)
+    if (!isLoading && events.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(title: 'Event', onSeeAll: null),
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+            padding: EdgeInsets.all(16.0),
             child: Text(
               'Belum ada event',
               style: TextStyle(color: Colors.white70),
             ),
-          )
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionTitle(
+          title: 'Event',
+          onSeeAll: events.isNotEmpty ? _openAllEvents : null,
+        ),
+        const SizedBox(height: 8),
+        if (isLoading && events.isEmpty)
+          const EventSkeleton()
         else
           SizedBox(
-            height: 300,
+            height: 260,
             child: ListView.builder(
               key: const PageStorageKey('events_list'),
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: const EdgeInsets.only(left: 12),
               physics: const BouncingScrollPhysics(),
               itemCount: events.length,
               itemBuilder: (context, index) {
@@ -156,20 +138,18 @@ class EventListState extends State<EventList>
                 final url = e.gambarUrl;
 
                 return GestureDetector(
-                  onTap: () {
-                    // TODO: buka detail event kalau ada
-                  },
                   child: Container(
-                    width: 200,
-                    margin: const EdgeInsets.only(right: 16),
+                    width: 180,
+                    margin: const EdgeInsets.only(right: 12),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(6),
                           child: SizedBox(
-                            width: 200,
-                            height: 220,
+                            width: 180,
+                            height: 180,
                             child: url.isEmpty
                                 ? _thumbPlaceholder()
                                 : CachedNetworkImage(
@@ -181,26 +161,33 @@ class EventListState extends State<EventList>
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          e.judul,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        const SizedBox(height: 6),
+                        Flexible(
+                          child: Text(
+                            e.judul,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              height: 1.2,
+                            ),
                           ),
                         ),
-                        Text(
-                          e.formattedTanggal,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.white,
+                        if (e.formattedTanggal.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              e.formattedTanggal,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -225,25 +212,4 @@ class EventListState extends State<EventList>
       child: CircularProgressIndicator(strokeWidth: 2),
     ),
   );
-
-  Widget _errorView({required VoidCallback onRetry}) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 12),
-            const Text(
-              'Gagal memuat data event. Silakan coba lagi.',
-              style: TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(onPressed: onRetry, child: const Text('Coba Lagi')),
-          ],
-        ),
-      ),
-    );
-  }
 }

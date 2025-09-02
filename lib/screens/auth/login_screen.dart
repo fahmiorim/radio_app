@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // for SystemNavigator.pop
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/services/auth_service.dart' as auth_service;
-import 'package:radio_odan_app/services/login_service.dart' as login_service;
 import 'package:radio_odan_app/config/app_colors.dart';
-import 'register_screen.dart';
-import 'forgot_password_screen.dart';
+import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,127 +14,70 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool rememberMe = false;
-  bool _obscureText = true;
-  bool _isLoading = false;
-
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  final _emailC = TextEditingController();
+  final _passC = TextEditingController();
+
+  bool _rememberMe = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _emailC.dispose();
+    _passC.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    final formState = _formKey.currentState;
-    if (formState == null || !formState.validate()) return;
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
 
-    setState(() => _isLoading = true);
+    final auth = context.read<AuthProvider>();
+    final err = await auth.login(_emailC.text.trim(), _passC.text);
 
-    try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
+    if (!mounted) return;
 
-      final authResponse = await login_service.AuthService().login(
-        email,
-        password,
-      );
-
-      if (!mounted) return;
-
-      setState(() => _isLoading = false);
-
-      if (authResponse != null) {
-        // Save token using AuthService
-        await auth_service.AuthService.saveToken(authResponse.token);
-
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 10),
-                  Text("Login berhasil", style: TextStyle(color: Colors.white)),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-
-          // Small delay to show the message
-          await Future.delayed(const Duration(seconds: 1));
-
-          if (mounted) {
-            Navigator.of(
-              context,
-            ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
-          }
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login gagal. Email atau password salah.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _signInWithGoogle() async {
-    if (_isLoading) return;
-    setState(() => _isLoading = true);
-    try {
-      final account = await _googleSignIn.signIn();
-      if (account == null) {
-        // user cancelled
-        return;
-      }
-
-      // TODO: tukar auth code/idToken ke backend kamu
-      // final auth = await account.authentication;
-      // await login_service.AuthService().loginWithGoogle(auth.idToken, auth.accessToken);
-
-      if (!mounted) return;
+    if (err == null) {
+      // sukses
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Login Google belum diaktifkan di app ini.'),
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 10),
+              Text('Login berhasil', style: TextStyle(color: Colors.white)),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
         ),
       );
-    } catch (e) {
+
+      // beri jeda kecil biar snackbar kebaca
+      await Future.delayed(const Duration(milliseconds: 800));
+
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Google Sign-In gagal: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
+    } else {
+      // gagal
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
     }
   }
 
-  // Handle back button on Android
+  // Placeholder untuk Google Sign-In (akan diisi nanti)
+  Future<void> _signInWithGoogle() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Login Google akan diaktifkan setelah setup.'),
+      ),
+    );
+  }
+
+  // Handle back button pada Android
   Future<bool> _onWillPop() async {
     final canPop = Navigator.of(context).canPop();
     if (!canPop) {
@@ -164,16 +105,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loading = context.watch<AuthProvider>().loading;
+
     return PopScope(
-      // Blokir pop default agar kita bisa tampilkan dialog sendiri
       canPop: false,
       onPopInvoked: (didPop) async {
-        if (didPop) return; // sudah di-pop oleh navigator
+        if (didPop) return;
         final allow = await _onWillPop();
-        if (allow) {
-          // Tutup app dengan rapi
-          await SystemNavigator.pop();
-        }
+        if (allow) await SystemNavigator.pop();
       },
       child: Scaffold(
         body: Stack(
@@ -195,22 +134,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const SizedBox(height: 6),
+
                         // Logo
-                        Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.asset(
-                                'assets/logo-white.png',
-                                width: 96,
-                                height: 96,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ],
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            'assets/logo-white.png',
+                            width: 96,
+                            height: 96,
+                            fit: BoxFit.contain,
+                          ),
                         ),
-                        const SizedBox(height: 4),
+
+                        const SizedBox(height: 8),
                         Text(
                           'Selamat datang',
                           style: Theme.of(context).textTheme.headlineSmall
@@ -251,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Column(
                               children: [
                                 TextFormField(
-                                  controller: _emailController,
+                                  controller: _emailC,
                                   style: const TextStyle(color: Colors.black87),
                                   decoration: const InputDecoration(
                                     labelText: 'Email',
@@ -264,20 +200,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   keyboardType: TextInputType.emailAddress,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
+                                  validator: (v) {
+                                    if (v == null || v.isEmpty)
                                       return 'Masukkan email Anda';
-                                    }
-                                    if (!value.contains('@')) {
+                                    if (!v.contains('@'))
                                       return 'Masukkan email yang valid';
-                                    }
                                     return null;
                                   },
                                 ),
                                 const SizedBox(height: 16),
                                 TextFormField(
-                                  controller: _passwordController,
+                                  controller: _passC,
                                   style: const TextStyle(color: Colors.black87),
+                                  obscureText: _obscure,
                                   decoration: InputDecoration(
                                     labelText: 'Password',
                                     labelStyle: const TextStyle(
@@ -289,50 +224,44 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
-                                        _obscureText
+                                        _obscure
                                             ? Icons.visibility
                                             : Icons.visibility_off,
                                         color: Colors.black54,
                                       ),
-                                      onPressed: () => setState(() {
-                                        _obscureText = !_obscureText;
-                                      }),
+                                      onPressed: () =>
+                                          setState(() => _obscure = !_obscure),
                                     ),
                                   ),
-                                  obscureText: _obscureText,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
+                                  validator: (v) {
+                                    if (v == null || v.isEmpty)
                                       return 'Masukkan password Anda';
-                                    }
-                                    if (value.length < 6) {
+                                    if (v.length < 6)
                                       return 'Password minimal 6 karakter';
-                                    }
                                     return null;
                                   },
                                 ),
                                 const SizedBox(height: 16),
+
                                 Row(
                                   children: [
                                     Checkbox(
-                                      value: rememberMe,
-                                      onChanged: (value) => setState(() {
-                                        rememberMe = value ?? false;
-                                      }),
+                                      value: _rememberMe,
+                                      onChanged: loading
+                                          ? null
+                                          : (val) => setState(
+                                              () => _rememberMe = val ?? false,
+                                            ),
                                     ),
                                     const Text('Ingat saya'),
                                     const Spacer(),
                                     TextButton(
-                                      onPressed: _isLoading
+                                      onPressed: loading
                                           ? null
-                                          : () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const ForgotPasswordScreen(),
-                                                ),
-                                              );
-                                            },
+                                          : () => Navigator.pushNamed(
+                                              context,
+                                              AppRoutes.forgotPassword,
+                                            ),
                                       child: const Text(
                                         'Lupa Password?',
                                         style: TextStyle(
@@ -344,20 +273,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 24),
+
                                 SizedBox(
                                   width: double.infinity,
                                   height: 50,
                                   child: ElevatedButton(
-                                    onPressed: _isLoading ? null : _login,
+                                    onPressed: loading ? null : _login,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.blue,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                     ),
-                                    child: _isLoading
-                                        ? const CircularProgressIndicator(
-                                            color: Colors.white,
+                                    child: loading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
                                           )
                                         : const Text(
                                             'MASUK',
@@ -369,6 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                   ),
                                 ),
+
                                 const SizedBox(height: 16),
                                 const Row(
                                   children: [
@@ -383,11 +319,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 16),
+
                                 SizedBox(
                                   width: double.infinity,
                                   height: 50,
                                   child: OutlinedButton.icon(
-                                    onPressed: _isLoading
+                                    onPressed: loading
                                         ? null
                                         : _signInWithGoogle,
                                     icon: Image.asset(
@@ -411,23 +348,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 ),
+
                                 const SizedBox(height: 16),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     const Text('Belum punya akun?'),
                                     TextButton(
-                                      onPressed: _isLoading
+                                      onPressed: loading
                                           ? null
-                                          : () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const RegisterScreen(),
-                                                ),
-                                              );
-                                            },
+                                          : () => Navigator.pushNamed(
+                                              context,
+                                              AppRoutes.register,
+                                            ),
                                       child: const Text(
                                         'Daftar',
                                         style: TextStyle(
@@ -442,6 +375,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 24),
                       ],
                     ),

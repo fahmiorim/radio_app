@@ -44,19 +44,15 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] ?? 0,
+      id: json['id'] is int ? json['id'] : int.tryParse('${json['id']}') ?? 0,
       name: json['name'] ?? 'Tidak ada nama',
       email: json['email'] ?? 'Tidak ada email',
       phone: json['phone'],
       address: json['address'],
       avatar: json['avatar'],
-      isActive: json['is_active'] ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : DateTime.now(),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
-          : DateTime.now(),
+      isActive: json['is_active'] == true || json['is_active'] == 1,
+      createdAt: DateTime.tryParse('${json['created_at']}') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse('${json['updated_at']}') ?? DateTime.now(),
     );
   }
 
@@ -67,7 +63,7 @@ class UserModel {
       'email': email,
       'phone': phone,
       'address': address,
-      'avatar': avatar, // simpan raw
+      'avatar': avatar,
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

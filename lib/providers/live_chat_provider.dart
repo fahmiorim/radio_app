@@ -42,7 +42,7 @@ class LiveChatProvider with ChangeNotifier {
 
   int? _currentRoomId;
   int? get currentRoomId => _currentRoomId;
-  
+
   // Track current user ID to prevent self-message duplicates
   int? _currentUserId;
 
@@ -128,21 +128,21 @@ class LiveChatProvider with ChangeNotifier {
         try {
           final msg = LiveChatMessage.fromJson(messageData);
           final messageId = msg.id.toString();
-          
+
           // Skip if this is a message from the current user
           if (_currentUserId != null && msg.userId == _currentUserId) {
             return;
           }
-          
+
           // Skip if this is a pending message we're already handling
           if (_pendingMessageIds.any((id) => messageId.contains(id))) {
             return;
           }
-          
+
           // Check for duplicates by ID
           final isDuplicate = _messages.any((m) => m.id == messageId);
           if (isDuplicate) return;
-          
+
           _messages.add(
             ChatMessage(
               id: messageId,
@@ -152,7 +152,7 @@ class LiveChatProvider with ChangeNotifier {
               userAvatar: msg.avatar,
             ),
           );
-          
+
           // Sort messages by timestamp to maintain order
           _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
           notifyListeners();
@@ -261,30 +261,25 @@ class LiveChatProvider with ChangeNotifier {
 
   // ==== SEND (HTTP; optimistic UI) ====
   final Set<String> _pendingMessageIds = {};
-  
+
   // Set current user ID after login
   void setCurrentUserId(int userId) {
     _currentUserId = userId;
   }
-  
+
   Future<void> send(String text, {String username = 'Anda'}) async {
     final t = text.trim();
     if (t.isEmpty || !_isLive) return;
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final now = DateTime.now();
-    
+
     // Add to pending set
     _pendingMessageIds.add(tempId);
 
     // optimistic update
     _messages.add(
-      ChatMessage(
-        id: tempId,
-        username: username,
-        message: t,
-        timestamp: now,
-      ),
+      ChatMessage(id: tempId, username: username, message: t, timestamp: now),
     );
     notifyListeners();
 

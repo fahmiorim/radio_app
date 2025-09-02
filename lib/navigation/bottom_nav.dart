@@ -11,7 +11,7 @@ import '../widgets/app_drawer.dart';
 
 class BottomNav extends StatefulWidget {
   final int initialIndex;
-  
+
   const BottomNav({super.key, this.initialIndex = 0});
 
   @override
@@ -20,7 +20,7 @@ class BottomNav extends StatefulWidget {
 
 class _BottomNavState extends State<BottomNav> {
   late int _currentIndex;
-  
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +43,7 @@ class _BottomNavState extends State<BottomNav> {
         children: [
           // Main Content
           _screens[_currentIndex],
-          
+
           // MiniPlayer with Gradient Background
           Positioned(
             left: 0,
@@ -54,10 +54,7 @@ class _BottomNavState extends State<BottomNav> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.9),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.9), Colors.transparent],
                 ),
               ),
               child: const MiniPlayer(),
@@ -81,7 +78,9 @@ class _BottomNavState extends State<BottomNav> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.black.withOpacity(0.8), // tambahkan warna latar belakang
+          backgroundColor: Colors.black.withOpacity(
+            0.8,
+          ), // tambahkan warna latar belakang
           elevation: 0,
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.grey,

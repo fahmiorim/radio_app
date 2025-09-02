@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
-import 'package:radio_odan_app/services/login_service.dart' as login_service;
+import 'package:radio_odan_app/config/app_routes.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -10,285 +11,136 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
+  final _emailC = TextEditingController();
+  bool _loading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _emailC.dispose();
     super.dispose();
   }
 
-  Future<void> _sendResetLink() async {
-    final formState = _formKey.currentState;
-    if (formState == null || !formState.validate()) return;
+  Future<void> _submit() async {
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
 
-    setState(() => _isLoading = true);
+    setState(() => _loading = true);
+    final err = await AuthService.I.sendPasswordResetEmail(_emailC.text.trim());
+    if (!mounted) return;
+    setState(() => _loading = false);
 
-    try {
-      final email = _emailController.text.trim();
-      final success = await login_service.AuthService().forgotPassword(email);
-
-      if (!mounted) return;
-
-      final message = success
-          ? 'Link reset password telah dikirim ke email Anda'
-          : 'Gagal mengirim link reset. Mohon coba lagi.';
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: success ? Colors.green : Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-
-        if (success) {
-          await Future.delayed(const Duration(seconds: 2));
-          if (mounted) Navigator.pop(context);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Terjadi kesalahan: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (err == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Link reset password telah dikirim. Cek email Anda.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Arahkan ke layar verifikasi/info atau kembali ke login
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.verification,
+        arguments: _emailC.text.trim(),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background with gradient
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
-                ),
-              ),
-              child: SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 16.0,
-                  ),
-                ),
-              ),
-            ),
+      appBar: AppBar(title: const Text('Lupa Password')),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary, AppColors.backgroundDark],
           ),
-
-          // Content
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
                       children: [
-                        const SizedBox(height: 40),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            'assets/logo-white.png',
-                            width: 96,
-                            height: 96,
-                            fit: BoxFit.contain,
-                          ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Atur Ulang Password',
+                          style: theme.textTheme.titleLarge,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Masukkan email yang terdaftar. Kami akan mengirim link reset password.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
 
-                    // Title
-                    Text(
-                      'Lupa Password',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Masukkan email Anda untuk menerima link reset password',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface
-                            .withValues(
-                              red: 0.7,
-                              green: 0.7,
-                              blue: 0.7,
-                              alpha: 1.0,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Form container
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(
-                          0xFFFFFFFF,
-                        ).withAlpha((0.9 * 255).round()),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0x1A000000), // 10% opacity black (0.1 * 255 ≈ 26 = 0x1A)
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
+                        TextFormField(
+                          controller: _emailC,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email_outlined),
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Email input field
-                          Form(
-                            key: _formKey,
-                            child: TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: const TextStyle(color: Colors.black87),
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                                labelStyle: TextStyle(color: Colors.grey[700]),
-                                prefixIcon: Icon(
-                                  Icons.email,
-                                  color: Colors.grey[700],
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[400]!,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[400]!,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Email tidak boleh kosong';
-                                } else if (!RegExp(
-                                  r'^[^@]+@[^\s]+\.[^\s]+$',
-                                ).hasMatch(value)) {
-                                  return 'Email tidak valid';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty)
+                              return 'Email wajib diisi';
+                            if (!v.contains('@'))
+                              return 'Format email tidak valid';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
 
-                          const SizedBox(height: 20),
-
-                          // Submit Button
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _sendResetLink,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
-                            ),
-                            child: _isLoading
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _submit,
+                            child: _loading
                                 ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
+                                    width: 20,
+                                    height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Text(
-                                    'Kirim Link Reset',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                : const Text('Kirim Link Reset'),
                           ),
+                        ),
 
-                          const SizedBox(height: 12),
-
-                          // Back to Login
-                          TextButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => Navigator.pop(context),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                            ),
-                            child: Text(
-                              'Kembali ke halaman login',
-                              style: TextStyle(
-                                color: Colors.black,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: const Text('Kembali'),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

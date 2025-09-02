@@ -198,6 +198,14 @@ class LiveChatSocketService {
             return {'id': userId, 'userInfo': user};
           }).toList();
 
+          // Kirim pesan sistem bahwa user telah bergabung
+          _onSystem?.call({
+            'type': 'system',
+            'message': '🎉 Anda telah bergabung ke siaran',
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+
+          // Update daftar user online
           for (final u in users) {
             _onUserJoined?.call(channelName, u);
           }
