@@ -254,7 +254,7 @@ class LiveChatSocketService {
     try {
       await _pusher.subscribe(
         channelName: channelName,
-        onSubscriptionSucceeded: (String ch, dynamic data) {
+        onSubscriptionSucceeded: (data) {
           try {
             final payload = _eventMap(data);
             final presence = _asMap(payload['presence']);
@@ -265,24 +265,16 @@ class LiveChatSocketService {
             if (memberList is List) {
               for (final m in memberList) {
                 final mMap = _asMap(m);
-                final id = mMap['userId']?.toString() ?? mMap['id']?.toString();
-                if (id == null || id.isEmpty) continue;
-                final info = _asMap(mMap['userInfo'] ?? mMap);
-                members.add({'userId': id, 'userInfo': info});
-              }
-            } else {
-              final ids = presence['ids'];
-              final hash = _asMap(presence['hash']);
-              if (ids is List) {
-                for (final id in ids) {
+                final id = _toInt(mMap['user_id']);
+                if (id != null) {
                   final idStr = id.toString();
-                  final info = _asMap(hash[idStr]);
+                  final info = _asMap(mMap['user_info'] ?? {});
                   members.add({'userId': idStr, 'userInfo': info});
                 }
               }
             }
 
-            _onInitialMembers?.call(ch, members);
+            _onInitialMembers?.call(channelName, members);
           } catch (e) {
             debugPrint('Error parsing subscription success: $e');
           }
@@ -467,16 +459,18 @@ class LiveChatSocketService {
         _onSystem?.call({
           'type': 'system',
           'message':
-              '🎉 ${processedUser['userInfo']['name']} telah bergabung ke siaran',
+              '${processedUser['userInfo']['name']} telah bergabung ke siaran',
           'user': processedUser,
+          'isSubtle': true,
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else if (eventType == 'user.left') {
         _onSystem?.call({
           'type': 'system',
           'message':
-              '👋 ${processedUser['userInfo']['name']} telah meninggalkan siaran',
+              '${processedUser['userInfo']['name']} telah meninggalkan siaran',
           'user': processedUser,
+          'isSubtle': true,
           'timestamp': DateTime.now().toIso8601String(),
         });
       }
