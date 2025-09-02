@@ -328,7 +328,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     right: 0,
                     child: MessageInputField(
                       controller: _messageController,
-                      onSend: () => _sendMessage(prov),
+                      onSend: () async => _sendMessage(prov),
                     ),
                   ),
               ],
