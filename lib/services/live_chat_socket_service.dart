@@ -159,16 +159,20 @@ class LiveChatSocketService {
           });
         },
         onMemberAdded: (String channel, PusherMember member) {
-          _onUserJoined?.call(channel, {
+          final userData = {
             'userId': member.userId,
             'userInfo': member.userInfo,
-          });
+          };
+          _onUserJoined?.call(channel, userData);
+          _handlePresenceEvent('user.joined', channel, {'user': userData});
         },
         onMemberRemoved: (String channel, PusherMember member) {
-          _onUserLeft?.call(channel, {
+          final userData = {
             'userId': member.userId,
             'userInfo': member.userInfo,
-          });
+          };
+          _onUserLeft?.call(channel, userData);
+          _handlePresenceEvent('user.left', channel, {'user': userData});
         },
       );
     } catch (e) {
@@ -421,34 +425,22 @@ class LiveChatSocketService {
           'email': userInfo['email']?.toString(),
         },
       };
-
-      switch (eventType) {
-        case 'user.joined':
-          _onUserJoined?.call(channelName, processedUser);
-          _onSystem?.call({
-            'type': 'system',
-            'message':
-                '🎉 ${processedUser['userInfo']['name']} telah bergabung ke siaran',
-            'user': processedUser,
-            'timestamp': DateTime.now().toIso8601String(),
-          });
-          break;
-        case 'user.left':
-          _onUserLeft?.call(channelName, processedUser);
-          _onSystem?.call({
-            'type': 'system',
-            'message':
-                '👋 ${processedUser['userInfo']['name']} telah meninggalkan siaran',
-            'user': processedUser,
-            'timestamp': DateTime.now().toIso8601String(),
-          });
-          break;
-        case 'member_added':
-          _onUserJoined?.call(channelName, processedUser);
-          break;
-        case 'member_removed':
-          _onUserLeft?.call(channelName, processedUser);
-          break;
+      if (eventType == 'user.joined') {
+        _onSystem?.call({
+          'type': 'system',
+          'message':
+              '🎉 ${processedUser['userInfo']['name']} telah bergabung ke siaran',
+          'user': processedUser,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+      } else if (eventType == 'user.left') {
+        _onSystem?.call({
+          'type': 'system',
+          'message':
+              '👋 ${processedUser['userInfo']['name']} telah meninggalkan siaran',
+          'user': processedUser,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
       }
     } catch (e) {
       debugPrint('Error handling presence event: $e');
