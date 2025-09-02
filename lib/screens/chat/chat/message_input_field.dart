@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class MessageInputField extends StatefulWidget {
   final TextEditingController controller;
-  final VoidCallback onSend;
+  final Future<void> Function() onSend;
 
   const MessageInputField({
     super.key,
@@ -56,8 +56,8 @@ class _MessageInputFieldState extends State<MessageInputField> {
                 maxLines: null,
                 minLines: 1,
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) {
-                  if (_hasText) widget.onSend();
+                onSubmitted: (_) async {
+                  if (_hasText) await widget.onSend();
                 },
                 decoration: InputDecoration(
                   hintText: 'Ketik pesan...',
@@ -91,7 +91,11 @@ class _MessageInputFieldState extends State<MessageInputField> {
                     : Colors.grey,
                 shape: const CircleBorder(),
               ),
-              onPressed: _hasText ? widget.onSend : null,
+              onPressed: _hasText
+                  ? () async {
+                      await widget.onSend();
+                    }
+                  : null,
             ),
           ],
         ),
