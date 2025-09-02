@@ -34,16 +34,21 @@ class LiveChatProvider with ChangeNotifier {
   int _page = 1;
   final int _perPage = 20;
 
-  // connection/subscription guards
+  // socket flags
   bool _socketReady = false;
   bool _statusSubscribed = false;
-  bool _presenceSubscribed = false;
-  bool _publicSubscribed = false;
 
+  // dynamic room subscriptions
   int? _currentRoomId;
   int? get currentRoomId => _currentRoomId;
+  int? _subscribedPublicRoomId;
+  int? _subscribedPresenceRoomId;
 
-  // Track current user ID to prevent self-message duplicates
+  // dedupe
+  final Set<String> _seenMessageIds = {}; // track ID yang sudah tampil
+  final Set<String> _pendingTempIds = {}; // untuk optimistic UI
+
+  // user
   int? _currentUserId;
 
   bool _isInitialized = false;
@@ -53,20 +58,16 @@ class LiveChatProvider with ChangeNotifier {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    // 1) connect socket (sekali)
     if (!_socketReady) {
-      await _sock.connect();
+      await _sock.ensureConnected();
       _socketReady = true;
     }
 
-    // 2) pasang callbacks realtime (sekali aja, sebelum subscribe)
     _wireRealtimeCallbacks();
 
-    // 3) subscribe status & presence (sekali)
     await _subscribeStatusOnce();
-    await _subscribePresenceOnce();
 
-    // 4) initial HTTP load status + messages
+    // Initial status & messages
     await refreshStatus();
 
     _isInitialized = true;
@@ -75,74 +76,132 @@ class LiveChatProvider with ChangeNotifier {
   // === Realtime callbacks wiring ===
   void _wireRealtimeCallbacks() {
     _sock.setCallbacks(
-      onStatusUpdate: (data) {
-        // event: LiveRoomStatusUpdated
+      onStatusUpdate: (data) async {
         final isLive = data['is_live'] == true || data['status'] == 'started';
         _isLive = isLive;
 
         if (!isLive) {
           _messages.clear();
+          _onlineUsers.clear();
+          _seenMessageIds.clear();
           notifyListeners();
           return;
         }
 
-        // update roomId jika dikirim
-        final rid = data['roomId'] ?? data['room_id'];
-        if (rid is int) _currentRoomId = rid;
+        // Update roomId jika ada
+        final rid = _toInt(data['roomId'] ?? data['room_id']);
+        if (rid != 0) {
+          await _switchRoom(rid);
+        }
 
-        // saat live start → subscribe chat + tarik history awal
+        // reset pagination & fetch batch pertama
         _page = 1;
         _hasMore = true;
         _messages.clear();
+        _onlineUsers.clear();
+        _seenMessageIds.clear();
         notifyListeners();
-        _subscribePublicOnce();
-        loadMore();
+
+        await _subscribePublicIfNeeded();
+        await loadMore();
       },
+
+      onSystem: (data) {
+        // optional: tampilkan pesan sistem singkat
+        final msg = data['message']?.toString();
+        if (msg == null || msg.isEmpty) return;
+
+        final systemMessage = ChatMessage(
+          id: 'system-${DateTime.now().microsecondsSinceEpoch}',
+          username: 'System',
+          message: msg,
+          timestamp:
+              DateTime.tryParse('${data['timestamp']}') ?? DateTime.now(),
+          isSystemMessage: true,
+        );
+
+        // tampilkan sebagai item ringan (tidak mengganggu dedupe normal)
+        _messages.add(systemMessage);
+        notifyListeners();
+      },
+
       onUserJoined: (channel, user) {
-        final map = (user);
-        final id = (map['userId'] ?? '').toString();
-        if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
-          _onlineUsers.add(
-            OnlineUser(
-              id: id,
-              username:
-                  (map['userInfo']?['name'] ??
-                          map['userInfo']?['username'] ??
-                          'User')
-                      .toString(),
-              userAvatar:
-                  (map['userInfo']?['avatar'] ?? map['userInfo']?['photo'])
-                      ?.toString(),
-              joinTime: DateTime.now(),
-            ),
-          );
-          notifyListeners();
-        }
-      },
-      onUserLeft: (channel, user) {
-        final id = (user['userId'] ?? '').toString();
-        _onlineUsers.removeWhere((x) => x.id == id);
+        final userId = (user['userId'] ?? '').toString();
+        final userInfo = user['userInfo'] is Map
+            ? Map<String, dynamic>.from(user['userInfo'])
+            : <String, dynamic>{};
+        final username = userInfo['name']?.toString() ?? 'Unknown User';
+
+        if (_onlineUsers.any((u) => u.id == userId)) return;
+
+        _onlineUsers.add(
+          OnlineUser(
+            id: userId,
+            username: username,
+            userAvatar: userInfo['avatar']?.toString(),
+            joinTime: DateTime.now(),
+          ),
+        );
+
+        // notifikasi bergabung (opsional)
+        final joinMessage = ChatMessage(
+          id: 'join-$userId-${DateTime.now().microsecondsSinceEpoch}',
+          username: username,
+          message: 'telah bergabung ke ruang chat',
+          timestamp: DateTime.now(),
+          isJoinNotification: true,
+        );
+        _messages.add(joinMessage);
+
         notifyListeners();
       },
+
+      onUserLeft: (channel, user) {
+        final userId = (user['userId'] ?? '').toString();
+        final userInfo = user['userInfo'] is Map
+            ? Map<String, dynamic>.from(user['userInfo'])
+            : <String, dynamic>{};
+        final username = userInfo['name']?.toString() ?? 'User';
+
+        _onlineUsers.removeWhere((u) => u.id == userId);
+
+        // notifikasi keluar (opsional)
+        final leaveMessage = ChatMessage(
+          id: 'leave-$userId-${DateTime.now().microsecondsSinceEpoch}',
+          username: username,
+          message: 'telah meninggalkan ruang chat',
+          timestamp: DateTime.now(),
+          isSystemMessage: true,
+        );
+        _messages.add(leaveMessage);
+
+        notifyListeners();
+      },
+
       onMessage: (channel, messageData) {
         try {
+          if (channel == 'message.deleted') {
+            final delId = (messageData['id'] ?? '').toString();
+            if (delId.isNotEmpty) {
+              _messages.removeWhere((m) => m.id == delId);
+              _seenMessageIds.remove(delId);
+              notifyListeners();
+            }
+            return;
+          }
+
           final msg = LiveChatMessage.fromJson(messageData);
           final messageId = msg.id.toString();
 
-          // Skip if this is a message from the current user
+          // Skip messages from self (server echo)
           if (_currentUserId != null && msg.userId == _currentUserId) {
             return;
           }
 
-          // Skip if this is a pending message we're already handling
-          if (_pendingMessageIds.any((id) => messageId.contains(id))) {
-            return;
-          }
+          // Dedupe: skip jika sudah tampil
+          if (_seenMessageIds.contains(messageId)) return;
 
-          // Check for duplicates by ID
-          final isDuplicate = _messages.any((m) => m.id == messageId);
-          if (isDuplicate) return;
-
+          _seenMessageIds.add(messageId);
           _messages.add(
             ChatMessage(
               id: messageId,
@@ -153,14 +212,13 @@ class LiveChatProvider with ChangeNotifier {
             ),
           );
 
-          // Sort messages by timestamp to maintain order
+          // Urut kronologis
           _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
           notifyListeners();
-        } catch (e) {
-          rethrow;
+        } catch (_) {
+          // swallow
         }
       },
-      onSystem: (_) {},
     );
   }
 
@@ -169,23 +227,22 @@ class LiveChatProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final s = await _http.fetchGlobalStatus(); // <-- pakai endpoint global
+      final s = await _http.fetchGlobalStatus();
       _isLive = s.isLive;
-      _currentRoomId = s.roomId ?? roomId;
+      final rid = s.roomId ?? roomId;
+      await _switchRoom(rid);
 
       if (_isLive) {
         _page = 1;
         _hasMore = true;
         _messages.clear();
-        await _subscribePublicOnce();
+        _seenMessageIds.clear();
+        await _subscribePublicIfNeeded();
         await loadMore();
       } else {
         _messages.clear();
+        _seenMessageIds.clear();
       }
-    } catch (e) {
-      _isLive = false;
-      _messages.clear();
-      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -198,30 +255,38 @@ class LiveChatProvider with ChangeNotifier {
     _statusSubscribed = true;
   }
 
-  // ==== PRESENCE ====
-  Future<void> _subscribePresenceOnce() async {
-    if (_presenceSubscribed) return;
-    await _sock.subscribeToPresence(roomId);
-    _presenceSubscribed = true;
+  // ==== ROOM SWITCHING & SUBSCRIPTIONS ====
+  Future<void> _switchRoom(int rid) async {
+    if (_currentRoomId == rid) return;
+
+    // Unsubscribe old channels (public & presence)
+    if (_subscribedPublicRoomId != null) {
+      await _sock.unsubscribePublic(_subscribedPublicRoomId!);
+      _subscribedPublicRoomId = null;
+    }
+    if (_subscribedPresenceRoomId != null) {
+      await _sock.unsubscribePresence(_subscribedPresenceRoomId!);
+      _subscribedPresenceRoomId = null;
+    }
+
+    _currentRoomId = rid;
+
+    // Subscribe new presence untuk room baru
+    await _subscribePresenceIfNeeded();
   }
 
-  // ==== PUBLIC CHAT (REALTIME) ====
-  Future<void> _subscribePublicOnce() async {
-    if (_publicSubscribed) return;
+  Future<void> _subscribePresenceIfNeeded() async {
     final rid = _currentRoomId ?? roomId;
+    if (_subscribedPresenceRoomId == rid) return;
+    await _sock.subscribeToPresence(rid);
+    _subscribedPresenceRoomId = rid;
+  }
 
-    _isLoading = true;
-    notifyListeners();
-
-    try {
-      await _sock.subscribeToChat(rid);
-      _publicSubscribed = true;
-    } catch (e) {
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  Future<void> _subscribePublicIfNeeded() async {
+    final rid = _currentRoomId ?? roomId;
+    if (_subscribedPublicRoomId == rid) return;
+    await _sock.subscribeToChat(rid);
+    _subscribedPublicRoomId = rid;
   }
 
   // ==== HISTORY (HTTP + PAGINATION) ====
@@ -235,34 +300,38 @@ class LiveChatProvider with ChangeNotifier {
         page: _page,
         perPage: _perPage,
       );
+
       if (items.isEmpty) {
         _hasMore = false;
       } else {
         final newMsgs = items
-            .map(
-              (m) => ChatMessage(
+            .where((m) {
+              final idStr = m.id.toString();
+              if (_seenMessageIds.contains(idStr)) return false;
+              _seenMessageIds.add(idStr);
+              return true;
+            })
+            .map((m) {
+              return ChatMessage(
                 id: m.id.toString(),
                 username: m.name,
                 message: m.message,
                 timestamp: m.timestamp,
                 userAvatar: m.avatar,
-              ),
-            )
+              );
+            })
             .toList();
-        _messages.insertAll(0, newMsgs); // older first, prepend
+
+        // prepend agar urutan tetap kronologis (older duluan)
+        _messages.insertAll(0, newMsgs);
         _page++;
       }
-    } catch (e) {
-      rethrow;
     } finally {
       notifyListeners();
     }
   }
 
   // ==== SEND (HTTP; optimistic UI) ====
-  final Set<String> _pendingMessageIds = {};
-
-  // Set current user ID after login
   void setCurrentUserId(int userId) {
     _currentUserId = userId;
   }
@@ -271,13 +340,13 @@ class LiveChatProvider with ChangeNotifier {
     final t = text.trim();
     if (t.isEmpty || !_isLive) return;
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = 'temp_${DateTime.now().microsecondsSinceEpoch}';
     final now = DateTime.now();
 
-    // Add to pending set
-    _pendingMessageIds.add(tempId);
+    _pendingTempIds.add(tempId);
 
-    // optimistic update
+    // Optimistic add
+    _seenMessageIds.add(tempId);
     _messages.add(
       ChatMessage(id: tempId, username: username, message: t, timestamp: now),
     );
@@ -286,18 +355,20 @@ class LiveChatProvider with ChangeNotifier {
     try {
       final sent = await _http.sendMessage(_currentRoomId ?? roomId, t);
 
-      // Remove the temporary message
+      // Remove temp
       _messages.removeWhere((m) => m.id == tempId);
-      // Check if the confirmed message already exists
+      _seenMessageIds.remove(tempId);
+
       final finalId = sent.id.toString();
-      if (_messages.any((m) => m.id == finalId)) {
-        _pendingMessageIds.remove(tempId);
+      if (_seenMessageIds.contains(finalId)) {
+        // sudah masuk via socket
+        _pendingTempIds.remove(tempId);
         _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
         notifyListeners();
         return;
       }
 
-      // Add the confirmed message from server
+      _seenMessageIds.add(finalId);
       _messages.add(
         ChatMessage(
           id: finalId,
@@ -308,17 +379,14 @@ class LiveChatProvider with ChangeNotifier {
         ),
       );
 
-      // Remove from pending set
-      _pendingMessageIds.remove(tempId);
-
-      // Sort messages by timestamp to maintain order
+      _pendingTempIds.remove(tempId);
       _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
       notifyListeners();
     } catch (e) {
-      // rollback optimistic update
+      // rollback
       _messages.removeWhere((m) => m.id == tempId);
-      _pendingMessageIds.remove(tempId);
+      _seenMessageIds.remove(tempId);
+      _pendingTempIds.remove(tempId);
       notifyListeners();
       rethrow;
     }
@@ -332,16 +400,19 @@ class LiveChatProvider with ChangeNotifier {
     if (diff.inHours < 1) return '${diff.inMinutes} menit lalu';
     if (diff.inDays < 1) return '${diff.inHours} jam lalu';
     return '${diff.inDays} hari lalu';
-    // (opsional: pakai intl untuk format yang lebih bagus)
   }
 
   // ==== LIFECYCLE ====
   Future<void> shutdown() async {
     try {
-      await _sock.unsubscribePublic(_currentRoomId ?? roomId);
+      if (_subscribedPublicRoomId != null) {
+        await _sock.unsubscribePublic(_subscribedPublicRoomId!);
+      }
     } catch (_) {}
     try {
-      await _sock.unsubscribePresence(roomId);
+      if (_subscribedPresenceRoomId != null) {
+        await _sock.unsubscribePresence(_subscribedPresenceRoomId!);
+      }
     } catch (_) {}
     try {
       await _sock.unsubscribeStatus();
@@ -349,5 +420,18 @@ class LiveChatProvider with ChangeNotifier {
     try {
       await _sock.disconnect();
     } catch (_) {}
+
+    _subscribedPublicRoomId = null;
+    _subscribedPresenceRoomId = null;
+    _statusSubscribed = false;
+    _socketReady = false;
+  }
+
+  // ==== helpers ====
+  int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
   }
 }

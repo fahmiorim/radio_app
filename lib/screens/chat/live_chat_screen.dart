@@ -25,6 +25,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   int _firstUnreadIndex = -1;
   int _lastMessageCount = 0;
   Timer? _scrollTimer;
+  bool _didInit = false;
 
   bool _isCurrentUser(String username) {
     final user = Provider.of<UserProvider>(context, listen: false).user;
@@ -37,28 +38,45 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    final userId = context.read<UserProvider>().user?.id;
-    if (userId != null) {
-      context.read<LiveChatProvider>().setCurrentUserId(userId);
-    }
+
+    // Inisialisasi provider & userId setelah frame pertama
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prov = context.read<LiveChatProvider>();
+      if (!_didInit) {
+        // set current user id untuk anti-duplikasi self-echo
+        final userId = context.read<UserProvider>().user?.id;
+        if (userId != null) {
+          prov.setCurrentUserId(userId);
+        }
+        await prov.init(); // subscribe socket + load status & messages
+        _didInit = true;
+
+        // auto-scroll ke bawah di load awal
+        _scrollToBottom();
+      }
+    });
   }
 
   void _handleScroll() {
     final prov = context.read<LiveChatProvider>();
 
+    // infinite scroll ke atas untuk history
     if (_scrollController.offset <=
             _scrollController.position.minScrollExtent + 200 &&
         !_scrollController.position.outOfRange) {
       prov.loadMore();
     }
 
+    // debounce kecil untuk status "scrolled up"
     _scrollTimer?.cancel();
-    _scrollTimer = Timer(const Duration(milliseconds: 200), () {
+    _scrollTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted || !_scrollController.hasClients) return;
+
       final isScrolledUp =
           _scrollController.offset <
           _scrollController.position.maxScrollExtent - 100;
 
-      if (!mounted) return;
       setState(() {
         _isUserScrolledUp = isScrolledUp;
         if (!isScrolledUp) _firstUnreadIndex = -1;
@@ -79,9 +97,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     final messages = context.read<LiveChatProvider>().messages;
     if (_firstUnreadIndex == -1 || !_scrollController.hasClients) return;
 
+    // Perkiraan tinggi item 70 px; jika kamu punya ukuran dinamis,
+    // bisa ganti pakai sliver/anchor atau itemExtent custom.
+    final approxItemExtent = 70.0;
     final offset =
         _scrollController.position.maxScrollExtent -
-        (messages.length - _firstUnreadIndex) * 70;
+        (messages.length - _firstUnreadIndex) * approxItemExtent;
 
     _scrollController.animateTo(
       offset.clamp(
@@ -101,7 +122,10 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     try {
       await prov.send(text, username: userName);
       _messageController.clear();
-      _scrollToBottom();
+      // scroll ke bawah hanya jika user tidak sedang baca pesan lama
+      if (!_isUserScrolledUp) {
+        _scrollToBottom();
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -179,7 +203,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       },
       child: Consumer<LiveChatProvider>(
         builder: (context, prov, _) {
-          if (prov.isLoading) {
+          if (prov.isLoading && prov.messages.isEmpty) {
             return Scaffold(
               appBar: AppBar(title: const Text('Live Chat')),
               body: const Center(child: CircularProgressIndicator()),
@@ -187,13 +211,18 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
           }
 
           final messages = prov.messages;
+
+          // Hitung unread: saat user lagi scroll up dan ada pesan baru masuk
           if (!_isUserScrolledUp) {
             _firstUnreadIndex = -1;
+            // auto-scroll ke bawah ketika ada pesan baru dan user tidak scroll up
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) _scrollToBottom();
             });
           } else if (messages.length > _lastMessageCount &&
-              _firstUnreadIndex == -1) {
+              _firstUnreadIndex == -1 &&
+              _lastMessageCount > 0) {
+            // tandai posisi unread pertama hanya jika sebelumnya sudah ada pesan
             _firstUnreadIndex = _lastMessageCount;
           }
           _lastMessageCount = messages.length;
@@ -256,6 +285,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       );
                     },
                   ),
+
+                // Tombol lompat ke pesan baru saat user scroll up
                 if (_isUserScrolledUp && unreadCount > 0)
                   Positioned(
                     bottom: 80,
@@ -288,6 +319,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       ),
                     ),
                   ),
+
+                // Input hanya saat live
                 if (prov.isLive)
                   Positioned(
                     bottom: 0,
@@ -309,9 +342,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   void dispose() {
     _scrollController.removeListener(_handleScroll);
+    _scrollTimer?.cancel();
     _scrollController.dispose();
     _messageController.dispose();
-    _scrollTimer?.cancel();
     super.dispose();
   }
 }

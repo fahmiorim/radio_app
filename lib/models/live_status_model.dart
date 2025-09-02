@@ -19,23 +19,32 @@ class LiveChatStatus {
     this.roomId,
   });
 
-  static int _toInt(dynamic v) =>
-      v is int ? v : int.tryParse(v?.toString() ?? '') ?? 0;
+  static int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    final s = v.toString();
+    return int.tryParse(s) ?? double.tryParse(s)?.toInt() ?? 0;
+  }
+
+  static DateTime? _toDate(dynamic v) {
+    if (v == null) return null;
+    if (v is DateTime) return v.toLocal();
+    final s = v.toString();
+    try {
+      return DateTime.parse(s).toLocal();
+    } catch (_) {
+      return null;
+    }
+  }
 
   factory LiveChatStatus.fromJson(Map<String, dynamic> json) {
-    DateTime? started;
-    final raw = json['started_at'];
-    if (raw is String && raw.isNotEmpty) {
-      try {
-        started = DateTime.parse(raw).toLocal(); // ISO + offset: aman
-      } catch (_) {}
-    }
-
     return LiveChatStatus(
-      isLive: json['is_live'] == true,
+      isLive:
+          json['is_live'] == true || json['status']?.toString() == 'started',
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
-      startedAt: started,
+      startedAt: _toDate(json['started_at']),
       likes: _toInt(json['likes']),
       liked: json['liked'] == true,
       listenerCount: _toInt(json['listener_count']),

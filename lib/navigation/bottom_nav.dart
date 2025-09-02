@@ -86,6 +86,7 @@ class _BottomNavState extends State<BottomNav> {
           unselectedItemColor: Colors.grey,
           onTap: (index) async {
             if (index == 3) {
+              if (!mounted) return;
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -96,12 +97,12 @@ class _BottomNavState extends State<BottomNav> {
                 ),
               );
 
-              if (result == 'goHome') {
+              if (mounted && result == 'goHome') {
                 setState(() {
                   _currentIndex = 0;
                 });
               }
-            } else {
+            } else if (mounted) {
               setState(() {
                 _currentIndex = index;
               });

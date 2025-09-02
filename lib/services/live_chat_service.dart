@@ -20,8 +20,6 @@ class LiveChatService {
     };
   }
 
-  void _ensure() => ApiClient.I.ensureInterceptors();
-
   Map<String, dynamic> _asMap(dynamic raw) {
     if (raw is Map) return Map<String, dynamic>.from(raw);
     return <String, dynamic>{};
@@ -38,6 +36,8 @@ class LiveChatService {
     return d?.toInt() ?? 0;
   }
 
+  void _ensure() => ApiClient.I.ensureInterceptors();
+
   Future<LiveChatStatus> fetchGlobalStatus() async {
     _ensure();
     final headers = await _authHeaders();
@@ -52,19 +52,17 @@ class LiveChatService {
 
     final code = res.statusCode ?? 0;
     final body = _asMap(res.data);
-    if (code == 200 && body['status'] == true) {
+    if (code == 200 && (body['status'] == true || body['success'] == true)) {
       final data = _asMap(body['data']);
       final liveRoom = _asMap(data['live_room']);
-      // bangun LiveChatStatus dari schema global
       return LiveChatStatus.fromJson({
         'is_live': data['is_live'],
-        'title': liveRoom['judul'],
-        'description': liveRoom['description'],
+        'title': liveRoom['judul'] ?? liveRoom['title'],
+        'description': liveRoom['description'] ?? liveRoom['deskripsi'],
         'started_at': liveRoom['started_at'],
         'likes': 0,
         'liked': false,
         'listener_count': 0,
-        // tambahkan room_id agar provider bisa tahu channel chat
         'room_id': liveRoom['id'],
       });
     }
@@ -81,7 +79,6 @@ class LiveChatService {
   }) async {
     try {
       _ensure();
-
       final headers = await _authHeaders();
       final res = await _dio.get<dynamic>(
         '/api/live-chat/$roomId/fetch',
@@ -91,7 +88,6 @@ class LiveChatService {
         },
         options: Options(
           headers: headers,
-          // Anggap 4xx akan diproses manual (tidak dilempar sebagai DioError)
           validateStatus: (s) => s != null && s < 500,
           followRedirects: false,
         ),
@@ -100,14 +96,13 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
 
-      if (code == 200 && body['success'] == true) {
+      if (code == 200 && (body['success'] == true || body['status'] == true)) {
         final list = (body['data'] as List? ?? const []);
         return list
             .map((e) => LiveChatMessage.fromJson(_asMap(e)))
             .toList(growable: false);
       }
 
-      // Tangani 4xx dengan pesan yang jelas
       final msg =
           body['message']?.toString() ??
           'Failed to fetch messages (HTTP $code)';
@@ -118,8 +113,6 @@ class LiveChatService {
       throw Exception(
         'Network error fetching messages (HTTP $code): ${data ?? e.message}',
       );
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -138,7 +131,7 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
 
-      if (code == 200 && body['success'] == true) {
+      if (code == 200 && (body['success'] == true || body['status'] == true)) {
         final data = _asMap(body['data']);
         return LiveChatStatus.fromJson(data);
       }
@@ -160,11 +153,14 @@ class LiveChatService {
   Future<LiveChatMessage> sendMessage(int roomId, String text) async {
     try {
       _ensure();
-
       final headers = await _authHeaders();
+
+      // kirim juga client_id untuk dedupe di server (jika server mendukung)
+      final clientId = 'c_${DateTime.now().microsecondsSinceEpoch}';
+
       final res = await _dio.post<dynamic>(
         '/api/live-chat/$roomId/send',
-        data: {'message': text},
+        data: {'message': text, 'client_id': clientId},
         options: Options(
           headers: headers,
           validateStatus: (s) => s != null && s < 500,
@@ -175,15 +171,14 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
 
-      if ((code == 200 || code == 201) && body['success'] == true) {
+      if ((code == 200 || code == 201) &&
+          (body['success'] == true || body['status'] == true)) {
         final data = _asMap(body['data']);
         return LiveChatMessage.fromJson(data);
       }
-
       if (code == 401 || code == 403) {
         throw Exception('Unauthorized');
       }
-
       final msg =
           body['message']?.toString() ?? 'Failed to send message (HTTP $code)';
       throw Exception(msg);
@@ -193,8 +188,6 @@ class LiveChatService {
       throw Exception(
         'Network error sending message (HTTP $code): ${data ?? e.message}',
       );
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -213,7 +206,7 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
 
-      if (code == 200 && body['success'] == true) {
+      if (code == 200 && (body['success'] == true || body['status'] == true)) {
         return {'liked': body['liked'] == true, 'likes': _toInt(body['likes'])};
       }
       if (code == 401 || code == 403) {
@@ -247,7 +240,7 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
 
-      if (code == 200 && body['success'] == true) {
+      if (code == 200 && (body['success'] == true || body['status'] == true)) {
         return {
           'listenerId': body['listener_id'],
           'listenerCount': _toInt(body['listener_count']),
@@ -283,7 +276,7 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
 
-      if (code == 200 && body['success'] == true) {
+      if (code == 200 && (body['success'] == true || body['status'] == true)) {
         return _toInt(body['listener_count']);
       }
       if (code == 401 || code == 403) {
