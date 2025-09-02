@@ -459,7 +459,7 @@ class LiveChatSocketService {
         _onSystem?.call({
           'type': 'system',
           'message':
-              '${processedUser['userInfo']['name']} telah bergabung ke siaran',
+              '🎉 ${processedUser['userInfo']['name']} bergabung',
           'user': processedUser,
           'isSubtle': true,
           'timestamp': DateTime.now().toIso8601String(),
@@ -468,7 +468,7 @@ class LiveChatSocketService {
         _onSystem?.call({
           'type': 'system',
           'message':
-              '${processedUser['userInfo']['name']} telah meninggalkan siaran',
+              '👋 ${processedUser['userInfo']['name']} keluar',
           'user': processedUser,
           'isSubtle': true,
           'timestamp': DateTime.now().toIso8601String(),

@@ -162,39 +162,12 @@ class LiveChatProvider with ChangeNotifier {
             joinTime: DateTime.now(),
           ),
         );
-
-        // notifikasi bergabung (opsional)
-        final joinMessage = ChatMessage(
-          id: 'join-$userId-${DateTime.now().microsecondsSinceEpoch}',
-          username: username,
-          message: 'telah bergabung ke ruang chat',
-          timestamp: DateTime.now(),
-          isJoinNotification: true,
-        );
-        _messages.add(joinMessage);
-
         notifyListeners();
       },
 
       onUserLeft: (channel, user) {
         final userId = (user['userId'] ?? '').toString();
-        final userInfo = user['userInfo'] is Map
-            ? Map<String, dynamic>.from(user['userInfo'])
-            : <String, dynamic>{};
-        final username = userInfo['name']?.toString() ?? 'User';
-
         _onlineUsers.removeWhere((u) => u.id == userId);
-
-        // notifikasi keluar (opsional)
-        final leaveMessage = ChatMessage(
-          id: 'leave-$userId-${DateTime.now().microsecondsSinceEpoch}',
-          username: username,
-          message: 'telah meninggalkan ruang chat',
-          timestamp: DateTime.now(),
-          isSystemMessage: true,
-        );
-        _messages.add(leaveMessage);
-
         notifyListeners();
       },
 
