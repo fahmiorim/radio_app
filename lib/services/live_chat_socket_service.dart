@@ -25,6 +25,7 @@ class LiveChatSocketService {
   Function(String, Map<String, dynamic>)? _onMessage;
   Function(Map<String, dynamic>)? _onStatusUpdate;
   Function(Map<String, dynamic>)? _onSystem;
+  Function(String, List<Map<String, dynamic>>)? _onInitialMembers;
 
   void setCallbacks({
     Function(String, Map<String, dynamic>)? onUserJoined,
@@ -32,12 +33,14 @@ class LiveChatSocketService {
     Function(String, Map<String, dynamic>)? onMessage,
     Function(Map<String, dynamic>)? onStatusUpdate,
     Function(Map<String, dynamic>)? onSystem,
+    Function(String, List<Map<String, dynamic>>)? onInitialMembers,
   }) {
     _onUserJoined = onUserJoined;
     _onUserLeft = onUserLeft;
     _onMessage = onMessage;
     _onStatusUpdate = onStatusUpdate;
     _onSystem = onSystem;
+    _onInitialMembers = onInitialMembers;
   }
 
   // ===== Connection =====
@@ -245,7 +248,42 @@ class LiveChatSocketService {
     if (_presenceChannels[channelName] == true) return;
 
     try {
-      await _pusher.subscribe(channelName: channelName);
+      await _pusher.subscribe(
+        channelName: channelName,
+        onSubscriptionSucceeded: (String ch, dynamic data) {
+          try {
+            final payload = _eventMap(data);
+            final presence = _asMap(payload['presence']);
+
+            final List<Map<String, dynamic>> members = [];
+
+            final memberList = presence['members'];
+            if (memberList is List) {
+              for (final m in memberList) {
+                final mMap = _asMap(m);
+                final id = mMap['userId']?.toString() ?? mMap['id']?.toString();
+                if (id == null || id.isEmpty) continue;
+                final info = _asMap(mMap['userInfo'] ?? mMap);
+                members.add({'userId': id, 'userInfo': info});
+              }
+            } else {
+              final ids = presence['ids'];
+              final hash = _asMap(presence['hash']);
+              if (ids is List) {
+                for (final id in ids) {
+                  final idStr = id.toString();
+                  final info = _asMap(hash[idStr]);
+                  members.add({'userId': idStr, 'userInfo': info});
+                }
+              }
+            }
+
+            _onInitialMembers?.call(ch, members);
+          } catch (e) {
+            debugPrint('Error parsing subscription success: $e');
+          }
+        },
+      );
       _presenceChannels[channelName] = true;
     } catch (e) {
       if (_isAlreadySubscribedError(e)) {

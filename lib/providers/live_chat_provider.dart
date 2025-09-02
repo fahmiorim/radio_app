@@ -125,6 +125,26 @@ class LiveChatProvider with ChangeNotifier {
         notifyListeners();
       },
 
+      onInitialMembers: (channel, members) {
+        _onlineUsers
+          ..clear()
+          ..addAll(members.map((user) {
+            final userId = (user['userId'] ?? '').toString();
+            final userInfo = user['userInfo'] is Map
+                ? Map<String, dynamic>.from(user['userInfo'])
+                : <String, dynamic>{};
+            final username = userInfo['name']?.toString() ?? 'Unknown User';
+
+            return OnlineUser(
+              id: userId,
+              username: username,
+              userAvatar: userInfo['avatar']?.toString(),
+              joinTime: DateTime.now(),
+            );
+          }));
+        notifyListeners();
+      },
+
       onUserJoined: (channel, user) {
         final userId = (user['userId'] ?? '').toString();
         final userInfo = user['userInfo'] is Map
