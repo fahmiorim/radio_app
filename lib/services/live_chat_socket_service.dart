@@ -197,8 +197,25 @@ class LiveChatSocketService {
         );
         if ((response.statusCode ?? 0) >= 200 &&
             (response.statusCode ?? 0) < 300) {
-          return response.data ?? {};
+          final data = response.data ?? {};
+          final auth = data['auth'];
+          final channelData = data['channel_data'];
+          if (auth is String && channelData is String) {
+            try {
+              final decoded = jsonDecode(channelData);
+              if (decoded is Map &&
+                  decoded['user_id'] != null &&
+                  decoded['user_info'] != null) {
+                return {'auth': auth, 'channel_data': channelData};
+              }
+            } catch (e) {
+              debugPrint('Invalid channel_data: $e');
+            }
+          }
+          throw Exception('Auth response missing required fields');
         }
+        debugPrint(
+            'Auth failed: status=${response.statusCode} body=${response.data}');
         throw Exception('Auth failed: ${response.statusMessage}');
       }
       return {};

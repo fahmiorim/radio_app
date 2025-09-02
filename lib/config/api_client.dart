@@ -115,6 +115,9 @@ class ApiClient {
           }
           if (token != null) {
             options.headers['X-XSRF-TOKEN'] = token;
+            // Beberapa endpoint (seperti /broadcasting/auth) juga
+            // mengharapkan header X-CSRF-TOKEN secara eksplisit.
+            options.headers['X-CSRF-TOKEN'] = token;
           }
           handler.next(options);
         },
