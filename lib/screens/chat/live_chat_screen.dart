@@ -8,6 +8,7 @@ import 'chat/chat_message_item.dart';
 import 'chat/message_input_field.dart';
 import 'chat/unread_messages_label.dart';
 import 'chat/no_live_placeholder.dart';
+import 'chat/system_message_item.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;
@@ -266,23 +267,32 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final message = messages[index];
+                      final isSystem =
+                          message.isSystemMessage || message.isJoinNotification;
+
+                      final displayText =
+                          (isSystem && message.username != 'System')
+                              ? '${message.username} ${message.message}'
+                              : message.message;
+
+                      final messageWidget = isSystem
+                          ? SystemMessageItem(message: displayText)
+                          : ChatMessageItem(
+                              message: message,
+                              isCurrentUser:
+                                  _isCurrentUser(message.username),
+                              time: prov.formatTime(message.timestamp),
+                            );
+
                       if (_isUserScrolledUp && index == _firstUnreadIndex) {
                         return Column(
                           children: [
                             UnreadMessagesLabel(count: unreadCount),
-                            ChatMessageItem(
-                              message: message,
-                              isCurrentUser: _isCurrentUser(message.username),
-                              time: prov.formatTime(message.timestamp),
-                            ),
+                            messageWidget,
                           ],
                         );
                       }
-                      return ChatMessageItem(
-                        message: message,
-                        isCurrentUser: _isCurrentUser(message.username),
-                        time: prov.formatTime(message.timestamp),
-                      );
+                      return messageWidget;
                     },
                   ),
 
