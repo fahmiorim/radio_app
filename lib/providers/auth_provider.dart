@@ -131,54 +131,29 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// === GOOGLE LOGIN BARU ===
-  /// 1) Sign-in Google → dapat Google tokens
-  /// 2) Buat Firebase credential → sign-in Firebase (agar dapat idToken)
-  /// 3) Kirim idToken ke backend → tukar dengan token aplikasi + user
+  /// Login dengan Google melalui [AuthService]
   Future<String?> loginWithGoogle() async {
     _loading = true;
     notifyListeners();
 
     try {
-      // 1) Pilih akun Google
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        return 'Login dibatalkan';
-      }
-
-      // 2) Ambil token Google
-      final googleAuth = await googleUser.authentication;
-
-      // 3) Login ke Firebase (supaya dapat Firebase ID token yang valid)
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: googleAuth.accessToken,
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
-
-      // 4) Ambil Firebase ID token
-      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-      if (idToken == null) {
-        return 'Gagal mengambil ID token';
-      }
-
-      // 5) Tukar idToken ke backend → dapat token app + user
-      final result = await AuthService.I.exchangeGoogleIdToken(idToken);
+      final result = await AuthService.I.loginWithGoogle();
 
       if (result.status && result.token != null && result.user != null) {
         _token = result.token;
         _user = result.user;
 
+        // simpan token supaya auto-login
         await const FlutterSecureStorage().write(
           key: 'user_token',
           value: _token,
         );
 
         notifyListeners();
-        return null; // success
-      } else {
-        return result.message ?? 'Login gagal';
+        return null;
       }
+
+      return result.message ?? 'Login gagal';
     } catch (e) {
       return 'Terjadi kesalahan: $e';
     } finally {
