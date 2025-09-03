@@ -140,30 +140,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1) Pilih akun Google
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        return 'Login dibatalkan';
-      }
-
-      // 2) Ambil token Google
-      final googleAuth = await googleUser.authentication;
-
-      // 3) Login ke Firebase (supaya dapat Firebase ID token yang valid)
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: googleAuth.accessToken,
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
-
-      // 4) Ambil Firebase ID token
-      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-      if (idToken == null) {
-        return 'Gagal mengambil ID token';
-      }
-
-      // 5) Tukar idToken ke backend → dapat token app + user
-      final result = await AuthService.I.exchangeGoogleIdToken(idToken);
+      final result = await AuthService.I.loginWithGoogle();
 
       if (result.status && result.token != null && result.user != null) {
         _token = result.token;
@@ -177,9 +154,15 @@ class AuthProvider with ChangeNotifier {
         notifyListeners();
         return null; // success
       } else {
+        await AuthService.I.logout();
+        _token = null;
+        _user = null;
         return result.message ?? 'Login gagal';
       }
     } catch (e) {
+      await AuthService.I.logout();
+      _token = null;
+      _user = null;
       return 'Terjadi kesalahan: $e';
     } finally {
       _loading = false;
