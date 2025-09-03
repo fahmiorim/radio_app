@@ -153,8 +153,10 @@ class AuthProvider with ChangeNotifier {
         return null;
       }
 
+      await AuthService.I.logout();
       return result.message ?? 'Login gagal';
     } catch (e) {
+      await AuthService.I.logout();
       return 'Terjadi kesalahan: $e';
     } finally {
       _loading = false;
