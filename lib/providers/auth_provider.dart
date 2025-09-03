@@ -122,7 +122,13 @@ class AuthProvider with ChangeNotifier {
 
     // pastikan juga sign-out Google/Firebase (biar bersih)
     try {
-      await GoogleSignIn().signOut();
+      await GoogleSignIn(
+        clientId: '', // If you need web support, provide the web client ID here
+        scopes: [
+          'email',
+          'profile',
+        ],
+      ).signOut();
     } catch (_) {}
     try {
       await FirebaseAuth.instance.signOut();

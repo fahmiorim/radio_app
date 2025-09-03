@@ -46,7 +46,7 @@ dependencies:
   intl: ^0.19.0
   firebase_auth: ^6.0.2
   firebase_core: ^4.1.0
-  google_sign_in: ^7.1.1
+  google_sign_in: ^6.1.2
   flutter_html: ^3.0.0
   logger: ^2.1.0
   http: ^1.2.2

@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 import '../config/api_client.dart';
@@ -279,7 +278,16 @@ class AuthService {
       // 4) Ambil Firebase ID token
       String idToken;
       try {
-        idToken = await fbUser.getIdToken();
+        final token = await fbUser.getIdToken();
+        if (token == null) {
+          _logger.e('Firebase ID token is null');
+          await logout();
+          return const AuthResult(
+            status: false,
+            message: 'Gagal mendapatkan token dari Firebase',
+          );
+        }
+        idToken = token;
       } catch (e, st) {
         _logger.e('Failed to get Firebase ID token: $e', stackTrace: st);
         await logout();
