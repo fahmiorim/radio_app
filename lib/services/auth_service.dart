@@ -247,21 +247,27 @@ class AuthService {
     try {
       _logger.i('1) Mulai login Google');
 
-      // 1) Coba silent login dulu
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) {
-        _logger.w('User membatalkan Google Sign-In');
-        return const AuthResult(
-          status: false,
-          message: 'Login dengan Google dibatalkan',
-        );
+      // 2) Coba silent sign-in terlebih dahulu, jika gagal baru interaktif
+      GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      if (googleUser != null) {
+        _logger.i('2) Silent sign-in berhasil: ${googleUser.email}');
+      } else {
+        _logger.i('2) Silent sign-in gagal, membuka Google Sign-In interaktif');
+        googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          _logger.w('User membatalkan Google Sign-In');
+          return const AuthResult(
+            status: false,
+            message: 'Login dengan Google dibatalkan',
+          );
+        }
+        _logger.i('2) Google user: ${googleUser.email}');
       }
-      _logger.i('Google user: ${googleUser.email}');
 
-      // 2) Ambil token Google
+      // 3) Ambil token Google
       final googleAuth = await googleUser.authentication;
 
-      // 3) Buat credential & login ke Firebase
+      // 4) Buat credential & login ke Firebase
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
         accessToken: googleAuth.accessToken,
@@ -275,7 +281,7 @@ class AuthService {
         );
       }
 
-      // 4) Ambil Firebase ID token
+      // 5) Ambil Firebase ID token
       final idToken = await fbUser.getIdToken();
       if (idToken == null) {
         await logout();
@@ -285,7 +291,7 @@ class AuthService {
         );
       }
 
-      // 5) Verifikasi ke backend → terima token & user
+      // 6) Verifikasi ke backend → terima token & user
       final backendData = await verifyWithBackend(idToken);
       final token = backendData['token']?.toString();
       if (token == null || token.isEmpty) {
