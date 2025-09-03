@@ -68,13 +68,58 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Placeholder untuk Google Sign-In (akan diisi nanti)
+  // Fungsi untuk login dengan Google
   Future<void> _signInWithGoogle() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login Google akan diaktifkan setelah setup.'),
-      ),
-    );
+    try {
+      final auth = context.read<AuthProvider>();
+      final errorMessage = await auth.loginWithGoogle();
+
+      if (!mounted) return;
+
+      if (errorMessage == null) {
+        // Login berhasil
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 10),
+                Text('Login dengan Google berhasil'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Beri jeda kecil biar snackbar kebaca
+        await Future.delayed(const Duration(milliseconds: 800));
+
+        if (!mounted) return;
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.bottomNav, 
+          (route) => false,
+        );
+      } else {
+        // Gagal login
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   // Handle back button pada Android
@@ -324,52 +369,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: double.infinity,
                                   height: 50,
                                   child: OutlinedButton.icon(
-                                    onPressed: loading
-                                        ? null
-                                        : _signInWithGoogle,
+                                    onPressed: loading ? null : _signInWithGoogle,
                                     icon: Image.asset(
                                       'assets/google.png',
                                       height: 24,
+                                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 24),
                                     ),
-                                    label: const Text(
-                                      'Masuk dengan Google',
-                                      style: TextStyle(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                                    label: const Text('MASUK DENGAN GOOGLE'),
                                     style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                        color: Colors.grey,
-                                      ),
+                                      side: const BorderSide(color: Colors.grey),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                     ),
                                   ),
-                                ),
-
-                                const SizedBox(height: 16),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text('Belum punya akun?'),
-                                    TextButton(
-                                      onPressed: loading
-                                          ? null
-                                          : () => Navigator.pushNamed(
-                                              context,
-                                              AppRoutes.register,
-                                            ),
-                                      child: const Text(
-                                        'Daftar',
-                                        style: TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ],
                             ),

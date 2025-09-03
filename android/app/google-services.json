@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "967860960628",
+    "project_id": "odan-fm",
+    "storage_bucket": "odan-fm.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967860960628:android:15551c7a55022502a68021",
+        "android_client_info": {
+          "package_name": "com.odanfm.radio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "967860960628-8gfb31a2nafea07168nndef3g3pdopsl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.odanfm.radio",
+            "certificate_hash": "afd24d253a1f524415d9a7ca3da8a890ec3d81fb"
+          }
+        },
+        {
+          "client_id": "967860960628-6g7s99odihggnjjd6kihin3gpo06akj2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqEjCqrq9AF5zHsq-v7UBLUaxB0daLYbk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "967860960628-6g7s99odihggnjjd6kihin3gpo06akj2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
