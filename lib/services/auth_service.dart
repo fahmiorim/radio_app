@@ -242,13 +242,14 @@ class AuthService {
     }
   }
 
-  /// LOGIN WITH GOOGLE → Firebase → tukar idToken dengan token backend
+  /// LOGIN WITH GOOGLE (silent terlebih dahulu) → Firebase → tukar idToken dengan token backend
   Future<AuthResult> loginWithGoogle() async {
     try {
       _logger.i('1) Mulai login Google');
 
-      // 1) Coba silent login dulu
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      // 1) Coba login Google: signInSilently() lebih dulu, fallback ke signIn() jika null
+      GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      googleUser ??= await _googleSignIn.signIn();
       if (googleUser == null) {
         _logger.w('User membatalkan Google Sign-In');
         return const AuthResult(
