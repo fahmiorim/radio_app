@@ -276,8 +276,11 @@ class AuthService {
       }
 
       // 4) Ambil Firebase ID token
-      final idToken = await fbUser.getIdToken();
-      if (idToken == null) {
+      String idToken;
+      try {
+        idToken = await fbUser.getIdToken();
+      } catch (e, st) {
+        _logger.e('Failed to get Firebase ID token: $e', stackTrace: st);
         await logout();
         return const AuthResult(
           status: false,
