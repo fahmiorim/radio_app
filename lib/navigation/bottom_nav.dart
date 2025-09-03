@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/live_chat_provider.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/artikel/artikel_screen.dart';
 import '../screens/galeri/galeri_screen.dart';
@@ -7,14 +10,22 @@ import '../widgets/mini_player.dart';
 import '../widgets/app_drawer.dart';
 
 class BottomNav extends StatefulWidget {
-  const BottomNav({super.key});
+  final int initialIndex;
+
+  const BottomNav({super.key, this.initialIndex = 0});
 
   @override
   State<BottomNav> createState() => _BottomNavState();
 }
 
 class _BottomNavState extends State<BottomNav> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),
@@ -30,40 +41,21 @@ class _BottomNavState extends State<BottomNav> {
       extendBody: true,
       body: Stack(
         children: [
+          // Main Content
           _screens[_currentIndex],
 
-          /// Gradient bawah
-          Align(
-            alignment: Alignment.bottomCenter,
+          // MiniPlayer with Gradient Background
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: kBottomNavigationBarHeight,
             child: Container(
-              height:
-                  kBottomNavigationBarHeight +
-                  90 +
-                  MediaQuery.of(context).padding.bottom,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.95),
-                    Colors.black.withValues(alpha: 0.75),
-                    Colors.black.withValues(alpha: 0.7),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withOpacity(0.9), Colors.transparent],
                 ),
-              ),
-            ),
-          ),
-
-          /// MiniPlayer
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom:
-                    MediaQuery.of(context).padding.bottom +
-                    kBottomNavigationBarHeight +
-                    6,
               ),
               child: const MiniPlayer(),
             ),
@@ -72,49 +64,69 @@ class _BottomNavState extends State<BottomNav> {
       ),
 
       /// BottomNav
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        onTap: (index) async {
-          if (index == 3) {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LiveChatScreen()),
-            );
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.black.withOpacity(
+            0.8,
+          ), // tambahkan warna latar belakang
+          elevation: 0,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.grey,
+          onTap: (index) async {
+            if (index == 3) {
+              if (!mounted) return;
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChangeNotifierProvider(
+                    create: (_) => LiveChatProvider(roomId: 1)..init(),
+                    child: const LiveChatScreen(roomId: 1),
+                  ),
+                ),
+              );
 
-            if (result == 'goHome') {
+              if (mounted && result == 'goHome') {
+                setState(() {
+                  _currentIndex = 0;
+                });
+              }
+            } else if (mounted) {
               setState(() {
-                _currentIndex = 0;
+                _currentIndex = index;
               });
             }
-          } else {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article_outlined),
-            label: "Artikel",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.photo_library_outlined),
-            label: "Galeri",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: "Chat",
-          ),
-        ],
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              label: "Home",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.article_outlined),
+              label: "Artikel",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.photo_library_outlined),
+              label: "Galeri",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline),
+              label: "Chat",
+            ),
+          ],
+        ),
       ),
     );
   }

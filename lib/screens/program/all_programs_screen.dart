@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../config/app_routes.dart';
-import '../../config/app_colors.dart';
-import '../../models/program_model.dart';
-import '../../services/program_service.dart';
-import '../../widgets/skeleton/all_programs_skeleton.dart';
-import '../../widgets/mini_player.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/models/program_model.dart';
+import 'package:radio_odan_app/providers/program_provider.dart';
+import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/widgets/mini_player.dart';
+import 'package:radio_odan_app/widgets/skeleton/all_programs_skeleton.dart';
+
+// ⬇️ Import detail screen
+import 'package:radio_odan_app/screens/program/program_detail_screen.dart';
 
 class AllProgramsScreen extends StatefulWidget {
   const AllProgramsScreen({super.key});
@@ -14,251 +19,343 @@ class AllProgramsScreen extends StatefulWidget {
   State<AllProgramsScreen> createState() => _AllProgramsScreenState();
 }
 
-class _AllProgramsScreenState extends State<AllProgramsScreen> {
-  bool isLoading = true;
-  List<Program> programList = [];
-  final programService = ProgramService();
+class _AllProgramsScreenState extends State<AllProgramsScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
-  bool _hasMore = true;
-  int _page = 1;
-  final int _perPage = 10;
   bool _isLoadingMore = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPrograms();
+    WidgetsBinding.instance.addObserver(this);
+
     _scrollController.addListener(_onScroll);
+
+    // Load awal setelah frame pertama agar aman.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prov = context.read<ProgramProvider>();
+      // Kalau list kosong → load, kalau sudah ada & stale → refresh.
+      if (prov.allPrograms.isEmpty) {
+        await prov.loadList(cacheFirst: true);
+      } else if (prov.shouldRefreshListOnResume()) {
+        await prov.refreshList();
+      }
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent &&
-        !_isLoadingMore &&
-        _hasMore) {
-      _loadMorePrograms();
+  // Auto-refresh hemat saat balik dari background.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      final prov = context.read<ProgramProvider>();
+      if (prov.shouldRefreshListOnResume()) {
+        prov.refreshList();
+      }
     }
   }
 
-  Future<void> _loadPrograms() async {
-    try {
-      final data = await programService.fetchPrograms(
-        page: _page,
-        perPage: _perPage,
-      );
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
 
-      if (mounted) {
-        setState(() {
-          programList = data;
-          isLoading = false;
-          _hasMore = data.length == _perPage;
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal memuat program: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat daftar program')),
-        );
-      }
-    }
+    // Prefetch saat 200px menjelang akhir
+    final position = _scrollController.position;
+    final trigger = position.maxScrollExtent - 200;
+
+    if (position.pixels >= trigger) _loadMorePrograms();
   }
 
   Future<void> _loadMorePrograms() async {
-    if (_isLoadingMore || !_hasMore) return;
+    final provider = context.read<ProgramProvider>();
+    if (_isLoadingMore || !provider.hasMore) return;
 
-    setState(() {
-      _isLoadingMore = true;
-    });
-
+    setState(() => _isLoadingMore = true);
     try {
-      final nextPage = _page + 1;
-      final data = await programService.fetchPrograms(
-        page: nextPage,
-        perPage: _perPage,
+      await provider.loadMore();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memuat program tambahan')),
       );
-
-      if (mounted) {
-        setState(() {
-          _isLoadingMore = false;
-          if (data.isNotEmpty) {
-            programList.addAll(data);
-            _page = nextPage;
-            _hasMore = data.length == _perPage;
-          } else {
-            _hasMore = false;
-          }
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal memuat program tambahan: $e");
-      if (mounted) {
-        setState(() {
-          _isLoadingMore = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gagal memuat program tambahan')),
-          );
-        }
-      }
+    } finally {
+      if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      appBar: AppBar(
-        title: const Text(
-          'Semua Program',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
-        backgroundColor: AppColors.backgroundDark,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+      appBar: CustomAppBar.transparent(
+        title: 'Semua Program',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              // TODO: Implement search
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
+          // Bubble/Wave Background
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.primary, AppColors.backgroundDark],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(top: -50, right: -50, child: _bubble(200)),
+                  Positioned(bottom: -30, left: -30, child: _bubble(150)),
+                  Positioned(top: 100, left: 100, child: _bubble(50)),
+                ],
+              ),
+            ),
+          ),
+          // Main content
           _buildBody(),
           // Mini Player
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: const MiniPlayer(),
-          ),
+          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
         ],
       ),
     );
   }
 
+  Widget _bubble(double size) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.white.withOpacity(0.05),
+    ),
+  );
+
   Widget _buildBody() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 80), // Padding untuk MiniPlayer
-      child: isLoading
-          ? const AllProgramsSkeleton()
-          : programList.isEmpty
-              ? const Center(child: Text('Tidak ada program tersedia'))
-              : _buildProgramList(),
+    return Consumer<ProgramProvider>(
+      builder: (context, provider, _) {
+        // Loading awal
+        if (provider.isLoadingList && provider.allPrograms.isEmpty) {
+          return const AllProgramsSkeleton();
+        }
+
+        // Error & kosong
+        if (provider.listError != null && provider.allPrograms.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Gagal memuat daftar program',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.listError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => provider.loadList(cacheFirst: false),
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Kosong tanpa error
+        if (provider.allPrograms.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.radio, size: 64, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum ada program tersedia',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // List
+        return RefreshIndicator(
+          onRefresh: () => provider.refreshList(),
+          child: _buildProgramList(provider),
+        );
+      },
     );
   }
 
-  Widget _buildProgramList() {
+  Widget _buildProgramList(ProgramProvider provider) {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: programList.length + (_hasMore ? 1 : 0),
+      addAutomaticKeepAlives: true,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 96), // ruang MiniPlayer
+      itemCount: provider.allPrograms.length + (provider.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index >= programList.length) {
-          return _buildLoader();
+        if (index >= provider.allPrograms.length) {
+          // Loader untuk infinite scroll
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
-        final program = programList[index];
+        final program = provider.allPrograms[index];
         return _buildProgramItem(program);
       },
     );
   }
 
-  Widget _buildLoader() {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: CircularProgressIndicator(),
+  Widget _buildProgramItem(ProgramModel program) {
+    final prov = context.read<ProgramProvider>();
+    final url = program.gambarUrl;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            // 1) set selected di provider (hemat fetch kalau detail butuh data)
+            prov.selectProgram(program);
+
+            // 2) navigasi ke ProgramDetailScreen dengan program ID
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const ProgramDetailScreen(),
+                settings: RouteSettings(arguments: program.id),
+              ),
+            );
+
+            // Catatan:
+            // Jika kamu ingin TIDAK set selected (dan selalu fetch by id),
+            // gunakan:
+            // Navigator.pushNamed(context, '/program/detail', arguments: program.id);
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 12.0,
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 80,
+                    height: 80,
+                    child: url.isEmpty
+                        ? _thumbPlaceholder()
+                        : CachedNetworkImage(
+                            imageUrl: url,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => _thumbLoading(),
+                            errorWidget: (_, __, ___) => _thumbPlaceholder(),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(child: _ProgramTexts(program: program)),
+                const Icon(Icons.chevron_right, color: Colors.white, size: 24),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildProgramItem(Program program) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      elevation: 2,
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.programDetail,
-            arguments: program.id,
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Row(
+  Widget _thumbPlaceholder() => Container(
+    color: AppColors.primary.withOpacity(0.1),
+    alignment: Alignment.center,
+    child: const Icon(Icons.radio, size: 32, color: AppColors.primary),
+  );
+
+  Widget _thumbLoading() => const Center(
+    child: SizedBox(
+      width: 18,
+      height: 18,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
+  );
+}
+
+class _ProgramTexts extends StatelessWidget {
+  const _ProgramTexts({required this.program});
+
+  final ProgramModel program;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          program.namaProgram,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if ((program.jadwal ?? '').isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  program.gambarUrl,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 80,
-                    height: 80,
-                    color: AppColors.surfaceLight,
-                    child: Icon(Icons.radio, size: 40, color: AppColors.textSecondary),
-                  ),
+              const Icon(Icons.schedule, size: 14, color: Colors.white70),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  program.jadwal!,
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      program.namaProgram,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (program.penyiarName != null && program.penyiarName!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          program.penyiarName!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    if (program.jadwal != null && program.jadwal!.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4.0),
-                        child: Text(
-                          program.jadwal!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary.withOpacity(0.8),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
           ),
-        ),
-      ),
+        ],
+      ],
     );
   }
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:radio_odan_app/services/login_service.dart';
-import '../../config/app_routes.dart'; // import AppRoutes
-import 'package:radio_odan_app/config/logger.dart';
+import 'package:provider/provider.dart';
+
+import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,262 +13,499 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  bool agreeTerms = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
+  final _formKey = GlobalKey<FormState>();
+  final _nameC = TextEditingController();
+  final _emailC = TextEditingController();
+  final _passC = TextEditingController();
+  final _confirmC = TextEditingController();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  bool _obscure = true;
+  bool _agreeTerms = false;
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    _nameC.dispose();
+    _emailC.dispose();
+    _passC.dispose();
+    _confirmC.dispose();
     super.dispose();
   }
 
-  Future<void> _register() async {
-    final name = _nameController.text;
-    final email = _emailController.text;
-    final password = _passwordController.text;
-    final confirm = _confirmPasswordController.text;
+  String? _validateName(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Nama lengkap harus diisi';
+    return null;
+  }
 
-    if (password != confirm) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Password tidak sama')));
+  String? _validateEmail(String? v) {
+    if (v == null || v.trim().isEmpty) return 'Email harus diisi';
+    if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+').hasMatch(v))
+      return 'Email tidak valid';
+    return null;
+  }
+
+  String? _validatePassword(String? v) {
+    if (v == null || v.isEmpty) return 'Password harus diisi';
+    if (v.length < 8) return 'Password minimal 8 karakter';
+    return null;
+  }
+
+  String? _validateConfirm(String? v) {
+    if (v == null || v.isEmpty) return 'Konfirmasi password harus diisi';
+    if (v != _passC.text) return 'Konfirmasi password tidak cocok';
+    return null;
+  }
+
+  double _passwordStrength(String p) {
+    if (p.isEmpty) return 0;
+    int score = 0;
+    if (p.length >= 8) score++;
+    if (RegExp(r'[a-z]').hasMatch(p)) score++;
+    if (RegExp(r'[A-Z]').hasMatch(p)) score++;
+    if (RegExp(r'\d').hasMatch(p)) score++;
+    if (RegExp(r'[!@#\$%^&*(),.?":{}|<>_\-]').hasMatch(p)) score++;
+    return (score / 5).clamp(0, 1);
+  }
+
+  Future<void> _register() async {
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    if (!_agreeTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Anda harus menyetujui Syarat & Ketentuan'),
+          backgroundColor: Colors.orange.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
       return;
     }
 
-    final authResponse = await AuthService().register(name, email, password);
-    if (authResponse != null) {
-      if (!context.mounted) return;
-      Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
-    } else {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
+    final auth = context.read<AuthProvider>();
+    final err = await auth.register(
+      _nameC.text.trim(),
+      _emailC.text.trim(),
+      _passC.text,
+    );
+
+    if (!mounted) return;
+
+    if (err == null) {
+      // sukses → ke halaman verifikasi, kirim email sebagai argumen
+      Navigator.pushReplacementNamed(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Registrasi gagal')));
+        AppRoutes.verification,
+        arguments: _emailC.text.trim(),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _loginWithGoogle() async {
-    try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
+  // Placeholder Google (kita isi saat setup Google selesai)
+  Future<void> _registerWithGoogle() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Daftar dengan Google akan diaktifkan nanti.'),
+      ),
+    );
+  }
 
-      final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
-      if (idToken == null) return;
-
-      final authResponse = await AuthService().loginWithGoogle(idToken);
-      if (authResponse != null) {
-        Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
-      } else {
-        logger.w('⚠️ Gagal login Google');
-      }
-    } catch (e) {
-      logger.e('❌ Error login Google: $e');
-    }
+  InputDecoration _inputDecoration(
+    BuildContext context, {
+    required String label,
+    required String hint,
+    required IconData icon,
+    Widget? trailing,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white54),
+      labelStyle: const TextStyle(color: Colors.white70),
+      prefixIcon: Icon(icon, color: Colors.white70),
+      suffixIcon: trailing,
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.1),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white70.withOpacity(0.5)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+      errorStyle: const TextStyle(color: Colors.orange),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final loading = context.watch<AuthProvider>().loading;
+    final strength = _passwordStrength(_passC.text);
+
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50),
-              // Nama
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nama',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.person),
+      body: Stack(
+        children: [
+          // Background gradient + circle waves
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.primary, AppColors.backgroundDark],
                 ),
               ),
-              const SizedBox(height: 20),
-
-              // Email
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.email),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Password
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Ulangi Password
-              TextField(
-                controller: _confirmPasswordController,
-                obscureText: _obscureConfirmPassword,
-                decoration: InputDecoration(
-                  labelText: 'Ulangi Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Checkbox setuju syarat & ketentuan
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  Checkbox(
-                    value: agreeTerms,
-                    onChanged: (value) {
-                      setState(() {
-                        agreeTerms = value ?? false;
-                      });
-                    },
+                  Positioned(
+                    top: -100,
+                    right: -100,
+                    child: Container(
+                      width: 300,
+                      height: 300,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color.fromRGBO(255, 255, 255, 0.1),
+                      ),
+                    ),
                   ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          agreeTerms = !agreeTerms;
-                        });
-                      },
-                      child: const Text(
-                        'Saya setuju dengan Syarat & Ketentuan dan Kebijakan Privasi',
-                        style: TextStyle(fontSize: 14),
+                  Positioned(
+                    bottom: -150,
+                    left: -50,
+                    child: Container(
+                      width: 400,
+                      height: 400,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color.fromRGBO(255, 255, 255, 0.1),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-
-              // Button Daftar
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: agreeTerms ? _register : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Daftar',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Sudah punya akun? Masuk disini
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Sudah punya akun? "),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushNamed(context, AppRoutes.login);
-                    },
-                    child: const Text(
-                      "Masuk di sini",
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              // Teks "atau"
-              const Text(
-                "atau",
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-              const SizedBox(height: 15),
-
-              // Login Google
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _loginWithGoogle,
-                  icon: Image.asset(
-                    'assets/icons/google.png',
-                    width: 24,
-                    height: 24,
-                  ),
-                  label: const Text("Login dengan Google"),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
-        ),
+
+          // Content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Buat Akun Baru',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Daftar untuk melanjutkan ke Radio Odan',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: const Color.fromRGBO(255, 255, 255, 0.9),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Name
+                      TextFormField(
+                        controller: _nameC,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration(
+                          context,
+                          label: 'Nama Lengkap',
+                          hint: 'Masukkan nama lengkap',
+                          icon: Icons.person_outline,
+                        ),
+                        validator: _validateName,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Email
+                      TextFormField(
+                        controller: _emailC,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration(
+                          context,
+                          label: 'Email',
+                          hint: 'contoh@email.com',
+                          icon: Icons.email_outlined,
+                        ),
+                        validator: _validateEmail,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password
+                      TextFormField(
+                        controller: _passC,
+                        obscureText: _obscure,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration(
+                          context,
+                          label: 'Password',
+                          hint: 'Minimal 8 karakter',
+                          icon: Icons.lock_outline,
+                          trailing: IconButton(
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
+                          ),
+                        ),
+                        validator: _validatePassword,
+                        onChanged: (_) =>
+                            setState(() {}), // update strength bar
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Strength bar
+                      LinearProgressIndicator(
+                        value: strength,
+                        backgroundColor: Colors.grey[800],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          strength < 0.3
+                              ? Colors.red
+                              : (strength < 0.7 ? Colors.orange : Colors.green),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Confirm
+                      TextFormField(
+                        controller: _confirmC,
+                        obscureText: _obscure,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: _inputDecoration(
+                          context,
+                          label: 'Konfirmasi Password',
+                          hint: 'Ketik ulang password',
+                          icon: Icons.lock_outline,
+                        ),
+                        validator: _validateConfirm,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Terms
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _agreeTerms,
+                            onChanged: loading
+                                ? null
+                                : (v) =>
+                                      setState(() => _agreeTerms = v ?? false),
+                            fillColor: WidgetStateProperty.resolveWith<Color>(
+                              (states) => states.contains(WidgetState.selected)
+                                  ? Colors.white
+                                  : Colors.transparent,
+                            ),
+                            side: const BorderSide(
+                              color: Colors.white70,
+                              width: 1.5,
+                            ),
+                          ),
+                          const Expanded(
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Saya menyetujui ',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                  TextSpan(
+                                    text: 'Syarat & Ketentuan',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' dan ',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                  TextSpan(
+                                    text: 'Kebijakan Privasi',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Register button
+                      ElevatedButton(
+                        onPressed: loading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.primary,
+                                  ),
+                                ),
+                              )
+                            : const Text(
+                                'Daftar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Divider
+                      Row(
+                        children: [
+                          const Expanded(child: Divider(color: Colors.white70)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'atau daftar dengan',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const Expanded(child: Divider(color: Colors.white70)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Google (placeholder)
+                      OutlinedButton.icon(
+                        onPressed: loading ? null : _registerWithGoogle,
+                        icon: Image.asset(
+                          'assets/google.png',
+                          width: 24,
+                          height: 24,
+                        ),
+                        label: const Text(
+                          'Google',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.white70),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Link ke login
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Sudah punya akun? ',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          TextButton(
+                            onPressed: loading
+                                ? null
+                                : () => Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRoutes.login,
+                                  ),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Masuk di sini',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Loading overlay
+          if (loading)
+            Container(
+              color: Colors.black26,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

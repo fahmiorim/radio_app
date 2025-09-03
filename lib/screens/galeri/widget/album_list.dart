@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:collection/collection.dart';
+
 import '../../../models/album_model.dart';
-import '../../../services/album_service.dart';
+import '../../../providers/album_provider.dart';
 import '../../../config/app_routes.dart';
 import '../../../widgets/skeleton/album_list_skeleton.dart';
+import '../../../widgets/section_title.dart';
+import '../album_detail_screen.dart';
 
 class AlbumList extends StatefulWidget {
   const AlbumList({super.key});
@@ -11,170 +16,308 @@ class AlbumList extends StatefulWidget {
   State<AlbumList> createState() => _AlbumListState();
 }
 
-class _AlbumListState extends State<AlbumList> {
-  final AlbumService _albumService = AlbumService();
-  bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
-  List<AlbumModel> _albums = [];
+class _AlbumListState extends State<AlbumList>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+  @override
+  bool get wantKeepAlive => true;
+
+  bool _isMounted = false;
+  List<AlbumModel>? _lastAlbums;
 
   @override
   void initState() {
     super.initState();
-    _fetchAlbums();
+    _isMounted = true;
+    WidgetsBinding.instance.addObserver(this);
+
+    // Load data after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
   }
 
-  Future<void> _fetchAlbums() async {
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (!mounted) return;
+
     try {
-      setState(() {
-        _isLoading = true;
-        _hasError = false;
-      });
+      final provider = Provider.of<AlbumProvider>(context, listen: false);
+      await provider.fetchFeaturedAlbums(forceRefresh: forceRefresh);
 
-      final albums = await _albumService.fetchFeaturedAlbums();
-      
-      // Take only first 5 albums if needed
-      final limitedAlbums = albums.take(5).toList();
-
-      setState(() {
-        _albums = limitedAlbums;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+        });
+      }
     } catch (e) {
-      setState(() {
-        _hasError = true;
-        _errorMessage = 'Gagal memuat album. Silakan coba lagi.';
-        _isLoading = false;
+      if (mounted) {}
+      rethrow;
+    }
+  }
+
+  @override
+  void dispose() {
+    _isMounted = false;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  bool _isFirstBuild = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only refresh on first build or when coming back to the tab
+    if (_isFirstBuild) {
+      _isFirstBuild = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadData(forceRefresh: true);
       });
     }
   }
 
-  Widget _buildAlbumItem(AlbumModel album) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(
-          context,
-          AppRoutes.albumDetail,
-          arguments: album.slug,
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.network(
-                    album.coverImage,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, size: 36),
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      // Tunda ke frame berikutnya agar aman terhadap build yang sedang berjalan
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _checkAndRefresh();
+      });
+    }
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    // Only check for refresh if the app is coming back to the foreground
+    final provider = context.read<AlbumProvider>();
+    await provider.fetchFeaturedAlbums(forceRefresh: true);
+    if (mounted) {
+      setState(() {
+        _lastAlbums = List<AlbumModel>.from(provider.featuredAlbums);
+      });
+    }
+  }
+
+  Widget _buildAlbumItem(BuildContext context, AlbumModel album) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      constraints: const BoxConstraints(maxWidth: 140, maxHeight: 180),
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AlbumDetailScreen(slug: album.slug),
+            ),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Image container with fixed aspect ratio
+            SizedBox(
+              height: 130, // Adjusted height
+              width: double.infinity,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Album cover image
+                    Image.network(
+                      album.coverUrl.isNotEmpty ? album.coverUrl : '',
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(color: Colors.grey[300]);
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey[200],
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.broken_image, size: 32),
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.8),
-                            Colors.transparent,
+
+                    // Gradient overlay for better text visibility
+                    Positioned.fill(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.7),
+                              Colors.transparent,
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.4, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Badge jumlah foto (opsional)
+                    Positioned(
+                      right: 8,
+                      bottom: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.55),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.photo_library_outlined,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${album.photosCount ?? 0}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            album.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '${album.photosCount ?? 0} Foto',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                    ),
+
+                    // Hero untuk transisi halus ke halaman detail (optional)
+                    Positioned.fill(
+                      child: Hero(
+                        tag: 'album-${album.slug}',
+                        child: Container(color: Colors.transparent),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+            // Title and photo count in a column
+            Container(
+              padding: const EdgeInsets.only(top: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Title
+                  Text(
+                    album.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      height: 1.1,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // Photo count
+                  Text(
+                    '${album.photosCount ?? 0} Foto',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 10,
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading && _albums.isEmpty) {
-      return const AlbumListSkeleton();
+    super.build(context);
+    final albumProvider = Provider.of<AlbumProvider>(context);
+    final isLoading = albumProvider.isLoadingFeatured;
+    final hasError = albumProvider.hasErrorFeatured;
+    final errMsg = albumProvider.errorMessageFeatured;
+    final items = albumProvider.featuredAlbums;
+
+    // Only update local state if data has actually changed
+    if (!const DeepCollectionEquality().equals(_lastAlbums, items)) {
+      _lastAlbums = List<AlbumModel>.from(items);
     }
 
-    if (_hasError && _albums.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return Consumer<AlbumProvider>(
+      builder: (context, albumProvider, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_errorMessage),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchAlbums,
-              child: const Text('Coba Lagi'),
+            SectionTitle(
+              title: 'Galeri',
+              onSeeAll: items.isNotEmpty
+                  ? () => Navigator.pushNamed(context, AppRoutes.albumList)
+                  : null,
             ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: 400, // Slightly increased height
+              child: isLoading && items.isEmpty
+                  ? const AlbumListSkeleton()
+                  : hasError
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(errMsg, textAlign: TextAlign.center),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: () => _loadData(forceRefresh: true),
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    )
+                  : items.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Tidak ada album tersedia',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
+                  : GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.8,
+                            mainAxisExtent: 180,
+                          ),
+                      itemCount: items.length > 4 ? 4 : items.length,
+                      itemBuilder: (context, index) {
+                        return _buildAlbumItem(context, items[index]);
+                      },
+                    ),
+            ),
+            const SizedBox(height: 24),
           ],
-        ),
-      );
-    }
-
-    if (_albums.isEmpty) {
-      return const Center(child: Text('Tidak ada album yang tersedia'));
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _albums.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.9,
-          ),
-          itemBuilder: (context, index) {
-            final album = _albums[index];
-            return _buildAlbumItem(album);
-          },
-        ),
-      ],
+        );
+      },
     );
   }
 }

@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
+
 import '../../models/artikel_model.dart';
-import '../../services/artikel_service.dart';
+import '../../providers/artikel_provider.dart';
 import '../../widgets/skeleton/artikel_all_skeleton.dart';
 import 'artikel_detail_screen.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import '../../../widgets/app_bar.dart';
 
 class ArtikelScreen extends StatefulWidget {
   const ArtikelScreen({super.key});
@@ -11,118 +17,171 @@ class ArtikelScreen extends StatefulWidget {
   State<ArtikelScreen> createState() => _ArtikelScreenState();
 }
 
-class _ArtikelScreenState extends State<ArtikelScreen> {
-  final ArtikelService _artikelService = ArtikelService();
-  bool isLoading = true;
-  String? errorMessage;
-  List<Artikel> artikelList = [];
-  int currentPage = 1;
-  int lastPage = 1;
-  bool hasMore = true;
-  bool _isLoadingMore = false;
+class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
+  bool _isMounted = false;
+  List<Artikel>? _lastItems;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _fetchArtikel();
+    _isMounted = true;
     _scrollController.addListener(_onScroll);
+    
+    WidgetsBinding.instance.addObserver(this);
+    
+    // Load data after first frame to avoid context issues
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadData();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkAndRefresh();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _isMounted = false;
     _scrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      await context.read<ArtikelProvider>().refresh();
+    } else {
+      await context.read<ArtikelProvider>().fetchArtikels();
+    }
+    if (mounted) {
+      setState(() {
+        _lastItems = List<Artikel>.from(
+          context.read<ArtikelProvider>().artikels,
+        );
+      });
+    }
+  }
+
+  Future<void> _checkAndRefresh() async {
+    if (!mounted) return;
+
+    final provider = context.read<ArtikelProvider>();
+    final currentItems = provider.artikels;
+    final shouldRefresh = _lastItems == null ||
+        !const DeepCollectionEquality().equals(_lastItems, currentItems);
+
+    if (shouldRefresh) {
+      await provider.refresh();
+      if (mounted) {
+        setState(() {
+          _lastItems = List<Artikel>.from(provider.artikels);
+        });
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isMounted) {
+      _checkAndRefresh();
+    }
+  }
+
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent &&
-        !_isLoadingMore &&
-        hasMore) {
-      _loadMoreArtikel();
-    }
-  }
-
-  Future<void> _fetchArtikel() async {
-    try {
-      if (!mounted) return;
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-
-      final response = await _artikelService.fetchAllArtikel(page: currentPage);
-      
-      if (!mounted) return;
-      setState(() {
-        artikelList = response['data'];
-        currentPage = response['currentPage'];
-        lastPage = response['lastPage'];
-        hasMore = currentPage < lastPage;
-        isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        errorMessage = 'Gagal memuat artikel. Silakan coba lagi.';
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadMoreArtikel() async {
-    if (_isLoadingMore || !hasMore || !mounted) return;
-
-    try {
-      setState(() {
-        _isLoadingMore = true;
-      });
-
-      final nextPage = currentPage + 1;
-      final response = await _artikelService.fetchAllArtikel(page: nextPage);
-
-      if (!mounted) return;
-      setState(() {
-        artikelList.addAll(response['data']);
-        currentPage = nextPage;
-        lastPage = response['lastPage'];
-        hasMore = currentPage < lastPage;
-        _isLoadingMore = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingMore = false;
-      });
+    final p = context.read<ArtikelProvider>();
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 48 &&
+        !p.isLoadingMore &&
+        p.hasMore) {
+      p.loadMoreArtikels();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Artikel"),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
+      backgroundColor: AppColors.backgroundDark,
+      appBar: CustomAppBar.transparent(title: 'Artikel'),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [AppColors.primary, AppColors.backgroundDark],
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: -50,
+                    right: -50,
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: -30,
+                    left: -30,
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Consumer<ArtikelProvider>(builder: (_, p, __) => _buildBody(p)),
+        ],
       ),
-      body: _buildBody(),
     );
   }
 
-  Widget _buildBody() {
-    if (isLoading && artikelList.isEmpty) {
+  Widget _buildBody(ArtikelProvider p) {
+    if (p.isLoading && p.artikels.isEmpty) {
       return const ArtikelAllSkeleton();
     }
 
-    if (errorMessage != null && artikelList.isEmpty) {
+    if (p.error != null && p.artikels.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(errorMessage!),
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Gagal memuat artikel: ${p.error}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70),
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _fetchArtikel,
+              onPressed: () => p.refresh(),
               child: const Text('Coba Lagi'),
             ),
           ],
@@ -131,110 +190,153 @@ class _ArtikelScreenState extends State<ArtikelScreen> {
     }
 
     return RefreshIndicator(
-      onRefresh: _fetchArtikel,
+      onRefresh: () => p.refresh(),
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.only(
-          bottom: 80,
-          left: 16,
-          right: 16,
-          top: 16,
-        ),
-        itemCount: artikelList.length + (hasMore ? 1 : 0),
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        itemCount: p.artikels.length + (p.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index >= artikelList.length) {
+          if (index >= p.artikels.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             );
           }
-
-          final artikel = artikelList[index];
-          return _buildArtikelItem(artikel);
+          final artikel = p.artikels[index];
+          return _buildArtikelItem(context, artikel);
         },
       ),
     );
   }
 
-  Widget _buildArtikelItem(Artikel artikel) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ArtikelDetailScreen(artikel: artikel),
-          ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (artikel.image.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                artikel.image,
-                width: double.infinity,
-                height: 180,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  width: double.infinity,
-                  height: 180,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.error_outline, color: Colors.red),
-                ),
-              ),
-            ),
-          const SizedBox(height: 12),
-          Text(
-            artikel.title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          if (artikel.excerpt.isNotEmpty)
-            Text(
-              artikel.excerpt,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              if (artikel.user.isNotEmpty)
-                Text(
-                  artikel.user,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              const SizedBox(width: 8),
-Text(
-                artikel.formattedDate,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-            ],
-          ),
-          const Divider(
-            color: Color.fromARGB(255, 48, 48, 48),
-            height: 32,
-            thickness: 0.5,
+  Widget _buildArtikelItem(BuildContext context, Artikel artikel) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ArtikelDetailScreen(artikelSlug: artikel.slug),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ArtikelThumb(url: artikel.gambarUrl),
+                const SizedBox(height: 12),
+                Text(
+                  artikel.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    height: 1.3,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (artikel.excerptPlain.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    artikel.excerptPlain,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    if (artikel.user.isNotEmpty) ...[
+                      Text(
+                        artikel.user,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '•',
+                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      artikel.formattedDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ArtikelThumb extends StatelessWidget {
+  final String url;
+  const _ArtikelThumb({required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: double.infinity,
+        height: w > 400 ? 200 : 180,
+        child: url.isEmpty
+            ? _placeholder()
+            : CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => _loading(),
+                errorWidget: (_, __, ___) => _placeholder(),
+              ),
       ),
     );
   }
 
+  Widget _placeholder() => Container(
+    color: Colors.grey[800],
+    alignment: Alignment.center,
+    child: const Icon(Icons.broken_image, size: 40, color: Colors.white54),
+  );
+
+  Widget _loading() => const Center(
+    child: SizedBox(
+      width: 22,
+      height: 22,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
+  );
 }

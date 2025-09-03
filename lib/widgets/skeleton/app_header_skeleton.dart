@@ -1,4 +1,3 @@
-// lib/widget/skeleton/app_header_skeleton.dart
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -8,57 +7,67 @@ class AppHeaderSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color.fromARGB(255, 2, 45, 155),
+            Color.fromARGB(255, 2, 42, 128),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Shimmer.fromColors(
-        baseColor: Colors.grey[800]!,
-        highlightColor: Colors.grey[700]!,
+        baseColor: Colors.grey[700]!,
+        highlightColor: Colors.grey[600]!,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Logo + Text
             Row(
               children: [
-                // Circle logo
+                // Logo placeholder
                 Container(
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.grey[800],
-                    shape: BoxShape.circle,
+                    color: Colors.grey[400],
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Text placeholder (2 baris)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                // ODAN FM text placeholder
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    'ODAN FM',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      fontFamily: 'Poppins',
+                      backgroundColor: Colors.grey[400],
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      width: 60,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
-            // Avatar
+            // Avatar placeholder
             Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: Colors.grey,
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
                 shape: BoxShape.circle,
               ),
             ),

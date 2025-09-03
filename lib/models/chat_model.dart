@@ -16,12 +16,32 @@ class ChatMessage {
     this.isSystemMessage = false,
     this.isJoinNotification = false,
   });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      id: json['id']?.toString() ?? '',
+      username: json['username']?.toString() ?? 'Anonymous',
+      message: json['message']?.toString() ?? '',
+      timestamp: json['timestamp'] != null 
+          ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+      userAvatar: json['userAvatar']?.toString(),
+      isSystemMessage: json['isSystemMessage'] == true,
+      isJoinNotification: json['isJoinNotification'] == true,
+    );
+  }
 }
 
 class OnlineUser {
+  final String id;
   final String username;
   final String? userAvatar;
   final DateTime joinTime;
 
-  OnlineUser({required this.username, this.userAvatar, required this.joinTime});
+  OnlineUser({
+    required this.id,
+    required this.username, 
+    this.userAvatar, 
+    required this.joinTime
+  });
 }

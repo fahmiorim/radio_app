@@ -1,11 +1,18 @@
-import 'package:flutter/material.dart';
-import 'dart:math';
 import 'dart:async';
-import '../../models/chat_model.dart';
-import '../../data/dummy_chat.dart'; // Import the data file
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/live_chat_provider.dart';
+import '../../providers/user_provider.dart';
+import 'chat/chat_message_item.dart';
+import 'chat/message_input_field.dart';
+import 'chat/unread_messages_label.dart';
+import 'chat/no_live_placeholder.dart';
+import 'chat/system_message_item.dart';
 
 class LiveChatScreen extends StatefulWidget {
-  const LiveChatScreen({super.key});
+  final int roomId;
+  const LiveChatScreen({super.key, required this.roomId});
 
   @override
   State<LiveChatScreen> createState() => _LiveChatScreenState();
@@ -14,399 +21,124 @@ class LiveChatScreen extends StatefulWidget {
 class _LiveChatScreenState extends State<LiveChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [];
-  final List<OnlineUser> _onlineUsers = [];
-  final Random _random = Random();
 
-  int _firstUnreadIndex = -1;
   bool _isUserScrolledUp = false;
+  int _firstUnreadIndex = -1;
+  int _lastMessageCount = 0;
   Timer? _scrollTimer;
-  Timer? _chatSimulationTimer;
+  bool _didInit = false;
+
+  bool _isCurrentUser(String username) {
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    final current = user?.name;
+    if (current == null) return false;
+    return current.toLowerCase() == username.toLowerCase();
+  }
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    _simulateLiveChat();
-  }
 
-  void _handleScroll() {
-    if (_scrollTimer != null) {
-      _scrollTimer!.cancel();
-    }
-
-    _scrollTimer = Timer(const Duration(milliseconds: 200), () {
-      final isScrolledUp =
-          _scrollController.position.pixels <
-          _scrollController.position.maxScrollExtent - 100;
-
-      setState(() {
-        _isUserScrolledUp = isScrolledUp;
-
-        // Mark all as read if scrolled to bottom
-        if (!isScrolledUp) {
-          _firstUnreadIndex = -1;
+    // Inisialisasi provider & userId setelah frame pertama
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prov = context.read<LiveChatProvider>();
+      if (!_didInit) {
+        // set current user id untuk anti-duplikasi self-echo
+        final userId = context.read<UserProvider>().user?.id;
+        if (userId != null) {
+          prov.setCurrentUserId(userId);
         }
-      });
-    });
-  }
+        await prov.init(); // subscribe socket + load status & messages
+        _didInit = true;
 
-  void _simulateLiveChat() {
-    // User join every 3-8 seconds
-    _chatSimulationTimer = Timer.periodic(
-      Duration(seconds: 3 + _random.nextInt(5)),
-      (timer) => _addRandomUserJoin(),
-    );
-
-    // Random messages every 2-5 seconds
-    _chatSimulationTimer = Timer.periodic(
-      Duration(seconds: 2 + _random.nextInt(3)),
-      (timer) => _addRandomMessage(),
-    );
-  }
-
-  void _addMessage(ChatMessage message) {
-    setState(() {
-      _messages.add(message);
-
-      if (!_isUserScrolledUp) {
-        // If at bottom, auto-scroll to new message
-        _firstUnreadIndex = -1;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.maxScrollExtent,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          }
-        });
-      } else if (_firstUnreadIndex == -1) {
-        // If scrolled up and this is first unread message
-        _firstUnreadIndex = _messages.length - 1;
+        // auto-scroll ke bawah di load awal
+        _scrollToBottom();
       }
     });
   }
 
-  void _scrollToUnreadMessages() {
-    if (_firstUnreadIndex == -1 || !_scrollController.hasClients) return;
+  void _handleScroll() {
+    final prov = context.read<LiveChatProvider>();
 
-    // Scroll to position above first unread message
+    // infinite scroll ke atas untuk history
+    if (_scrollController.offset <=
+            _scrollController.position.minScrollExtent + 200 &&
+        !_scrollController.position.outOfRange) {
+      prov.loadMore();
+    }
+
+    // debounce kecil untuk status "scrolled up"
+    _scrollTimer?.cancel();
+    _scrollTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted || !_scrollController.hasClients) return;
+
+      final isScrolledUp =
+          _scrollController.offset <
+          _scrollController.position.maxScrollExtent - 100;
+
+      setState(() {
+        _isUserScrolledUp = isScrolledUp;
+        if (!isScrolledUp) _firstUnreadIndex = -1;
+      });
+    });
+  }
+
+  void _scrollToBottom() {
+    if (!_scrollController.hasClients) return;
     _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent -
-          (_messages.length - _firstUnreadIndex) *
-              70, // Estimate 70px per message
+      _scrollController.position.maxScrollExtent,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
   }
 
-  void _addRandomUserJoin() {
-    final username = ChatData.getRandomUsername(_random);
+  void _scrollToUnreadMessages() {
+    final messages = context.read<LiveChatProvider>().messages;
+    if (_firstUnreadIndex == -1 || !_scrollController.hasClients) return;
 
-    _addMessage(
-      ChatMessage(
-        id: 'join-${DateTime.now().millisecondsSinceEpoch}',
-        username: username,
-        message: 'telah bergabung ke chat',
-        timestamp: DateTime.now(),
-        isSystemMessage: true,
-        isJoinNotification: true,
+    // Perkiraan tinggi item 70 px; jika kamu punya ukuran dinamis,
+    // bisa ganti pakai sliver/anchor atau itemExtent custom.
+    final approxItemExtent = 70.0;
+    final offset =
+        _scrollController.position.maxScrollExtent -
+        (messages.length - _firstUnreadIndex) * approxItemExtent;
+
+    _scrollController.animateTo(
+      offset.clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
       ),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
     );
+  }
 
-    // Add to online users
-    setState(() {
-      _onlineUsers.add(
-        OnlineUser(username: username, joinTime: DateTime.now()),
+  Future<void> _sendMessage(LiveChatProvider prov) async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    final userName = context.read<UserProvider>().user?.name ?? 'Anda';
+
+    try {
+      await prov.send(text, username: userName);
+      _messageController.clear();
+      // scroll ke bawah hanya jika user tidak sedang baca pesan lama
+      if (!_isUserScrolledUp) {
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send message: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
-    });
-  }
-
-  void _addRandomMessage() {
-    final username = ChatData.getRandomUsername(_random);
-    final message = ChatData.getRandomMessage(_random);
-
-    _addMessage(
-      ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        username: username,
-        message: message,
-        timestamp: DateTime.now(),
-      ),
-    );
-  }
-
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-
-    _addMessage(
-      ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        username: 'Anda',
-        message: _messageController.text,
-        timestamp: DateTime.now(),
-      ),
-    );
-    _messageController.clear();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final unreadCount = _firstUnreadIndex == -1
-        ? 0
-        : _messages.length - _firstUnreadIndex;
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context, 'goHome');
-          },
-        ),
-        title: const Text('Live Chat'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.people_alt),
-            onPressed: () {
-              _showOnlineUsers(context);
-            },
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.only(bottom: 80, left: 8, right: 8),
-            itemCount: _messages.length,
-            itemBuilder: (context, index) {
-              // Show unread divider only when scrolled up
-              if (_isUserScrolledUp && index == _firstUnreadIndex) {
-                return Column(
-                  children: [
-                    _buildUnreadMessagesLabel(unreadCount),
-                    _buildChatItem(_messages[index]),
-                  ],
-                );
-              }
-              return _buildChatItem(_messages[index]);
-            },
-          ),
-
-          // Show "X new messages" button only when scrolled up
-          if (_isUserScrolledUp && unreadCount > 0)
-            Positioned(
-              bottom: 80,
-              right: 16,
-              child: GestureDetector(
-                onTap: _scrollToUnreadMessages,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[800],
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    '$unreadCount pesan baru',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          Positioned(bottom: 0, left: 0, right: 0, child: _buildMessageInput()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUnreadMessagesLabel(int count) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      color: Colors.grey[900]!.withValues(alpha: 0.7),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.blue[800],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$count pesan belum dibaca',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChatItem(ChatMessage message) {
-    if (message.isJoinNotification) {
-      return _buildJoinNotification(message);
     }
-    return _buildChatMessage(message);
   }
 
-  Widget _buildChatMessage(ChatMessage message) {
-    final isMe = message.username == 'Anda';
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        children: [
-          if (!isMe)
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey[800],
-              child: Text(
-                message.username.substring(0, 1).toUpperCase(),
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-
-          const SizedBox(width: 8),
-
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-              decoration: BoxDecoration(
-                color: isMe ? Colors.blue[800] : Colors.grey[800],
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (!isMe)
-                    Text(
-                      message.username,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  Text(
-                    message.message,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildJoinNotification(ChatMessage message) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      alignment: Alignment.center,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.grey[900]!.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFE2C55),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person_add,
-                color: Colors.white,
-                size: 14,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '${message.username} ${message.message}',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.black,
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Ketik pesan...',
-                hintStyle: TextStyle(color: Colors.grey[500]),
-                filled: true,
-                fillColor: Colors.grey[900],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              onSubmitted: (_) => _sendMessage(),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFE2C55),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.send, color: Colors.white, size: 20),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showOnlineUsers(BuildContext context) {
+  void _showOnlineUsers(BuildContext context, LiveChatProvider prov) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.black,
@@ -414,74 +146,215 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'User Online',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'User Online',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _onlineUsers.length,
-                  itemBuilder: (context, index) {
-                    final user = _onlineUsers[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.grey[800],
-                        child: Text(
-                          user.username.substring(0, 1).toUpperCase(),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: prov.onlineUsers.length,
+                    itemBuilder: (context, index) {
+                      final user = prov.onlineUsers[index];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.grey[800],
+                          child: Text(
+                            user.username.substring(0, 1).toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        title: Text(
+                          user.username,
                           style: const TextStyle(color: Colors.white),
                         ),
-                      ),
-                      title: Text(
-                        user.username,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                      subtitle: Text(
-                        'Bergabung ${_formatTime(user.joinTime)}',
-                        style: TextStyle(color: Colors.grey[400]),
-                      ),
-                    );
-                  },
+                        subtitle: Text(
+                          'Bergabung ${prov.formatTime(user.joinTime)}',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
     );
   }
 
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        await context.read<LiveChatProvider>().shutdown();
+        return true;
+      },
+      child: Consumer<LiveChatProvider>(
+        builder: (context, prov, _) {
+          if (prov.isLoading && prov.messages.isEmpty) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('Live Chat')),
+              body: const Center(child: CircularProgressIndicator()),
+            );
+          }
 
-    if (difference.inMinutes < 1) {
-      return 'baru saja';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes} menit lalu';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours} jam lalu';
-    } else {
-      return '${difference.inDays} hari lalu';
-    }
+          final messages = prov.messages;
+
+          // Hitung unread: saat user lagi scroll up dan ada pesan baru masuk
+          if (!_isUserScrolledUp) {
+            _firstUnreadIndex = -1;
+            // auto-scroll ke bawah ketika ada pesan baru dan user tidak scroll up
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _scrollToBottom();
+            });
+          } else if (messages.length > _lastMessageCount &&
+              _firstUnreadIndex == -1 &&
+              _lastMessageCount > 0) {
+            // tandai posisi unread pertama hanya jika sebelumnya sudah ada pesan
+            _firstUnreadIndex = _lastMessageCount;
+          }
+          _lastMessageCount = messages.length;
+
+          final unreadCount = _firstUnreadIndex == -1
+              ? 0
+              : messages.length - _firstUnreadIndex;
+
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () async {
+                  await prov.shutdown();
+                  if (!mounted) return;
+                  Navigator.pop(context, 'goHome');
+                },
+              ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.people_alt),
+                  onPressed: () => _showOnlineUsers(context, prov),
+                ),
+              ],
+            ),
+            body: Stack(
+              children: [
+                if (!prov.isLive)
+                  const NoLivePlaceholder()
+                else
+                  ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.only(
+                      bottom: 80,
+                      left: 8,
+                      right: 8,
+                      top: 8,
+                    ),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      final isSystem =
+                          message.isSystemMessage || message.isJoinNotification;
+
+                      final displayText =
+                          (isSystem && message.username != 'System')
+                              ? '${message.username} ${message.message}'
+                              : message.message;
+
+                      final messageWidget = isSystem
+                          ? SystemMessageItem(message: displayText)
+                          : ChatMessageItem(
+                              message: message,
+                              isCurrentUser:
+                                  _isCurrentUser(message.username),
+                              time: prov.formatTime(message.timestamp),
+                            );
+
+                      if (_isUserScrolledUp && index == _firstUnreadIndex) {
+                        return Column(
+                          children: [
+                            UnreadMessagesLabel(count: unreadCount),
+                            messageWidget,
+                          ],
+                        );
+                      }
+                      return messageWidget;
+                    },
+                  ),
+
+                // Tombol lompat ke pesan baru saat user scroll up
+                if (_isUserScrolledUp && unreadCount > 0)
+                  Positioned(
+                    bottom: 80,
+                    right: 16,
+                    child: GestureDetector(
+                      onTap: _scrollToUnreadMessages,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[800],
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '$unreadCount pesan baru',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Input hanya saat live
+                if (prov.isLive)
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: MessageInputField(
+                      controller: _messageController,
+                      onSend: () async => _sendMessage(prov),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScroll);
     _scrollTimer?.cancel();
-    _chatSimulationTimer?.cancel();
-    _messageController.dispose();
     _scrollController.dispose();
+    _messageController.dispose();
     super.dispose();
   }
 }

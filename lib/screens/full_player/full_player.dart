@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import '../../data/dummy_radio.dart';
+import 'package:provider/provider.dart';
 import '../../audio/audio_player_manager.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../providers/radio_station_provider.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -12,11 +14,74 @@ class FullPlayer extends StatefulWidget {
 }
 
 class _FullPlayerState extends State<FullPlayer> {
-  final _audioManager = AudioPlayerManager();
+  final _audioManager = AudioPlayerManager.instance;
   bool isFavorited = false;
+
+  Widget _buildDefaultCover() {
+    return Image.asset(
+      'assets/odanlogo.png',
+      width: double.infinity,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.music_note, size: 100, color: Colors.white),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      final radioProvider = Provider.of<RadioStationProvider>(
+        context,
+        listen: false,
+      );
+      final currentStation = radioProvider.currentStation;
+
+      if (currentStation != null) {
+        await _audioManager.playRadio(currentStation);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal memutar radio. Coba lagi nanti.'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final radioProvider = Provider.of<RadioStationProvider>(context);
+    final currentStation = radioProvider.currentStation;
+    final nowPlaying = radioProvider.nowPlaying;
+
+    final cover = (nowPlaying?.artUrl.isNotEmpty ?? false)
+        ? nowPlaying!.artUrl
+        : currentStation?.coverUrl ?? '';
+    final title = (nowPlaying?.title.isNotEmpty ?? false)
+        ? nowPlaying!.title
+        : currentStation?.title ?? '';
+    final artist = (nowPlaying?.artist.isNotEmpty ?? false)
+        ? nowPlaying!.artist
+        : currentStation?.host ?? '';
+
+    if (currentStation == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(
+          child: Text(
+            'No radio station selected',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
@@ -34,7 +99,12 @@ class _FullPlayerState extends State<FullPlayer> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Update the provider state before navigating back
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          },
         ),
       ),
       body: SafeArea(
@@ -48,37 +118,49 @@ class _FullPlayerState extends State<FullPlayer> {
                   padding: const EdgeInsets.all(30.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      dummyRadio.coverUrl,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                    child: (nowPlaying != null && nowPlaying.artUrl.isNotEmpty)
+                        ? CachedNetworkImage(
+                            imageUrl: cover,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) =>
+                                _buildDefaultCover(),
+                          )
+                        : _buildDefaultCover(),
                   ),
                 ),
               ),
             ),
 
             // === Title & Host & LIVE ===
-            Expanded(
-              flex: 2,
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    dummyRadio.title,
+                    title,
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                     textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    artist,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    dummyRadio.host,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -91,8 +173,8 @@ class _FullPlayerState extends State<FullPlayer> {
                     child: const Text(
                       "LIVE",
                       style: TextStyle(
-                        color: Colors.white,
                         fontSize: 12,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -124,7 +206,7 @@ class _FullPlayerState extends State<FullPlayer> {
                         height: 4,
                         child: LinearProgressIndicator(
                           value: progress,
-                          backgroundColor: Colors.white.withValues(alpha: 0.3),
+                          backgroundColor: Colors.white.withAlpha(30),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                             Colors.red,
                           ),
@@ -204,14 +286,8 @@ class _FullPlayerState extends State<FullPlayer> {
                                   icon: Icon(
                                     isPlaying ? Icons.pause : Icons.play_arrow,
                                   ),
-                                  onPressed: () {
-                                    if (isPlaying) {
-                                      _audioManager.pause();
-                                    } else {
-                                      _audioManager.playRadio(
-                                        dummyRadio,
-                                      ); // <-- pakai RadioStation
-                                    }
+                                  onPressed: () async {
+                                    await radioProvider.togglePlayPause();
                                   },
                                 ),
                         ),
@@ -222,8 +298,8 @@ class _FullPlayerState extends State<FullPlayer> {
                           iconSize: 28,
                           onPressed: () async {
                             await Share.share(
-                              '🎵 Listening to "${dummyRadio.title}" on ${dummyRadio.host}\n\n${dummyRadio.streamUrl}',
-                              subject: 'Listen to ${dummyRadio.title}',
+                              '🎵 Listening to "${currentStation.title}" on ${currentStation.host}\n\n${currentStation.streamUrl}',
+                              subject: 'Listen to ${currentStation.title}',
                             );
                           },
                         ),

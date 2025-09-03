@@ -37,7 +37,7 @@ class AppTheme {
       primary: AppColors.primary,
       secondary: AppColors.primary,
       surface: AppColors.surface,
-      background: AppColors.backgroundDark,
+      background: AppColors.backgroundDark, // Keeping for backward compatibility
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.backgroundDark,

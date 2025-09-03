@@ -10,6 +10,7 @@ class AppColors {
   static const Color backgroundLight = Color(0xFFE6F0FF); // Biru muda untuk tema terang
   static const Color surface = Color(0xFF1A2E4A); // Biru tua untuk surface
   static const Color surfaceLight = Color(0xFF2A3D59); // Biru tua lebih terang
+  static const Color cardBackground = Color(0xFF1E2D47); // Warna untuk card background
   
   // Text Colors
   static const Color textPrimary = Colors.white;

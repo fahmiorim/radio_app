@@ -1,146 +1,221 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/intl.dart';
+
 import '../../../widgets/section_title.dart';
 import '../../../widgets/skeleton/artikel_skeleton.dart';
-import '../../../config/app_routes.dart';
 import '../../../models/artikel_model.dart';
-import '../../../services/artikel_service.dart';
+import '../../../providers/artikel_provider.dart';
 import '../../../screens/artikel/artikel_screen.dart';
+import '../../../screens/artikel/artikel_detail_screen.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
 
   @override
-  State<ArtikelList> createState() => _ArtikelListState();
+  State<ArtikelList> createState() => ArtikelListState();
 }
 
-class _ArtikelListState extends State<ArtikelList>
-    with AutomaticKeepAliveClientMixin {
-  bool isLoading = true;
-  List<Artikel> artikelList = [];
-
+class ArtikelListState extends State<ArtikelList>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   @override
-  bool get wantKeepAlive => true; // biar state tetap hidup
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
-    _loadArtikel();
+    WidgetsBinding.instance.addObserver(this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prov = context.read<ArtikelProvider>();
+      if (prov.recentArtikels.isEmpty) {
+        await prov.loadRecent(cacheFirst: true);
+      } else if (prov.shouldRefreshOnResume()) {
+        await prov.refreshRecent();
+      }
+    });
   }
 
-  Future<void> _loadArtikel() async {
-    try {
-      final data = await ArtikelService().fetchRecentArtikel();
-      if (mounted) {
-        setState(() {
-          artikelList = data;
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint("Gagal ambil data artikel: $e");
-      if (mounted) {
-        setState(() {
-          isLoading = false; // skeleton hilang walau error
-        });
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      final prov = context.read<ArtikelProvider>();
+      if (prov.shouldRefreshOnResume()) {
+        prov.refreshRecent();
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // WAJIB kalau pakai AutomaticKeepAliveClientMixin
+    super.build(context);
+
+    final prov = context.watch<ArtikelProvider>();
+    final bool isLoading = prov.isLoadingRecent;
+    final List<Artikel> artikelList = prov.recentArtikels;
+    final String? error = prov.recentError;
+
+    if (error != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(
+            title: 'Program Hari Ini',
+            onSeeAll: () => _openAll(context),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Gagal memuat data program. Silakan tarik untuk refresh.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Empty state (tidak ada program hari ini)
+    if (artikelList.isEmpty && !isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SectionTitle(
+            title: 'Program Hari Ini',
+            onSeeAll: () => _openAll(context),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Tidak ada program untuk hari ini',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const SectionTitle(title: "Artikel"),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
+        SectionTitle(
+          title: 'Artikel Terbaru',
+          onSeeAll: () => _openAll(context),
+        ),
+        if (isLoading)
+          const ArtikelSkeleton()
+        else if (artikelList.isEmpty)
+          const SizedBox.shrink()
+        else
+          GridView.builder(
+            key: const PageStorageKey('artikel_list'),
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            itemCount: artikelList.length > 4 ? 4 : artikelList.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.8,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemBuilder: (context, index) {
+              final artikel = artikelList[index];
+              final url = artikel.gambarUrl;
+
+              return GestureDetector(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ArtikelScreen(),
+                      builder: (_) => ArtikelDetailScreen(
+                        artikelSlug: artikel.id.toString(),
+                      ),
                     ),
                   );
+                  if (mounted) {}
                 },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(50, 30),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text('Lihat Semua'),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        isLoading
-            ? const ArtikelSkeleton()
-            : SizedBox(
-                height: 200,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(), // biar smooth
-                  shrinkWrap: true,
-                  itemCount: artikelList.length,
-                  padding: const EdgeInsets.only(left: 16),
-                  itemBuilder: (context, index) {
-                    final artikel = artikelList[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          AppRoutes.artikelDetail,
-                          arguments: artikel,
-                        );
-                      },
-                      child: Container(
-                        width: 160,
-                        margin: const EdgeInsets.only(right: 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(5),
-                              child: Image.network(
-                                artikel.image,
-                                height: 150,
-                                width: 160,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: url.isEmpty
+                            ? _buildPlaceholderImage()
+                            : CachedNetworkImage(
+                                imageUrl: url,
+                                width: double.infinity,
+                                height: double.infinity,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Icon(Icons.broken_image, size: 80),
+                                placeholder: (context, url) => _buildLoadingThumb(),
+                                errorWidget: (context, url, error) => _buildPlaceholderImage(),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              artikel.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              artikel.formattedDate,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      artikel.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      artikel.publishedAt != null
+                          ? DateFormat('dd MMM yyyy').format(artikel.publishedAt!)
+                          : '',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                    ),
+                  ],
                 ),
-              ),
+              );
+            },
+          ),
       ],
+    );
+  }
+
+  void _openAll(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ArtikelScreen()),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      height: 225,
+      width: 160,
+      color: Colors.grey[900],
+      alignment: Alignment.center,
+      child: const Icon(Icons.image, size: 44, color: Colors.white38),
+    );
+  }
+
+  Widget _buildLoadingThumb() {
+    return const SizedBox(
+      height: 225,
+      width: 160,
+      child: Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
     );
   }
 }

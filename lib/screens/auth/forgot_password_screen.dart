@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/services/login_service.dart';
+import 'package:radio_odan_app/services/auth_service.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/config/app_routes.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -9,151 +11,133 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _emailC = TextEditingController();
+  bool _loading = false;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _emailC.dispose();
     super.dispose();
   }
 
-  Future<void> _sendResetLink() async {
-    final email = _emailController.text;
-    final success = await AuthService().forgotPassword(email);
-    final message =
-        success ? 'Link reset dikirim ke email' : 'Gagal mengirim link reset';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+  Future<void> _submit() async {
+    final form = _formKey.currentState;
+    if (form == null || !form.validate()) return;
+
+    setState(() => _loading = true);
+    final err = await AuthService.I.sendPasswordResetEmail(_emailC.text.trim());
+    if (!mounted) return;
+    setState(() => _loading = false);
+
+    if (err == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Link reset password telah dikirim. Cek email Anda.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      // Arahkan ke layar verifikasi/info atau kembali ke login
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.verification,
+        arguments: _emailC.text.trim(),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      body: SafeArea(
+      appBar: AppBar(title: const Text('Lupa Password')),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary, AppColors.backgroundDark],
+          ),
+        ),
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Icon
-                Container(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E1E1E),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.lock_outline,
-                    color: Colors.blueAccent,
-                    size: 50,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Forgot Password',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                const Text(
-                  'Enter your email to reset your password',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
-
-                const Text(
-                  "Enter the email address associated with your account and we'll send you a link to reset your password.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
-
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'Email Address',
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    hintText: 'you@example.com',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: const BorderSide(color: Colors.blueAccent),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.email_outlined,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _sendResetLink,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Send Password Reset Link',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 50),
-
-                GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                  child: RichText(
-                    text: const TextSpan(
-                      text: 'Remember your password? ',
-                      style: TextStyle(
-                        color: Colors.white,
-                        decoration: TextDecoration.none,
-                      ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
                       children: [
-                        TextSpan(
-                          text: 'Back to login',
-                          style: TextStyle(
-                            color: Colors.blueAccent,
-                            decoration: TextDecoration.underline,
+                        const SizedBox(height: 8),
+                        Text(
+                          'Atur Ulang Password',
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Masukkan email yang terdaftar. Kami akan mengirim link reset password.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _emailC,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email_outlined),
                           ),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty)
+                              return 'Email wajib diisi';
+                            if (!v.contains('@'))
+                              return 'Format email tidak valid';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _loading ? null : _submit,
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Kirim Link Reset'),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: _loading
+                              ? null
+                              : () => Navigator.pop(context),
+                          child: const Text('Kembali'),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -161,4 +145,3 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 }
-

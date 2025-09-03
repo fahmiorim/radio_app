@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import '../data/dummy_radio.dart';
+import 'package:provider/provider.dart';
 import '../audio/audio_player_manager.dart';
 import '../config/app_routes.dart';
+import '../providers/radio_station_provider.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -12,21 +14,61 @@ class MiniPlayer extends StatefulWidget {
 }
 
 class _MiniPlayerState extends State<MiniPlayer> {
-  final audioManager = AudioPlayerManager();
+  final AudioPlayerManager _audioManager = AudioPlayerManager.instance;
+
+  Widget _buildDefaultCover() {
+    return Image.asset(
+      'assets/odanlogo.png',
+      width: 42,
+      height: 42,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) => const Icon(Icons.music_note, size: 24, color: Colors.white70),
+    );
+  }
+
+  @override
+  void dispose() {
+    // Don't dispose the audio manager here as it's a singleton
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final radioProvider = Provider.of<RadioStationProvider>(context);
+    final currentStation =
+        radioProvider.currentStation ?? RadioStationProvider.defaultStation;
+    final nowPlaying = radioProvider.nowPlaying;
+
+    final cover = (nowPlaying?.artUrl.isNotEmpty ?? false)
+        ? nowPlaying!.artUrl
+        : currentStation.coverUrl;
+    final title = (nowPlaying?.title.isNotEmpty ?? false)
+        ? nowPlaying!.title
+        : currentStation.title;
+    final artist = (nowPlaying?.artist.isNotEmpty ?? false)
+        ? nowPlaying!.artist
+        : currentStation.host;
+
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
-        Navigator.pushNamed(context, AppRoutes.fullPlayer);
+        // Use pushNamed to navigate to the full player screen
+        Navigator.of(context).pushNamed(AppRoutes.fullPlayer);
       },
       child: Container(
         height: 55,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: const Color(0xF3200C18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
 
         child: Column(
@@ -36,12 +78,15 @@ class _MiniPlayerState extends State<MiniPlayer> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: Image.asset(
-                      dummyRadio.coverUrl,
-                      height: 42,
-                      width: 42,
-                      fit: BoxFit.cover,
-                    ),
+                    child: (nowPlaying != null && nowPlaying.artUrl.isNotEmpty)
+                        ? CachedNetworkImage(
+                            imageUrl: cover,
+                            height: 42,
+                            width: 42,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => _buildDefaultCover(),
+                          )
+                        : _buildDefaultCover(),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -50,7 +95,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          dummyRadio.title,
+                          title,
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -59,7 +104,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          dummyRadio.host,
+                          artist,
                           style: const TextStyle(
                             color: Colors.grey,
                             fontSize: 12,
@@ -96,10 +141,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
                       /// StreamBuilder untuk pantau state player
                       StreamBuilder<PlayerState>(
-                        stream: audioManager.playerStateStream,
+                        stream: _audioManager.player.playerStateStream,
                         builder: (context, snapshot) {
                           final state = snapshot.data;
-                          final isPlaying = state?.playing ?? false;
                           final isBuffering =
                               state?.processingState ==
                                   ProcessingState.loading ||
@@ -116,16 +160,11 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
                           return IconButton(
                             icon: Icon(
-                              isPlaying ? Icons.pause : Icons.play_arrow,
+                              radioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
+                              color: Colors.white,
                             ),
-                            onPressed: () {
-                              if (isPlaying) {
-                                audioManager.pause();
-                              } else {
-                                audioManager.playRadio(
-                                  dummyRadio,
-                                ); // <-- pakai RadioStation
-                              }
+                            onPressed: () async {
+                              await radioProvider.togglePlayPause();
                             },
                           );
                         },
@@ -138,13 +177,14 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
             /// progress bar tipis
             StreamBuilder<Duration>(
-              stream: audioManager.player.positionStream,
+              stream: _audioManager.player.positionStream,
               builder: (context, snapshot) {
                 final pos = snapshot.data ?? Duration.zero;
                 final duration =
-                    audioManager.player.duration ?? const Duration(seconds: 1);
-                double progress = pos.inMilliseconds / duration.inMilliseconds;
-                if (progress.isNaN) progress = 0.0;
+                    _audioManager.player.duration ?? const Duration(seconds: 1);
+                double progress = duration.inMilliseconds > 0
+                    ? pos.inMilliseconds / duration.inMilliseconds
+                    : 0.0;
 
                 return SizedBox(
                   height: 2, // ketebalan bar
