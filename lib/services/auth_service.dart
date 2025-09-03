@@ -38,8 +38,8 @@ class AuthService {
 
   final _storage = const FlutterSecureStorage();
 
-  /// Gunakan konstruktor biasa (API resmi).
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
+  /// Gunakan konstruktor standar dari `GoogleSignIn`.
+  final GoogleSignIn _googleSignIn = GoogleSignIn.standard(
     scopes: <String>['email', 'profile'],
   );
 
