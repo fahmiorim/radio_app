@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
@@ -73,15 +73,18 @@ class _LoginScreenState extends State<LoginScreen> {
   // Placeholder untuk Google Sign-In (akan diisi nanti)
   Future<void> _signInWithGoogle() async {
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
       if (googleUser == null) return;
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final credential = firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      final userCred =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final userCred = await firebase_auth.FirebaseAuth.instance.signInWithCredential(credential);
       final user = userCred.user;
       if (user != null) {
         await context.read<AuthProvider>().loginWithFirebase(user);
