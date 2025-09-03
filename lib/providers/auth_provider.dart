@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../config/api_client.dart';
@@ -66,6 +67,30 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       return res.message; // pesan error
     }
+  }
+
+  Future<void> loginWithFirebase(fb.User user) async {
+    _loading = true;
+    notifyListeners();
+
+    final token = await user.getIdToken();
+    await const FlutterSecureStorage().write(key: 'user_token', value: token);
+
+    _user = UserModel(
+      id: 0,
+      name: user.displayName ?? 'Tidak ada nama',
+      email: user.email ?? 'Tidak ada email',
+      phone: user.phoneNumber,
+      address: null,
+      avatar: user.photoURL,
+      isActive: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    _token = token;
+
+    _loading = false;
+    notifyListeners();
   }
 
   Future<String?> register(String name, String email, String password) async {
