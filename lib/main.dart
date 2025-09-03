@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // ⬅️ Firebase init
 import 'package:just_audio_background/just_audio_background.dart';
@@ -27,7 +29,11 @@ Future<void> main() async {
   await Firebase.initializeApp();
 
   // 2) Load environment variables
-  await dotenv.load(fileName: '.env');
+  if (await File('.env').exists()) {
+    await dotenv.load(fileName: '.env');
+  } else {
+    await dotenv.load(fileName: '.env.example');
+  }
 
   // 3) Setup API client interceptors (auth header, cookies, csrf, dll)
   ApiClient.I.ensureInterceptors();
