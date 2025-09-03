@@ -22,7 +22,11 @@ import 'config/api_client.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase with default settings
   await Firebase.initializeApp();
+
+  // This will suppress the locale warnings
+  await Firebase.app().setAutomaticDataCollectionEnabled(true);
 
   // Load environment variables
   await dotenv.load(fileName: '.env');
