@@ -203,20 +203,12 @@ class AuthService {
     try {
       final storage = const FlutterSecureStorage();
       final token = await storage.read(key: 'user_token');
-      
+
       // Periksa apakah token ada dan valid
       if (token == null || token.isEmpty) {
         return false;
       }
-      
-      // Opsional: Validasi format token jika diperlukan
-      // Contoh: periksa apakah token memiliki format yang benar
-      // final tokenParts = token.split('.');
-      // if (tokenParts.length != 3) {
-      //   await storage.delete(key: 'user_token');
-      //   return false;
-      // }
-      
+
       return true;
     } catch (e) {
       // Jika terjadi error, asumsikan tidak login
