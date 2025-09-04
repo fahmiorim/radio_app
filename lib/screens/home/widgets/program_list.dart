@@ -88,11 +88,16 @@ class _ProgramListState extends State<ProgramList>
             title: 'Program Hari Ini',
             onSeeAll: () => _openAll(context),
           ),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               'Tidak ada program untuk hari ini',
-              style: TextStyle(color: Colors.white70),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onBackground
+                        .withOpacity(0.7),
+                  ),
             ),
           ),
         ],
@@ -162,11 +167,9 @@ class _ProgramListState extends State<ProgramList>
                           program.namaProgram,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ],
                     ),

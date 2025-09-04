@@ -14,6 +14,7 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -23,21 +24,15 @@ class SectionTitle extends StatelessWidget {
             title,
             style:
                 titleStyle ??
-                const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
-                ),
+                theme.textTheme.titleMedium?.copyWith(letterSpacing: 0.5),
           ),
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
               child: Text(
                 "Lihat Semua",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.amber[300],
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.secondary,
                   fontWeight: FontWeight.w500,
                 ),
               ),

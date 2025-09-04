@@ -27,6 +27,30 @@ class AppTheme {
         borderRadius: BorderRadius.all(Radius.circular(12)),
       ),
     ),
+    textTheme: const TextTheme(
+      titleLarge: TextStyle(
+        color: Colors.black87,
+        fontWeight: FontWeight.bold,
+        fontSize: 24,
+      ),
+      titleMedium: TextStyle(
+        color: Colors.black87,
+        fontWeight: FontWeight.w600,
+        fontSize: 20,
+      ),
+      bodyLarge: TextStyle(
+        color: Colors.black87,
+        fontSize: 16,
+      ),
+      bodyMedium: TextStyle(
+        color: Colors.black54,
+        fontSize: 14,
+      ),
+      bodySmall: TextStyle(
+        color: Colors.black45,
+        fontSize: 12,
+      ),
+    ),
   );
 
   static ThemeData darkTheme = ThemeData(
@@ -68,6 +92,11 @@ class AppTheme {
         fontWeight: FontWeight.bold,
         fontSize: 24,
       ),
+      titleMedium: TextStyle(
+        color: AppColors.textPrimary,
+        fontWeight: FontWeight.w600,
+        fontSize: 20,
+      ),
       bodyLarge: TextStyle(
         color: AppColors.textPrimary,
         fontSize: 16,
@@ -75,6 +104,10 @@ class AppTheme {
       bodyMedium: TextStyle(
         color: AppColors.textSecondary,
         fontSize: 14,
+      ),
+      bodySmall: TextStyle(
+        color: AppColors.textSecondary,
+        fontSize: 12,
       ),
     ),
   );

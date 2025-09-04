@@ -5,6 +5,7 @@ class NotFoundScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('404'), centerTitle: true),
       body: Center(
@@ -13,17 +14,23 @@ class NotFoundScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.search_off, size: 100, color: Colors.grey),
+              Icon(
+                Icons.search_off,
+                size: 100,
+                color: theme.colorScheme.onBackground.withOpacity(0.5),
+              ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Halaman Tidak Ditemukan',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge?.copyWith(fontSize: 22),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Maaf, halaman yang kamu tuju tidak tersedia atau argumennya tidak valid.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: theme.colorScheme.onBackground.withOpacity(0.54),
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
