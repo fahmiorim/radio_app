@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Config
-import 'package:radio_odan_app/config/app_colors.dart';
 
 // Providers
 import '../../providers/program_provider.dart';
@@ -123,9 +122,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: colors.background,
       drawer: const AppDrawer(),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -138,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [AppColors.primary, AppColors.backgroundDark],
+                      colors: [colors.primary, colors.background],
                     ),
                   ),
                   child: Stack(
@@ -188,8 +189,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: RefreshIndicator(
                   key: _refreshIndicatorKey,
                   onRefresh: _refreshAll,
-                  color: AppColors.primary,
-                  backgroundColor: AppColors.backgroundDark,
+                  color: colors.primary,
+                  backgroundColor: colors.background,
                   child: CustomScrollView(
                     key: const Key('home_scroll_view'),
                     physics: const AlwaysScrollableScrollPhysics(

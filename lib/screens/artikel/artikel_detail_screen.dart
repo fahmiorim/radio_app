@@ -4,7 +4,6 @@ import 'package:html/dom.dart' as dom;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
 import 'package:radio_odan_app/widgets/loading/loading_widget.dart';
@@ -44,20 +43,21 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
   Widget build(BuildContext context) {
     return Consumer<ArtikelProvider>(
       builder: (context, provider, _) {
+        final colors = Theme.of(context).colorScheme;
         final artikel = provider.selectedArtikel;
         final error = provider.error;
         final isLoading = provider.isLoadingDetail;
 
         if (isLoading) {
-          return const Scaffold(
-            backgroundColor: AppColors.backgroundDark,
-            body: Center(child: LoadingWidget()),
+          return Scaffold(
+            backgroundColor: colors.background,
+            body: const Center(child: LoadingWidget()),
           );
         }
 
         if (error != null || artikel == null) {
           return Scaffold(
-            backgroundColor: AppColors.backgroundDark,
+            backgroundColor: colors.background,
             appBar: CustomAppBar.transparent(title: 'Error'),
             body: Center(
               child: Column(
@@ -84,22 +84,22 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
             content.isEmpty || content == '<p></p>' || content == '<div></div>';
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundDark,
+          backgroundColor: colors.background,
           appBar: CustomAppBar.transparent(title: artikel.title),
           body: RefreshIndicator(
             onRefresh: _loadArticle,
-            color: AppColors.primary,
-            backgroundColor: AppColors.backgroundDark,
+            color: colors.primary,
+            backgroundColor: colors.background,
             child: Stack(
               children: [
                 // Background
                 Positioned.fill(
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [AppColors.primary, AppColors.backgroundDark],
+                        colors: [colors.primary, colors.background],
                       ),
                     ),
                     child: Stack(

@@ -3,8 +3,18 @@ import 'app_colors.dart';
 
 class AppTheme {
   static ThemeData lightTheme = ThemeData(
-    brightness: Brightness.light,
-    primaryColor: AppColors.primary,
+    colorScheme: const ColorScheme.light(
+      primary: AppColors.primary,
+      secondary: AppColors.primary,
+      background: AppColors.backgroundLight,
+      surface: Colors.white,
+      error: Colors.red,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onBackground: AppColors.textPrimary,
+      onSurface: AppColors.textPrimary,
+      onError: Colors.white,
+    ),
     scaffoldBackgroundColor: AppColors.backgroundLight,
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.backgroundLight,
@@ -31,13 +41,18 @@ class AppTheme {
 
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
-    primaryColor: AppColors.primary,
     scaffoldBackgroundColor: AppColors.backgroundDark,
     colorScheme: const ColorScheme.dark(
       primary: AppColors.primary,
       secondary: AppColors.primary,
+      background: AppColors.backgroundDark,
       surface: AppColors.surface,
-      background: AppColors.backgroundDark, // Keeping for backward compatibility
+      error: Colors.red,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onBackground: AppColors.textPrimary,
+      onSurface: AppColors.textPrimary,
+      onError: Colors.white,
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.backgroundDark,

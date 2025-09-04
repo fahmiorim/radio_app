@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -61,14 +60,19 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       iconColor: iconColor,
       actions: actions,
       leading: leading,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, AppColors.primary],
-          ),
-        ),
+      flexibleSpace: Builder(
+        builder: (context) {
+          final colors = Theme.of(context).colorScheme;
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, colors.primary],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
