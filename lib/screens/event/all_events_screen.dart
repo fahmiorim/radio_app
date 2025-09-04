@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/event_model.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
@@ -102,22 +101,31 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     return Scaffold(
       key: const Key('all_events_screen'),
       appBar: CustomAppBar.transparent(title: 'Semua Event'),
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Stack(
         children: [
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.background,
+                  ],
                 ),
               ),
               child: Stack(
                 children: [
-                  Positioned(top: 50, right: -50, child: _bubble(200, 0.05)),
-                  Positioned(bottom: -50, left: -50, child: _bubble(250, 0.03)),
+                  Positioned(
+                      top: 50,
+                      right: -50,
+                      child: _bubble(context, 200, 0.05)),
+                  Positioned(
+                      bottom: -50,
+                      left: -50,
+                      child: _bubble(context, 250, 0.03)),
                 ],
               ),
             ),
@@ -143,12 +151,18 @@ class _AllEventsScreenState extends State<AllEventsScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  Icon(Icons.error_outline,
+                      color: Theme.of(context).colorScheme.error, size: 48),
                   const SizedBox(height: 12),
                   Text(
                     'Gagal memuat event:\n${provider.error}',
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onBackground
+                              .withOpacity(0.7),
+                        ),
                   ),
                   const SizedBox(height: 12),
                   ElevatedButton(
@@ -162,10 +176,15 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         }
 
         if (provider.events.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               'Tidak ada event yang tersedia',
-              style: TextStyle(color: Colors.white70),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onBackground
+                        .withOpacity(0.7),
+                  ),
             ),
           );
         }
@@ -210,7 +229,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     return Card(
       key: Key('event_${e.id}'),
       margin: const EdgeInsets.only(bottom: 16),
-      color: AppColors.surface.withOpacity(0.9),
+      color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: InkWell(
@@ -230,22 +249,23 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                   width: double.infinity,
                   height: 180,
                   child: url.isEmpty
-                      ? _thumbPlaceholder()
+                      ? _thumbPlaceholder(context)
                       : CachedNetworkImage(
                           imageUrl: url,
                           fit: BoxFit.cover,
                           placeholder: (_, __) => _thumbLoading(),
-                          errorWidget: (_, __, ___) => _thumbPlaceholder(),
+                          errorWidget: (_, __, ___) =>
+                              _thumbPlaceholder(context),
                         ),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 e.judul,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -255,7 +275,10 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                 e.formattedTanggal,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.8),
                 ),
               ),
             ],
@@ -265,15 +288,19 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     );
   }
 
-  Widget _thumbPlaceholder() => Container(
-    color: Colors.grey[900],
-    alignment: Alignment.center,
-    child: const Icon(
-      Icons.image_not_supported,
-      size: 40,
-      color: Colors.white38,
-    ),
-  );
+  Widget _thumbPlaceholder(BuildContext context) => Container(
+        color:
+            Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.image_not_supported,
+          size: 40,
+          color: Theme.of(context)
+              .colorScheme
+              .onSurface
+              .withOpacity(0.38),
+        ),
+      );
 
   Widget _thumbLoading() => const Center(
     child: SizedBox(
@@ -283,12 +310,16 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     ),
   );
 
-  Widget _bubble(double size, double opacity) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withOpacity(opacity),
-    ),
-  );
+  Widget _bubble(BuildContext context, double size, double opacity) =>
+      Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Theme.of(context)
+              .colorScheme
+              .onPrimary
+              .withOpacity(opacity),
+        ),
+      );
 }

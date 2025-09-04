@@ -13,7 +13,12 @@ class NotFoundScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.search_off, size: 100, color: Colors.grey),
+              Icon(
+                Icons.search_off,
+                size: 100,
+                color:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Halaman Tidak Ditemukan',
@@ -21,9 +26,14 @@ class NotFoundScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Maaf, halaman yang kamu tuju tidak tersedia atau argumennya tidak valid.',
-                style: TextStyle(fontSize: 16, color: Colors.black54),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onBackground
+                          .withOpacity(0.6),
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
