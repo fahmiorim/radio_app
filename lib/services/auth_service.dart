@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import '../config/api_client.dart';
 import '../models/user_model.dart';
@@ -24,7 +25,7 @@ class AuthService {
 
   final _storage = const FlutterSecureStorage();
 
-  /// LOGIN: POST /login
+  // ===================== Email/Password =====================
   Future<AuthResult> login(String email, String password) async {
     try {
       final res = await ApiClient.I.dio.post(
@@ -49,6 +50,7 @@ class AuthService {
       }
 
       await _storage.write(key: 'user_token', value: token);
+      ApiClient.I.setBearer(token);
 
       final userJson = (data['user'] ?? {}) as Map<String, dynamic>;
       final user = UserModel.fromJson(userJson);
@@ -67,7 +69,6 @@ class AuthService {
     }
   }
 
-  /// REGISTER: POST /register
   Future<AuthResult> register(
     String name,
     String email,
@@ -96,6 +97,7 @@ class AuthService {
       }
 
       await _storage.write(key: 'user_token', value: token);
+      ApiClient.I.setBearer(token);
 
       final userJson = (data['user'] ?? {}) as Map<String, dynamic>;
       final user = UserModel.fromJson(userJson);
@@ -114,13 +116,97 @@ class AuthService {
     }
   }
 
+  // ===================== Firebase Auth ======================
+  Future<String> _getFirebaseIdToken(fb.User user) async {
+    final String? t1 = await user.getIdToken(true); // force refresh
+    if (t1 != null && t1.isNotEmpty) return t1;
+
+    final String? t2 = await user.getIdToken(false); // cached
+    if (t2 != null && t2.isNotEmpty) return t2;
+
+    throw StateError('Firebase mengembalikan token kosong.');
+  }
+
+  Future<AuthResult> loginWithIdToken({
+    required String idToken,
+    String? name,
+    String? email,
+    String? photoUrl,
+  }) async {
+    try {
+      final res = await ApiClient.I.dio.post(
+        '/firebase-login',
+        data: {
+          if (name != null) 'name': name,
+          if (email != null) 'email': email,
+          if (photoUrl != null) 'photo_url': photoUrl,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $idToken',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (c) => c != null && c >= 200 && c < 500,
+        ),
+      );
+
+      final data = res.data as Map<String, dynamic>? ?? {};
+      if (res.statusCode == 200 && data['status'] == true) {
+        final token = (data['token'] ?? '').toString();
+        if (token.isEmpty) {
+          return const AuthResult(
+            status: false,
+            message: 'JWT kosong dari server.',
+          );
+        }
+
+        await _storage.write(key: 'user_token', value: token);
+        ApiClient.I.setBearer(token);
+
+        final userJson = (data['data'] ?? {}) as Map<String, dynamic>;
+        final user = UserModel.fromJson(userJson);
+
+        return AuthResult(
+          status: true,
+          message: data['message']?.toString() ?? 'Login berhasil.',
+          token: token,
+          user: user,
+        );
+      }
+
+      return AuthResult(
+        status: false,
+        message:
+            (data['message']?.toString() ??
+            'Login Firebase gagal. (HTTP ${res.statusCode})'),
+      );
+    } on DioException catch (e) {
+      return AuthResult(
+        status: false,
+        message: _extractApiError(e, 'Gagal login via Firebase.'),
+      );
+    }
+  }
+
+  Future<AuthResult> loginWithFirebaseUser(fb.User user) async {
+    final idToken = await _getFirebaseIdToken(user);
+    return loginWithIdToken(
+      idToken: idToken,
+      name: user.displayName,
+      email: user.email,
+      photoUrl: user.photoURL,
+    );
+    // NOTE: ApiClient.I.setBearer(token) dilakukan di loginWithIdToken()
+  }
+
+  // ===================== Misc ======================
   Future<bool> checkEmailVerified() async {
     try {
-      final res = await ApiClient.I.dio.get('/me'); // sesuaikan: /me atau /user
+      final res = await ApiClient.I.dio.get('/me');
       final data = res.data as Map<String, dynamic>? ?? {};
       final user = (data['user'] ?? {}) as Map<String, dynamic>;
-      final verified = user['email_verified_at'] != null;
-      return verified;
+      return user['email_verified_at'] != null;
     } catch (_) {
       return false;
     }
@@ -128,9 +214,8 @@ class AuthService {
 
   Future<String?> resendVerificationEmail() async {
     try {
-      // Laravel default: POST /email/verification-notification
       await ApiClient.I.dio.post('/email/verification-notification');
-      return null; // null = sukses tanpa error
+      return null;
     } on DioException catch (e) {
       return _extractApiError(e, 'Gagal mengirim ulang email verifikasi.');
     } catch (e) {
@@ -140,18 +225,14 @@ class AuthService {
 
   Future<String?> sendPasswordResetEmail(String email) async {
     try {
-      // Laravel Fortify default: POST /forgot-password
       final res = await ApiClient.I.dio.post(
         '/forgot-password',
         data: {'email': email},
       );
-
-      // Banyak setup Laravel mengembalikan { status: "We have emailed your password reset link!" }
       final data = res.data;
       final ok =
           (data is Map && (data['status'] == true || data['status'] == 'OK')) ||
           res.statusCode == 200;
-
       if (ok) return null;
       return (data is Map && data['message'] != null)
           ? data['message'].toString()
@@ -163,7 +244,6 @@ class AuthService {
     }
   }
 
-  /// Reset password dengan token dari email (opsional dipakai kalau reset di app)
   Future<String?> resetPassword({
     required String email,
     required String token,
@@ -171,7 +251,6 @@ class AuthService {
     required String passwordConfirmation,
   }) async {
     try {
-      // Laravel Fortify default: POST /reset-password
       final res = await ApiClient.I.dio.post(
         '/reset-password',
         data: {
@@ -181,12 +260,10 @@ class AuthService {
           'password_confirmation': passwordConfirmation,
         },
       );
-
       final data = res.data;
       final ok =
           (data is Map && (data['status'] == true || data['status'] == 'OK')) ||
           res.statusCode == 200;
-
       if (ok) return null;
       return (data is Map && data['message'] != null)
           ? data['message'].toString()
@@ -198,35 +275,25 @@ class AuthService {
     }
   }
 
-  /// CEK LOGIN
   static Future<bool> isLoggedIn() async {
     try {
       final storage = const FlutterSecureStorage();
       final token = await storage.read(key: 'user_token');
-
-      // Periksa apakah token ada dan valid
-      if (token == null || token.isEmpty) {
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      // Jika terjadi error, asumsikan tidak login
+      return (token ?? '').isNotEmpty;
+    } catch (_) {
       return false;
     }
   }
 
-  /// LOGOUT
   Future<void> logout() async {
     try {
-      // optional: hit endpoint logout kalau ada
-      // await ApiClient.I.dio.post('/logout');
+      // optional: await ApiClient.I.dio.post('/logout');
     } finally {
       await _storage.delete(key: 'user_token');
+      ApiClient.I.clearBearer();
     }
   }
 
-  /// Ambil user aktif (opsional, kalau API ada /me)
   Future<UserModel?> getCurrentUser() async {
     try {
       final res = await ApiClient.I.dio.get('/me');

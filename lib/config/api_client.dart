@@ -1,8 +1,9 @@
+import 'dart:io';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'app_api_config.dart';
 
@@ -10,97 +11,116 @@ class ApiClient {
   ApiClient._internal();
   static final ApiClient I = ApiClient._internal();
 
-  // API (punya /api/mobile)
-  final Dio dio = Dio(
-    BaseOptions(
-      baseUrl: AppApiConfig.apiBaseUrl,
-      connectTimeout: const Duration(seconds: 120),
-      receiveTimeout: const Duration(seconds: 120),
-      sendTimeout: const Duration(seconds: 120),
-      headers: {'Accept': 'application/json'},
-    ),
-  );
+  late final Dio dio; // untuk endpoint /api/mobile
+  late final Dio dioRoot; // untuk root host (file, csrf, broadcasting, dll)
+  late final CookieJar _cookieJar;
 
-  final Dio dioRoot = Dio(
-    BaseOptions(
-      baseUrl: AppApiConfig.assetBaseUrl,
-      connectTimeout: const Duration(seconds: 120),
-      receiveTimeout: const Duration(seconds: 120),
-      sendTimeout: const Duration(seconds: 120),
-      headers: {'Accept': 'application/json'},
-    ),
-  );
-
-  final _storage = const FlutterSecureStorage();
-  final CookieJar _cookieJar = CookieJar();
+  // supaya nggak dobel wiring
   bool _wired = false;
 
-  void ensureInterceptors() {
+  /// Panggil sekali saat startup, setelah dotenv.load()
+  Future<void> ensureInterceptors() async {
     if (_wired) return;
     _wired = true;
 
+    // ====== Inisialisasi Dio clients ======
+    dio = Dio(
+      BaseOptions(
+        baseUrl: AppApiConfig.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 20),
+        headers: {'Accept': 'application/json'},
+        // 2xx saja yang dianggap success → 401/403/422/5xx akan masuk onError
+        validateStatus: (c) => c != null && c >= 200 && c < 300,
+      ),
+    );
+
+    dioRoot = Dio(
+      BaseOptions(
+        baseUrl: AppApiConfig.assetBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 20),
+        sendTimeout: const Duration(seconds: 20),
+        headers: {'Accept': 'application/json'},
+        validateStatus: (c) => c != null && c >= 200 && c < 300,
+      ),
+    );
+
+    // ====== Cookie storage (persisten) ======
+    final dir = await _cookiesDir();
+    _cookieJar = PersistCookieJar(storage: FileStorage(dir.path));
+    final cookieMgr = CookieManager(_cookieJar);
+    dio.interceptors.add(cookieMgr);
+    dioRoot.interceptors.add(cookieMgr);
+
+    // ====== Authorization & no-cache ======
     final authInterceptor = InterceptorsWrapper(
       onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'user_token');
-        if (token != null && token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        // Tambahkan header untuk mencegah caching
+        // cache-control
         options.headers['Cache-Control'] = 'no-cache';
         options.headers['Pragma'] = 'no-cache';
         handler.next(options);
       },
       onResponse: (response, handler) => handler.next(response),
-      onError: (DioException e, handler) async {
-        // Handle unauthorized (401) error
+      onError: (e, handler) async {
         if (e.response?.statusCode == 401) {
-          // Hapus token yang tidak valid
-          await _storage.delete(key: 'user_token');
-
-          // Navigasi ke halaman login jika diperlukan
-          // Catatan: Anda perlu menggunakan navigator key atau event bus untuk ini
-          // Contoh: navigatorKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+          // bisa lakukan aksi global (hapus token, navigate login) di sini
+          // NOTE: token header dikelola via setBearer()/clearBearer()
         }
         handler.next(e);
       },
     );
+    dio.interceptors.add(authInterceptor);
+    dioRoot.interceptors.add(authInterceptor);
 
-    // Tambahkan interceptor untuk menangani error
-    final errorInterceptor = InterceptorsWrapper(
-      onError: (DioException e, handler) async {
-        // Log error untuk debugging
-        debugPrint('API Error: ${e.message}');
-        debugPrint('URL: ${e.requestOptions.uri}');
-        debugPrint('Response: ${e.response?.data}');
+    // ====== Logging (debug only) ======
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestBody: true,
+          responseBody: false,
+          responseHeader: false,
+        ),
+      );
+      dioRoot.interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestBody: true,
+          responseBody: false,
+          responseHeader: false,
+        ),
+      );
+    }
 
-        // Handle network errors
-        if (e.type == DioExceptionType.connectionTimeout ||
-            e.type == DioExceptionType.receiveTimeout ||
-            e.type == DioExceptionType.sendTimeout) {
-          // Handle timeout errors
-          return handler.reject(
-            DioException(
-              requestOptions: e.requestOptions,
-              error: 'Koneksi timeout. Silakan coba lagi.',
-            ),
-          );
+    // ====== Bypass baseUrl untuk URL absolut ======
+    final absUrlBypass = InterceptorsWrapper(
+      onRequest: (options, handler) {
+        final p = options.path;
+        if (p.startsWith('http://') || p.startsWith('https://')) {
+          // jangan gabungkan dengan baseUrl
+          options.baseUrl = '';
         }
-
-        return handler.next(e);
+        handler.next(options);
       },
     );
+    dio.interceptors.add(absUrlBypass);
+    dioRoot.interceptors.add(absUrlBypass);
 
-    dio.interceptors.addAll([authInterceptor, errorInterceptor]);
-    dioRoot.interceptors.addAll([authInterceptor, errorInterceptor]);
-
-    final cookieManager = CookieManager(_cookieJar);
-    dio.interceptors.add(cookieManager);
-    dioRoot.interceptors.add(CookieManager(_cookieJar));
-
+    // ====== CSRF untuk Sanctum di dioRoot ======
     dioRoot.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (options.extra['skipCsrf'] == true) {
+          // hanya suntik CSRF untuk host yang sama (ASSET_BASE_URL)
+          final reqUri = Uri.parse(AppApiConfig.assetBaseUrl);
+          final optUri = Uri.parse('${dioRoot.options.baseUrl}${options.path}');
+          final sameHost =
+              (optUri.host == reqUri.host &&
+              optUri.scheme == reqUri.scheme &&
+              optUri.port == reqUri.port);
+
+          if (!sameHost || options.extra['skipCsrf'] == true) {
             handler.next(options);
             return;
           }
@@ -120,6 +140,26 @@ class ApiClient {
         },
       ),
     );
+  }
+
+  /// Set Authorization Bearer ke KEDUA client
+  void setBearer(String token) {
+    final v = 'Bearer $token';
+    dio.options.headers['Authorization'] = v;
+    dioRoot.options.headers['Authorization'] = v;
+  }
+
+  /// Hapus Authorization
+  void clearBearer() {
+    dio.options.headers.remove('Authorization');
+    dioRoot.options.headers.remove('Authorization');
+  }
+
+  Future<Directory> _cookiesDir() async {
+    final support = await getApplicationSupportDirectory();
+    final dir = Directory('${support.path}${Platform.pathSeparator}cookies');
+    if (!(await dir.exists())) await dir.create(recursive: true);
+    return dir;
   }
 
   Future<String?> _getCsrfToken() async {
