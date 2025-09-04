@@ -15,6 +15,9 @@ class AppColors {
   // Text Colors
   static const Color textPrimary = Colors.white;
   static const Color textSecondary = Color(0xFFB3B3B3);
+
+  // Semantic Colors
+  static const Color error = Color(0xFFB00020);
   
   // Gradients
   static const LinearGradient darkGradient = LinearGradient(
