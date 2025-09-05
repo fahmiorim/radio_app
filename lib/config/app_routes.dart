@@ -15,10 +15,12 @@ import '../screens/auth/reset_password_screen.dart'; // opsional
 import '../screens/program/all_programs_screen.dart';
 import '../screens/program/program_detail_screen.dart';
 import '../screens/event/all_events_screen.dart';
+import '../screens/event/event_detail_screen.dart';
 
 // Screens (Artikel)
 import '../screens/artikel/artikel_detail_screen.dart';
 import '../models/artikel_model.dart';
+import '../models/event_model.dart';
 
 // Screens (Galeri)
 import '../screens/galeri/all_videos_screen.dart';
@@ -49,6 +51,7 @@ class AppRoutes {
 
   static const String artikelDetail = '/artikel-detail';
   static const String programDetail = '/program-detail';
+  static const String eventDetail = '/event-detail';
   static const String allPrograms = '/program-semua';
   static const String allVideos = '/all-videos';
   static const String albumList = '/album-semua';
@@ -146,6 +149,15 @@ class AppRoutes {
 
       case programDetail:
         return const ProgramDetailScreen();
+
+      case eventDetail:
+        {
+          final arg = settings.arguments;
+          if (arg is Event) {
+            return EventDetailScreen(event: arg);
+          }
+          return const NotFoundScreen();
+        }
 
       case allPrograms:
         return const AllProgramsScreen();

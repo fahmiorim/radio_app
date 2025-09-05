@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import '../../config/app_colors.dart';
+import 'package:radio_odan_app/config/app_routes.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
@@ -242,8 +243,11 @@ class _AllEventsScreenState extends State<AllEventsScreen>
       elevation: 2,
       child: InkWell(
         onTap: () {
-          // TODO: buka detail event kalau sudah ada screen-nya
-          // context.read<EventProvider>().selectEvent(e, context);
+          Navigator.pushNamed(
+            context,
+            AppRoutes.eventDetail,
+            arguments: e,
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
