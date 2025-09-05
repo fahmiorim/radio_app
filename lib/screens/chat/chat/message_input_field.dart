@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/app_colors.dart';
 
 class MessageInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -16,21 +17,21 @@ class MessageInputField extends StatelessWidget {
       top: false,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        color: Colors.black,
+        color: AppColors.chatBackground,
         child: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: controller,
-                style: const TextStyle(color: Colors.white),
-                cursorColor: Colors.white,
+                style: const TextStyle(color: AppColors.white),
+                cursorColor: AppColors.white,
                 maxLines: null,
                 minLines: 1,
                 decoration: InputDecoration(
                   hintText: 'Ketik pesan...',
-                  hintStyle: TextStyle(color: Colors.grey[500]),
+                  hintStyle: const TextStyle(color: AppColors.chatHintText),
                   filled: true,
-                  fillColor: Colors.grey[900],
+                  fillColor: AppColors.chatInputBackground,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
@@ -46,10 +47,10 @@ class MessageInputField extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.send, color: Colors.white, size: 20),
+              icon: const Icon(Icons.send, color: AppColors.white, size: 20),
               padding: const EdgeInsets.all(12),
               style: IconButton.styleFrom(
-                backgroundColor: const Color(0xFFFE2C55),
+                backgroundColor: AppColors.liveIndicator,
                 shape: const CircleBorder(),
               ),
               onPressed: onSend,

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../audio/audio_player_manager.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../providers/radio_station_provider.dart';
+import '../../config/app_colors.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -23,7 +24,7 @@ class _FullPlayerState extends State<FullPlayer> {
       width: double.infinity,
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) =>
-          const Icon(Icons.music_note, size: 100, color: Colors.white),
+          const Icon(Icons.music_note, size: 100, color: AppColors.white),
     );
   }
 
@@ -73,17 +74,17 @@ class _FullPlayerState extends State<FullPlayer> {
 
     if (currentStation == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFF121212),
+        backgroundColor: AppColors.backgroundDark,
         body: Center(
           child: Text(
             'No radio station selected',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.white),
           ),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
         title: const Text(
           "Now Playing",
@@ -94,11 +95,11 @@ class _FullPlayerState extends State<FullPlayer> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.transparent,
+        foregroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios, size: 20, color: AppColors.white),
           onPressed: () {
             // Update the provider state before navigating back
             if (mounted) {
@@ -156,7 +157,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   const SizedBox(height: 4),
                   Text(
                     artist,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -167,7 +168,7 @@ class _FullPlayerState extends State<FullPlayer> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: AppColors.liveBadge,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Text(

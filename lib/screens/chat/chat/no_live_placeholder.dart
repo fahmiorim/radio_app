@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../../../config/app_colors.dart';
 
 class NoLivePlaceholder extends StatelessWidget {
   final VoidCallback? onNotify;
@@ -8,8 +10,13 @@ class NoLivePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Define gradient colors here since they can't be const
+    final gradientColors = [
+      AppColors.liveIndicator,
+      Color.lerp(AppColors.liveIndicator, Colors.white, 0.2) ?? AppColors.liveIndicator,
+    ];
     return Container(
-      color: Colors.black,
+      color: AppColors.chatBackground,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -31,17 +38,17 @@ class NoLivePlaceholder extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.grey[900]!.withOpacity(0.7),
+                    color: AppColors.cardSurface.withOpacity(0.7),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFFFE2C55).withOpacity(0.3),
+                      color: AppColors.liveIndicator.withOpacity(0.3),
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.radio_outlined,
                     size: 64,
-                    color: const Color(0xFFFE2C55).withOpacity(0.8),
+                    color: AppColors.liveIndicator.withOpacity(0.8),
                   ),
                 ),
               ),
@@ -51,7 +58,7 @@ class NoLivePlaceholder extends StatelessWidget {
               const Text(
                 'Tidak Ada Siaran Saat Ini',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -62,7 +69,7 @@ class NoLivePlaceholder extends StatelessWidget {
               Text(
                 'Siaran belum dimulai atau sedang dalam jeda.\nNantikan siaran berikutnya!',
                 style: TextStyle(
-                  color: Colors.grey[400],
+                  color: AppColors.textSecondary,
                   fontSize: 14,
                   height: 1.5,
                 ),
@@ -83,15 +90,15 @@ class NoLivePlaceholder extends StatelessWidget {
                       ),
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFE2C55), Color(0xFFFF5A5F)],
+                        gradient: LinearGradient(
+                          colors: gradientColors,
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFFE2C55).withOpacity(0.3),
+                            color: AppColors.liveIndicator.withOpacity(0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -102,14 +109,14 @@ class NoLivePlaceholder extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.notifications_active_outlined,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 18,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Aktifkan Notifikasi',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -131,7 +138,7 @@ class NoLivePlaceholder extends StatelessWidget {
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(
-                          color: Colors.grey[700]!,
+                          color: AppColors.border,
                           width: 1.5,
                         ),
                       ),
@@ -140,14 +147,14 @@ class NoLivePlaceholder extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.arrow_back_rounded,
-                            color: Colors.white,
+                            color: AppColors.white,
                             size: 16,
                           ),
                           SizedBox(width: 8),
                           Text(
                             'Kembali ke Beranda',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.white,
                               fontWeight: FontWeight.w500,
                               fontSize: 14,
                             ),

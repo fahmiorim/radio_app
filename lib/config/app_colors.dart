@@ -134,4 +134,11 @@ class AppColors {
   static const Color brown = Colors.brown;
   static const Color grey = Colors.grey;
   static const Color blueGrey = Colors.blueGrey;
+  
+  // New colors for replacing hardcoded values
+  static const Color liveBadge = Color(0xFFFF0000); // For LIVE badge
+  static const Color chatBackground = Color(0xFF000000); // For chat background
+  static const Color chatInputBackground = Color(0xFF1E1E1E); // For chat input field
+  static const Color chatHintText = Color(0xFF9E9E9E); // For hint text in chat
+  static const Color liveIndicator = Color(0xFFFE2C55); // For live indicator and icons
 }
