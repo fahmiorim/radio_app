@@ -73,26 +73,25 @@ class _FullPlayerState extends State<FullPlayer> {
         : currentStation?.host ?? '';
 
     if (currentStation == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.backgroundDark,
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.background,
         body: Center(
           child: Text(
             'No radio station selected',
-            style: TextStyle(color: AppColors.white),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Now Playing",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: AppColors.transparent,
@@ -149,11 +148,10 @@ class _FullPlayerState extends State<FullPlayer> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontSize: 22, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -161,10 +159,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   const SizedBox(height: 4),
                   Text(
                     artist,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -178,13 +173,14 @@ class _FullPlayerState extends State<FullPlayer> {
                       color: AppColors.liveBadge,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Text(
+                    child: Text(
                       "LIVE",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -249,29 +245,32 @@ class _FullPlayerState extends State<FullPlayer> {
                             isFavorited
                                 ? Icons.favorite
                                 : Icons.favorite_border,
-                            color: isFavorited
-                                ? const Color(0xFF1DB954)
-                                : Colors.grey,
-                          ),
+                              color: isFavorited
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : Colors.grey,
+                            ),
                           iconSize: 28,
                           onPressed: () {
                             setState(() => isFavorited = !isFavorited);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  isFavorited
-                                      ? 'Added to favorites'
-                                      : 'Removed from favorites',
-                                  style: const TextStyle(color: Colors.white),
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isFavorited
+                                        ? 'Added to favorites'
+                                        : 'Removed from favorites',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: Colors.white),
+                                  ),
+                                  backgroundColor: isFavorited
+                                      ? Theme.of(context).colorScheme.secondary
+                                      : Colors.grey,
                                 ),
-                                backgroundColor: isFavorited
-                                    ? const Color(0xFF1DB954)
-                                    : Colors.grey,
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 25),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 25),
 
                         // Play / Pause
                         Container(
@@ -282,18 +281,21 @@ class _FullPlayerState extends State<FullPlayer> {
                             borderRadius: BorderRadius.circular(32),
                           ),
                           child: isLoading
-                              ? const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Color(0xFF121212),
-                                    strokeWidth: 2,
-                                  ),
-                                )
+                              ? Center(
+                                    child: CircularProgressIndicator(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surface,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
                               : IconButton(
                                   iconSize: 40,
-                                  color: const Color(0xFF121212),
-                                  icon: Icon(
-                                    isPlaying ? Icons.pause : Icons.play_arrow,
-                                  ),
+                                    color:
+                                        Theme.of(context).colorScheme.surface,
+                                    icon: Icon(
+                                      isPlaying ? Icons.pause : Icons.play_arrow,
+                                    ),
                                   onPressed: () async {
                                     await radioProvider.togglePlayPause();
                                   },
