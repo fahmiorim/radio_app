@@ -48,7 +48,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
 
   Widget _buildInfoCard(String title, String value, {IconData? icon}) {
     return Card(
-      color: const Color(0xFF1E1E1E),
+      color: Theme.of(context).colorScheme.surface,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -63,9 +63,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -74,9 +72,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             else
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -88,7 +84,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                       "body": Style(
                         margin: Margins.zero,
                         padding: HtmlPaddings.zero,
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                         fontSize: FontSize(14.0),
                         lineHeight: LineHeight(1.5),
                       ),
@@ -119,7 +115,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         child: url.isEmpty
             ? Container(
-                color: const Color(0xFF1E1E1E),
+                color: Theme.of(context).colorScheme.surface,
                 child: const Center(
                   child: Icon(
                     Icons.radio,
@@ -139,7 +135,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                   ),
                 ),
                 errorWidget: (_, __, ___) => Container(
-                  color: const Color(0xFF1E1E1E),
+                  color: Theme.of(context).colorScheme.surface,
                   child: const Center(
                     child: Icon(
                       Icons.radio,
@@ -162,7 +158,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
         final error = prov.detailError;
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundDark,
+          backgroundColor: Theme.of(context).colorScheme.background,
           appBar: CustomAppBar.transparent(
             context: context,
             title: program?.namaProgram ?? 'Detail Program',
@@ -232,16 +228,14 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                         const SizedBox(height: 16),
                         Text(
                           'Gagal memuat detail program',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(color: AppColors.textPrimary),
+                          style:
+                              Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           error,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
@@ -265,8 +259,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'Program tidak ditemukan',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(color: AppColors.textPrimary),
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
                   ),
@@ -288,12 +281,10 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                               ),
                               child: Text(
                                 program.namaProgram,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                  height: 1.2,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .displaySmall
+                                    ?.copyWith(height: 1.2),
                               ),
                             ),
                             const SizedBox(height: 16),

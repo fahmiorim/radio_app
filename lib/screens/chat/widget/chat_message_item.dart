@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/chat_model.dart';
+import '../../../config/color_scheme_extension.dart';
 
 class ChatMessageItem extends StatelessWidget {
   final ChatMessage message;
@@ -17,14 +18,15 @@ class ChatMessageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // batas lebar bubble maks 75% layar
     final maxBubbleWidth = MediaQuery.of(context).size.width * 0.75;
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isCurrentUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           // avatar lawan bicara di kiri
           if (!isCurrentUser) ...[
@@ -48,16 +50,12 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     isCurrentUser ? 'You' : message.username,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 13.0,
-                          color: isCurrentUser
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.color,
-                        ),
+                    style: textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: isCurrentUser
+                          ? colors.primary
+                          : colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 Container(
@@ -68,8 +66,8 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isCurrentUser
-                        ? Theme.of(context).primaryColor
-                        : Colors.grey[200],
+                        ? colors.sentMessageBubble
+                        : colors.receivedMessageBubble,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(12.0),
                       topRight: const Radius.circular(12.0),
@@ -90,12 +88,11 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     message.message,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isCurrentUser
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onSurface,
-                          fontSize: 15.0,
-                        ),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: isCurrentUser
+                          ? colors.sentMessageText
+                          : colors.receivedMessageText,
+                    ),
                   ),
                 ),
                 Padding(
@@ -106,16 +103,16 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     time,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(fontSize: 11.0),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
+          // avatar pengirim (user) di kanan
           if (isCurrentUser) ...[
             const SizedBox(width: 4),
             _Avatar(url: message.userAvatar),
