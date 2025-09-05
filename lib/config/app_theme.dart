@@ -17,11 +17,11 @@ class AppTheme {
         surface: AppColors.lightCardSurface,
         background: AppColors.lightBackground,
         error: AppColors.error,
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
+        onPrimary: AppColors.white,
+        onSecondary: AppColors.white,
         onSurface: AppColors.lightTextPrimary,
         onBackground: AppColors.lightTextPrimary,
-        onError: Colors.white,
+        onError: AppColors.white,
         brightness: Brightness.light,
       ),
       textTheme: TextTheme(
@@ -70,9 +70,9 @@ class AppTheme {
         titleTextStyle: const TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: AppColors.white,
         ),
-        iconTheme: const IconThemeData(color: Colors.white, size: 24),
+        iconTheme: const IconThemeData(color: AppColors.white, size: 24),
         systemOverlayStyle:
             SystemUiOverlayStyle.light, // status bar icons putih
       ),
@@ -93,11 +93,11 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: MaterialStateColor.resolveWith((states) {
             if (states.contains(MaterialState.disabled)) {
-              return Colors.grey.shade400;
+              return AppColors.grey400;
             }
-            return Colors.blue.shade800; // Warna biru tua
+            return AppColors.blue800;
           }),
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.white,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 2,
@@ -138,7 +138,7 @@ class AppTheme {
         errorStyle: TextStyle(color: AppColors.error, fontSize: 12),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.white,
         selectedItemColor: AppColors.lightPrimary,
         unselectedItemColor: AppColors.lightTextSecondary,
         selectedLabelStyle: const TextStyle(fontSize: 12),
@@ -167,11 +167,11 @@ class AppTheme {
         surface: AppColors.darkSurface,
         background: AppColors.darkBackground,
         error: AppColors.error,
-        onPrimary: Colors.black, // jika kontras kurang, ganti ke Colors.white
-        onSecondary: Colors.black,
+        onPrimary: AppColors.black,
+        onSecondary: AppColors.black,
         onSurface: AppColors.darkTextPrimary,
         onBackground: AppColors.darkTextPrimary,
-        onError: Colors.black,
+        onError: AppColors.black,
         brightness: Brightness.dark,
       ),
       textTheme: TextTheme(
@@ -221,7 +221,7 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: AppColors.darkTextPrimary, size: 24),
         systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
-          statusBarColor: Colors.transparent,
+          statusBarColor: AppColors.transparent,
           statusBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
         ),
@@ -243,11 +243,11 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: MaterialStateColor.resolveWith((states) {
             if (states.contains(MaterialState.disabled)) {
-              return Colors.grey.shade700;
+              return AppColors.grey700;
             }
-            return Colors.blueGrey.shade800; // Warna biru tua untuk dark mode
+            return AppColors.blueGrey800;
           }),
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.white,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           elevation: 2,
@@ -322,9 +322,9 @@ class AppTheme {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final color = usePrimaryColor
-        ? (isDark ? const Color.fromARGB(255, 0, 0, 0) : AppColors.lightPrimary)
-              .withOpacity(opacity)
-        : (isDark ? Colors.grey[800]! : Colors.grey[200]!).withOpacity(opacity);
+        ? (isDark ? AppColors.black : AppColors.lightPrimary)
+            .withOpacity(opacity)
+        : (isDark ? AppColors.grey800 : AppColors.grey200).withOpacity(opacity);
 
     return Positioned(
       top: top,
