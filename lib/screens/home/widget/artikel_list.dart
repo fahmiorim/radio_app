@@ -18,9 +18,7 @@ class ArtikelList extends StatefulWidget {
 }
 
 class ArtikelListState extends State<ArtikelList>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  @override
-  bool get wantKeepAlive => true;
+    with WidgetsBindingObserver {
 
   @override
   void initState() {
@@ -55,8 +53,6 @@ class ArtikelListState extends State<ArtikelList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     final prov = context.watch<ArtikelProvider>();
     final bool isLoading = prov.isLoadingRecent;
     final List<Artikel> artikelList = prov.recentArtikels;

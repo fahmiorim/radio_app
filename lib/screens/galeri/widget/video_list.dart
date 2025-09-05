@@ -17,10 +17,7 @@ class VideoList extends StatefulWidget {
   State<VideoList> createState() => _VideoListState();
 }
 
-class _VideoListState extends State<VideoList>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  @override
-  bool get wantKeepAlive => true;
+class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
 
   bool _isMounted = false;
   List<VideoModel>? _lastVideos;
@@ -113,7 +110,6 @@ class _VideoListState extends State<VideoList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     return Consumer<VideoProvider>(
       builder: (context, videoProvider, _) {
         final isLoading = videoProvider.isLoadingRecent;
