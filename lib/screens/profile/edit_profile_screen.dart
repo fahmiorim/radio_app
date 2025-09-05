@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/services/user_service.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -293,11 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       Icon(
                                         Icons.save_alt_rounded,
                                         size: 20,
-                                        color:
-                                            Theme.of(context).brightness ==
-                                                Brightness.dark
-                                            ? Colors.white
-                                            : Colors.white,
+                                        color: AppColors.button.primaryText,
                                       ),
                                       const SizedBox(width: 8),
                                       const Text('Simpan Perubahan'),
@@ -318,13 +315,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _updateProfile() async {
+    final colorScheme = Theme.of(context).colorScheme;
     // Validate required fields
     if (_nameController.text.trim().isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Nama harus diisi'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Text(
+              'Nama harus diisi',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -335,9 +336,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (email.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email harus diisi'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Text(
+              'Email harus diisi',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -349,9 +353,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!emailRegex.hasMatch(email)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Format email tidak valid'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Text(
+              'Format email tidak valid',
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -394,8 +401,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message'] ?? 'Gagal memperbarui profil'),
-              backgroundColor: Colors.red,
+              content: Text(
+                result['message'] ?? 'Gagal memperbarui profil',
+                style: TextStyle(color: colorScheme.onError),
+              ),
+              backgroundColor: colorScheme.error,
             ),
           );
         }
@@ -411,8 +421,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorText),
-            backgroundColor: Colors.red,
+            content: Text(
+              errorText,
+              style: TextStyle(color: colorScheme.onError),
+            ),
+            backgroundColor: colorScheme.error,
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
           ),
