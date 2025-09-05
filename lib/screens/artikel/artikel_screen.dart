@@ -17,13 +17,10 @@ class ArtikelScreen extends StatefulWidget {
 }
 
 class _ArtikelScreenState extends State<ArtikelScreen>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
   bool _isMounted = false;
   List<Artikel>? _lastItems;
-
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -112,7 +109,6 @@ class _ArtikelScreenState extends State<ArtikelScreen>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
     

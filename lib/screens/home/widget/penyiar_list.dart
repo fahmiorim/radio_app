@@ -15,9 +15,7 @@ class PenyiarList extends StatefulWidget {
 }
 
 class _PenyiarListState extends State<PenyiarList>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  @override
-  bool get wantKeepAlive => true;
+    with WidgetsBindingObserver {
 
   @override
   void initState() {
@@ -48,8 +46,6 @@ class _PenyiarListState extends State<PenyiarList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     return Selector<PenyiarProvider, _PenyiarVm>(
       selector: (_, p) => _PenyiarVm(
         isLoading: p.isLoading,

@@ -16,10 +16,7 @@ class AlbumList extends StatefulWidget {
   State<AlbumList> createState() => _AlbumListState();
 }
 
-class _AlbumListState extends State<AlbumList>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  @override
-  bool get wantKeepAlive => true;
+class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
 
   bool _isMounted = false;
   List<AlbumModel>? _lastAlbums;
@@ -63,12 +60,12 @@ class _AlbumListState extends State<AlbumList>
     super.dispose();
   }
 
+  // Refresh once after the first build to avoid redundant reloads
   bool _isFirstBuild = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Only refresh on first build or when coming back to the tab
     if (_isFirstBuild) {
       _isFirstBuild = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -245,7 +242,6 @@ class _AlbumListState extends State<AlbumList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final albumProvider = Provider.of<AlbumProvider>(context);
     final isLoading = albumProvider.isLoadingFeatured;
     final hasError = albumProvider.hasErrorFeatured;

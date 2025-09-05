@@ -17,9 +17,7 @@ class ProgramList extends StatefulWidget {
 }
 
 class _ProgramListState extends State<ProgramList>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  @override
-  bool get wantKeepAlive => true;
+    with WidgetsBindingObserver {
 
   @override
   void initState() {
@@ -54,8 +52,6 @@ class _ProgramListState extends State<ProgramList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     final prov = context.watch<ProgramProvider>();
     final bool isLoading = prov.isLoadingTodays;
     final List<ProgramModel> programList = prov.todaysPrograms;

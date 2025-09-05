@@ -16,9 +16,7 @@ class EventList extends StatefulWidget {
 }
 
 class _EventListState extends State<EventList>
-    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  @override
-  bool get wantKeepAlive => true;
+    with WidgetsBindingObserver {
 
   @override
   void initState() {
@@ -59,8 +57,6 @@ class _EventListState extends State<EventList>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     final prov = context.watch<EventProvider>();
     final isLoading = prov.isLoading;
     final events = prov.events;
