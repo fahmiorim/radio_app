@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart'; // RenderContext ada di sini
+import 'package:flutter_html/flutter_html.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
 import 'package:radio_odan_app/widgets/loading/loading_widget.dart';
@@ -49,15 +48,15 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
         final isLoading = provider.isLoadingDetail;
 
         if (isLoading) {
-          return const Scaffold(
-            backgroundColor: AppColors.backgroundDark,
-            body: Center(child: LoadingWidget()),
+          return Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: const Center(child: LoadingWidget()),
           );
         }
 
         if (error != null || artikel == null) {
           return Scaffold(
-            backgroundColor: AppColors.backgroundDark,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             appBar: CustomAppBar.transparent(title: 'Error'),
             body: Center(
               child: Column(
@@ -65,12 +64,16 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                 children: [
                   Text(
                     error ?? 'Artikel tidak ditemukan',
-                    style: const TextStyle(color: Colors.white),
+                    style: Theme.of(context).textTheme.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadArticle,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
                     child: const Text('Coba Lagi'),
                   ),
                 ],
@@ -84,22 +87,25 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
             content.isEmpty || content == '<p></p>' || content == '<div></div>';
 
         return Scaffold(
-          backgroundColor: AppColors.backgroundDark,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: CustomAppBar.transparent(title: artikel.title),
           body: RefreshIndicator(
             onRefresh: _loadArticle,
-            color: AppColors.primary,
-            backgroundColor: AppColors.backgroundDark,
+            color: Theme.of(context).primaryColor,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             child: Stack(
               children: [
-                // Background
+                // Background with gradient overlay
                 Positioned.fill(
                   child: Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [AppColors.primary, AppColors.backgroundDark],
+                        colors: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).scaffoldBackgroundColor,
+                        ],
                       ),
                     ),
                     child: Stack(
@@ -112,7 +118,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 200,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.05),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                             ),
                           ),
                         ),
@@ -124,7 +130,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 150,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.05),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                             ),
                           ),
                         ),
@@ -136,7 +142,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 50,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.05),
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                             ),
                           ),
                         ),
@@ -155,11 +161,10 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                       // Judul
                       Text(
                         artikel.title,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: 8),
 
@@ -174,9 +179,8 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                           const SizedBox(width: 4),
                           Text(
                             artikel.user,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -188,9 +192,8 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                           const SizedBox(width: 4),
                           Text(
                             artikel.formattedDate,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],

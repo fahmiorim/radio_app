@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
@@ -68,59 +70,156 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     final form = _formKey.currentState;
-    if (form == null || !form.validate()) return;
-
-    if (!_agreeTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Anda harus menyetujui Syarat & Ketentuan'),
-          backgroundColor: Colors.orange.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      );
+    if (form == null || !form.validate()) {
+      print('Form validation failed');
       return;
     }
 
-    final auth = context.read<AuthProvider>();
-    final err = await auth.register(
-      _nameC.text.trim(),
-      _emailC.text.trim(),
-      _passC.text,
-    );
+    if (!_agreeTerms) {
+      print('Terms not agreed');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Anda harus menyetujui Syarat & Ketentuan'),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     if (!mounted) return;
+    
+    final auth = context.read<AuthProvider>();
+    print('Starting registration process...');
+    print('Name: ${_nameC.text.trim()}');
+    print('Email: ${_emailC.text.trim()}');
+    
+    try {
+      final errorMessage = await auth.register(
+        _nameC.text.trim(),
+        _emailC.text.trim(),
+        _passC.text,
+      );
 
-    if (err == null) {
-      // sukses → ke halaman verifikasi, kirim email sebagai argumen
-      Navigator.pushReplacementNamed(
-        context,
-        AppRoutes.verification,
-        arguments: _emailC.text.trim(),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(err),
-          backgroundColor: Colors.red.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      print('Registration result - errorMessage: $errorMessage');
+      print('Mounted: $mounted');
+
+      if (!mounted) {
+        print('Not mounted, returning early');
+        return;
+      }
+
+      // If errorMessage is null, registration was successful
+      if (errorMessage == null) {
+        print('Registration successful, preparing to navigate to verification screen');
+        final email = _emailC.text.trim();
+        print('Will navigate to verification screen with email: $email');
+        
+        try {
+          print('Attempting to push verification screen');
+          await Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.verification,
+            arguments: email,
+          );
+          print('Successfully navigated to verification screen');
+        } catch (e) {
+          print('Error during navigation: $e');
+          print('Stack trace: ${e is Error ? e.stackTrace : ''}');
+          // Show error to user
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Gagal pindah ke halaman verifikasi: $e'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } else {
+        // Show error message
+        print('Registration failed: $errorMessage');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red.shade600,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error during registration: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
           ),
-        ),
-      );
+        );
+      }
     }
   }
 
-  // Placeholder Google (kita isi saat setup Google selesai)
+  // Google Sign-In for registration
   Future<void> _registerWithGoogle() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Daftar dengan Google akan diaktifkan nanti.'),
-      ),
-    );
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) return;
+
+      final GoogleSignInAuthentication googleAuth = 
+          await googleUser.authentication;
+      
+      final credential = firebase_auth.GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCred = await firebase_auth.FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCred.user;
+      
+      if (user != null) {
+        final auth = context.read<AuthProvider>();
+        final error = await auth.loginWithFirebase(user);
+        
+        if (!mounted) return;
+        
+        if (error == null) {
+          // Successfully registered and logged in with Google
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoutes.bottomNav,
+            (route) => false,
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Pendaftaran dengan Google gagal: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Terjadi kesalahan: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   InputDecoration _inputDecoration(

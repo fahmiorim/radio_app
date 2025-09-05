@@ -77,21 +77,46 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<String?> register(String name, String email, String password) async {
+    print('AuthProvider.register() called with email: $email');
     _loading = true;
     notifyListeners();
 
-    final res = await AuthService.I.register(name, email, password);
+    try {
+      print('Calling AuthService.register()...');
+      final res = await AuthService.I.register(name, email, password);
 
-    _loading = false;
-    if (res.status) {
-      _user = res.user;
-      _token = res.token;
-      if ((_token ?? '').isNotEmpty) ApiClient.I.setBearer(_token!);
+      print(
+        'AuthService.register() response - status: ${res.status}, message: ${res.message}',
+      );
+
+      if (res.status) {
+        print('Registration successful');
+        _user = res.user;
+        _token = res.token;
+
+        if ((_token ?? '').isNotEmpty) {
+          ApiClient.I.setBearer(_token!);
+          print('Bearer token set successfully');
+          
+          // Save token to secure storage
+          final storage = const FlutterSecureStorage();
+          await storage.write(key: 'user_token', value: _token);
+          print('Token saved to secure storage');
+        }
+        
+        return null; // Success, no error
+      } else {
+        // If failed, return error message
+        return res.message.isNotEmpty
+            ? res.message
+            : 'Gagal melakukan registrasi';
+      }
+    } catch (e) {
+      print('Error during registration: $e');
+      return 'Terjadi kesalahan: $e';
+    } finally {
+      _loading = false;
       notifyListeners();
-      return null;
-    } else {
-      notifyListeners();
-      return res.message;
     }
   }
 
@@ -137,13 +162,22 @@ class AuthProvider with ChangeNotifier {
     return res;
   }
 
+  bool _isEmailVerified = false;
+  bool get isEmailVerified => _isEmailVerified;
+
   Future<bool> checkEmailVerified() async {
+    if (_isEmailVerified) return true;
+
     _loading = true;
     notifyListeners();
-    final res = await AuthService.I.checkEmailVerified();
-    _loading = false;
-    notifyListeners();
-    return res;
+
+    try {
+      _isEmailVerified = await AuthService.I.checkEmailVerified();
+      return _isEmailVerified;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> logout() async {

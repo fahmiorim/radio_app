@@ -75,38 +75,79 @@ class AuthService {
     String password,
   ) async {
     try {
+      print('Sending registration request...');
       final res = await ApiClient.I.dio.post(
         '/register',
-        data: {'name': name, 'email': email, 'password': password},
+        data: {
+          'name': name,
+          'email': email,
+          'password': password,
+          'password_confirmation': password,
+        },
+        options: Options(
+          extra: {'noAuth': true},
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (c) => c != null && c < 500,
+        ),
       );
 
+      print('Registration response status: ${res.statusCode}');
       final data = res.data as Map<String, dynamic>? ?? {};
-      if (data['status'] != true) {
+      print('Registration response data: $data');
+
+      // Check for successful response (200 or 201)
+      if ((res.statusCode == 200 || res.statusCode == 201) &&
+          (data['status'] == true || data['token'] != null)) {
+        final token = (data['token'] ?? '').toString();
+        if (token.isEmpty) {
+          return const AuthResult(
+            status: false,
+            message: 'Token tidak ditemukan setelah registrasi.',
+          );
+        }
+
+        await _storage.write(key: 'user_token', value: token);
+        ApiClient.I.setBearer(token);
+
+        final userJson = (data['user'] ?? {}) as Map<String, dynamic>;
+        final user = UserModel.fromJson(userJson);
+
+        return AuthResult(
+          status: true,
+          message: data['message']?.toString() ?? 'Pendaftaran akun berhasil.',
+          token: token,
+          user: user,
+        );
+      }
+
+      // If we have a success status code but no token, it's still an error
+      if ((res.statusCode == 200 || res.statusCode == 201)) {
+        if (data['token'] != null) {
+          // This should have been caught by the success case above
+          return AuthResult(
+            status: true,
+            message: data['message']?.toString() ?? 'Pendaftaran berhasil',
+            token: data['token'].toString(),
+            user: data['user'] != null
+                ? UserModel.fromJson(data['user'])
+                : null,
+          );
+        }
         return AuthResult(
           status: false,
-          message: data['message']?.toString() ?? 'Registrasi gagal.',
+          message: 'Registrasi berhasil tetapi token tidak ditemukan',
         );
       }
 
-      final token = data['token']?.toString();
-      if (token == null || token.isEmpty) {
-        return const AuthResult(
-          status: false,
-          message: 'Token tidak ditemukan setelah registrasi.',
-        );
-      }
-
-      await _storage.write(key: 'user_token', value: token);
-      ApiClient.I.setBearer(token);
-
-      final userJson = (data['user'] ?? {}) as Map<String, dynamic>;
-      final user = UserModel.fromJson(userJson);
-
+      // For all other error cases
       return AuthResult(
-        status: true,
-        message: data['message']?.toString() ?? 'Pendaftaran akun berhasil.',
-        token: token,
-        user: user,
+        status: false,
+        message:
+            _messageFromResponseMap(data) ??
+            'Registrasi gagal. (HTTP ${res.statusCode})',
       );
     } on DioException catch (e) {
       return AuthResult(
@@ -203,10 +244,10 @@ class AuthService {
   // ===================== Misc ======================
   Future<bool> checkEmailVerified() async {
     try {
-      final res = await ApiClient.I.dio.get('/me');
+      final res = await ApiClient.I.dio.get('/user');
       final data = res.data as Map<String, dynamic>? ?? {};
-      final user = (data['user'] ?? {}) as Map<String, dynamic>;
-      return user['email_verified_at'] != null;
+      final userData = (data['data'] ?? {}) as Map<String, dynamic>;
+      return userData['email_verified_at'] != null;
     } catch (_) {
       return false;
     }
@@ -214,9 +255,42 @@ class AuthService {
 
   Future<String?> resendVerificationEmail() async {
     try {
-      await ApiClient.I.dio.post('/email/verification-notification');
-      return null;
+      final response = await ApiClient.I.dio.post(
+        '/email/verification-notification',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 202) {
+        return null; // Success
+      }
+
+      // Handle rate limiting (status code 429)
+      if (response.statusCode == 429) {
+        final retryAfter = response.headers['retry-after']?.first;
+        final waitTime = retryAfter != null
+            ? 'Coba lagi dalam $retryAfter detik'
+            : 'beberapa saat lagi';
+        return 'Terlalu banyak permintaan. $waitTime';
+      }
+
+      // Handle other errors
+      final errorData = response.data as Map<String, dynamic>?;
+      return errorData?['message']?.toString() ??
+          'Gagal mengirim ulang email verifikasi';
     } on DioException catch (e) {
+      if (e.response?.statusCode == 429) {
+        final retryAfter = e.response?.headers['retry-after']?.first;
+        final waitTime = retryAfter != null
+            ? 'Coba lagi dalam $retryAfter detik'
+            : 'beberapa saat lagi';
+        return 'Terlalu banyak permintaan. $waitTime';
+      }
       return _extractApiError(e, 'Gagal mengirim ulang email verifikasi.');
     } catch (e) {
       return e.toString();
@@ -296,7 +370,7 @@ class AuthService {
 
   Future<UserModel?> getCurrentUser() async {
     try {
-      final res = await ApiClient.I.dio.get('/me');
+      final res = await ApiClient.I.dio.get('/user');
       final data = res.data as Map<String, dynamic>? ?? {};
       if (data['user'] == null) return null;
       return UserModel.fromJson(data['user']);
@@ -307,11 +381,40 @@ class AuthService {
 
   String _extractApiError(DioException e, String fallback) {
     try {
-      final data = e.response?.data;
-      if (data is Map && data['message'] != null)
-        return data['message'].toString();
-      if (data is String && data.isNotEmpty) return data;
-    } catch (_) {}
-    return fallback;
+      if (e.response?.data is Map) {
+        return e.response?.data['message'] ?? fallback;
+      }
+      if (e.response?.data is String) {
+        return e.response?.data ?? fallback;
+      }
+      return fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  String? _messageFromResponseMap(Map<String, dynamic>? data) {
+    if (data == null) return null;
+
+    // Check for common error message fields in the response
+    if (data['message'] != null) return data['message'].toString();
+    if (data['error'] != null) return data['error'].toString();
+    if (data['errors'] != null) {
+      // Handle errors object that might contain field-specific errors
+      if (data['errors'] is Map) {
+        final errors = data['errors'] as Map;
+        if (errors.isNotEmpty) {
+          // Return the first error message
+          final firstError = errors.values.first;
+          if (firstError is List) {
+            return firstError.first.toString();
+          }
+          return firstError.toString();
+        }
+      }
+      return data['errors'].toString();
+    }
+
+    return null;
   }
 }

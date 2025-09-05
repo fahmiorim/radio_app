@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
-import 'package:radio_odan_app/services/auth_service.dart';
+import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -15,103 +17,113 @@ class VerificationScreen extends StatefulWidget {
 class _VerificationScreenState extends State<VerificationScreen> {
   bool _initialLoading = false;
   bool _resending = false;
+
+  // spinner di tombol "cek status"
   bool _checking = false;
 
-  // countdown untuk tombol kirim ulang
-  static const int _cooldownSeconds = 30;
-  int _countdown = _cooldownSeconds;
-  Timer? _countdownTimer;
+  // guard supaya _checkStatus tidak dipanggil berulang-ulang
+  bool _isChecking = false;
 
-  // (opsional) auto-poll cek status tiap 6 detik
-  Timer? _pollTimer;
+  // status tombol kirim ulang
+  bool _canResend = true;
 
   @override
   void initState() {
     super.initState();
-    _sendVerificationEmail(); // kirim email pertama (kalau perlu dari app)
-    _startCountdown();
-    _startAutoPoll(); // bisa dimatikan kalau tak diinginkan
-  }
-
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    _pollTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startCountdown() {
-    _countdownTimer?.cancel();
-    setState(() => _countdown = _cooldownSeconds);
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_countdown <= 1) {
-        t.cancel();
-        setState(() => _countdown = 0);
-      } else {
-        setState(() => _countdown--);
-      }
+    // Schedule the email to be sent after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sendVerificationEmail(); // kirim email pertama (skip kalau backend sudah auto-send)
     });
   }
 
-  void _startAutoPoll() {
-    _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(
-      const Duration(seconds: 6),
-      (_) => _checkStatus(silent: true),
-    );
-  }
-
   Future<void> _sendVerificationEmail() async {
-    // kalau backend sudah otomatis kirim saat register, ini bisa di-skip.
     setState(() => _initialLoading = true);
-    final err = await AuthService.I.resendVerificationEmail();
+
+    final authProvider = context.read<AuthProvider>();
+    final err = await authProvider.resendVerificationEmail();
+
     if (!mounted) return;
     setState(() => _initialLoading = false);
 
     if (err == null) {
       _toast('Email verifikasi dikirim ke ${widget.email}', ok: true);
+      // cooldown awal setelah kirim pertama
+      setState(() => _canResend = false);
+      Future.delayed(const Duration(seconds: 30), () {
+        if (mounted) setState(() => _canResend = true);
+      });
     } else {
       _toast(err, ok: false);
     }
   }
 
   Future<void> _resend() async {
-    if (_countdown > 0) return; // safety
-    setState(() => _resending = true);
-    final err = await AuthService.I.resendVerificationEmail();
+    if (!_canResend || _resending) return;
+
+    setState(() {
+      _resending = true;
+      _canResend = false;
+    });
+
+    final authProvider = context.read<AuthProvider>();
+    final err = await authProvider.resendVerificationEmail();
+
     if (!mounted) return;
-    setState(() => _resending = false);
 
     if (err == null) {
       _toast('Link verifikasi dikirim ulang.', ok: true);
-      _startCountdown();
+      // cooldown 30 detik sebelum bisa kirim lagi
+      Future.delayed(const Duration(seconds: 30), () {
+        if (mounted) setState(() => _canResend = true);
+      });
     } else {
+      setState(() => _canResend = true);
       _toast(err, ok: false);
     }
+
+    if (mounted) setState(() => _resending = false);
   }
 
-  Future<void> _checkStatus({bool silent = false}) async {
-    setState(() => _checking = !silent);
-    final verified = await AuthService.I.checkEmailVerified();
-    if (!mounted) return;
-    setState(() => _checking = false);
+  Future<void> _checkStatus() async {
+    if (_isChecking) return;
 
-    if (verified) {
-      _pollTimer?.cancel();
-      _countdownTimer?.cancel();
+    setState(() {
+      _isChecking = true;
+      _checking = true;
+    });
+
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final verified = await authProvider.checkEmailVerified();
+
       if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (r) => false);
-    } else if (!silent) {
-      _toast(
-        'Belum terverifikasi. Coba lagi setelah klik link di email.',
-        ok: false,
-      );
+
+      if (verified) {
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (r) => false);
+      } else {
+        _toast(
+          'Belum terverifikasi. Coba lagi setelah klik link di email.',
+          ok: false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error checking verification status: $e');
+      if (mounted) {
+        _toast('Gagal memeriksa status verifikasi.', ok: false);
+      }
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = false;
+        _checking = false;
+      });
     }
   }
 
   void _toast(String msg, {required bool ok}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
@@ -150,6 +162,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                   end: Alignment.bottomCenter,
                   colors: [
                     AppColors.backgroundDark,
+                    // pastikan warna ini ada di AppColors kamu
                     AppColors.backgroundDarker,
                   ],
                 ),
@@ -235,18 +248,15 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     // Kirim ulang
                     SizedBox(
                       height: 50,
-                      child: ElevatedButton(
-                        onPressed: (_resending || _countdown > 0)
-                            ? null
-                            : _resend,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
+                      child: OutlinedButton(
+                        onPressed: (_canResend && !_resending) ? _resend : null,
+                        style: OutlinedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(
-                              color: AppColors.textPrimary,
-                              width: 1.5,
-                            ),
+                          ),
+                          side: const BorderSide(
+                            color: AppColors.textPrimary,
+                            width: 1.5,
                           ),
                         ),
                         child: _resending
@@ -254,29 +264,23 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
-                                  color: AppColors.textPrimary,
                                   strokeWidth: 2,
                                 ),
                               )
                             : Text(
-                                _countdown > 0
-                                    ? 'Kirim ulang ($_countdown s)'
-                                    : 'Kirim Ulang Email',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.textPrimary,
-                                ),
+                                _canResend
+                                    ? 'Kirim Ulang Email'
+                                    : 'Tunggu 30 detik',
                               ),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // Cek status
+                    // Cek status (manual only)
                     SizedBox(
                       height: 50,
                       child: ElevatedButton.icon(
-                        onPressed: _checking ? null : () => _checkStatus(),
+                        onPressed: _checking ? null : _checkStatus,
                         icon: _checking
                             ? const SizedBox(
                                 width: 18,

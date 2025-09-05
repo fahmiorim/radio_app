@@ -8,6 +8,7 @@ import '../../providers/album_provider.dart';
 import '../../models/album_model.dart';
 import '../../widgets/app_bar.dart';
 import '../../widgets/mini_player.dart';
+import '../../config/app_theme.dart';
 import 'album_detail_screen.dart';
 
 class AllAlbumsScreen extends StatefulWidget {
@@ -139,8 +140,19 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
             ),
             child: Stack(
               children: [
-                Positioned(top: -50, right: -50, child: _bubble(200)),
-                Positioned(bottom: -30, left: -30, child: _bubble(150)),
+                AppTheme.bubble(
+                  context,
+                  size: 200,
+                  top: -50,
+                  right: -50,
+                ),
+                AppTheme.bubble(
+                  context,
+                  size: 150,
+                  bottom: -30,
+                  left: -30,
+                  opacity: 0.05,
+                ),
               ],
             ),
           ),
@@ -234,14 +246,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
     );
   }
 
-  Widget _bubble(double size) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withOpacity(0.05),
-    ),
-  );
+  // _bubble method removed - using AppTheme.bubble instead
 }
 
 class _AlbumCard extends StatelessWidget {

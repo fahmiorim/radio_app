@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'widget/video_list.dart';
@@ -67,43 +68,26 @@ class _GaleriScreenState extends State<GaleriScreen> {
               child: Stack(
                 children: [
                   // Large bubble top right
-                  Positioned(
+                  AppTheme.bubble(
+                    context,
+                    size: 200,
                     top: -50,
                     right: -50,
-                    child: Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
                   ),
                   // Medium bubble bottom left
-                  Positioned(
+                  AppTheme.bubble(
+                    context,
+                    size: 150,
                     bottom: -30,
                     left: -30,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
                   ),
                   // Small bubble center
-                  Positioned(
+                  AppTheme.bubble(
+                    context,
+                    size: 50,
                     top: 100,
                     left: 100,
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
+                    opacity: 0.05,
                   ),
                 ],
               ),

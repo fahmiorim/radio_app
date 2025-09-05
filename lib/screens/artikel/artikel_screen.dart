@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
+import '../../config/app_colors.dart';
 
+import '../../config/app_theme.dart';
 import '../../models/artikel_model.dart';
 import '../../providers/artikel_provider.dart';
 import '../../widgets/skeleton/artikel_all_skeleton.dart';
 import 'artikel_detail_screen.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
-import '../../../widgets/app_bar.dart';
+import '../../widgets/app_bar.dart';
 
 class ArtikelScreen extends StatefulWidget {
   const ArtikelScreen({super.key});
@@ -113,7 +114,7 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar.transparent(title: 'Artikel'),
       body: Stack(
         children: [
@@ -123,34 +124,26 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
                 ),
               ),
               child: Stack(
                 children: [
-                  Positioned(
-                    top: -50,
+                  AppTheme.bubble(
+                    context,
+                    size: 200,
+                    top: 50,
                     right: -50,
-                    child: Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
                   ),
-                  Positioned(
+                  AppTheme.bubble(
+                    context,
+                    size: 150,
                     bottom: -30,
                     left: -30,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
-                      ),
-                    ),
+                    opacity: AppColors.bubbleDefaultOpacity * 0.6, // 60% dari opacity default
                   ),
                 ],
               ),
@@ -177,11 +170,17 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
             Text(
               'Gagal memuat artikel: ${p.error}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => p.refresh(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              ),
               child: const Text('Coba Lagi'),
             ),
           ],
@@ -214,11 +213,11 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+  color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -244,12 +243,10 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
                 const SizedBox(height: 12),
                 Text(
                   artikel.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    height: 1.3,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -259,7 +256,7 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
                     artikel.excerptPlain,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
                       height: 1.4,
                     ),
                     maxLines: 2,
@@ -272,23 +269,21 @@ class _ArtikelScreenState extends State<ArtikelScreen> with AutomaticKeepAliveCl
                     if (artikel.user.isNotEmpty) ...[
                       Text(
                         artikel.user,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.7),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '•',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                       ),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       artikel.formattedDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.7),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                       ),
                     ),
                   ],
@@ -326,10 +321,16 @@ class _ArtikelThumb extends StatelessWidget {
     );
   }
 
-  Widget _placeholder() => Container(
-    color: Colors.grey[800],
-    alignment: Alignment.center,
-    child: const Icon(Icons.broken_image, size: 40, color: Colors.white54),
+  Widget _placeholder() => Builder(
+    builder: (context) => Container(
+      color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.broken_image, 
+        size: 40, 
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+      ),
+    ),
   );
 
   Widget _loading() => const Center(
