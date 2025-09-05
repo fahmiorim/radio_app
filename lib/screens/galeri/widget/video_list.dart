@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
 
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/video_model.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'package:radio_odan_app/widgets/skeleton/video_list_skeleton.dart';
@@ -120,6 +121,14 @@ class _VideoListState extends State<VideoList>
         final errMsg = videoProvider.errorMessageRecent;
         final items = videoProvider.recentVideos;
 
+        final colorScheme = Theme.of(context).colorScheme;
+        final isDark = colorScheme.brightness == Brightness.dark;
+        final textPrimaryColor =
+            isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
+        final textSecondaryColor =
+            isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+        final overlayColor = colorScheme.surface.withOpacity(0.6);
+
         return Stack(
           children: [
             Column(
@@ -153,10 +162,10 @@ class _VideoListState extends State<VideoList>
                           ),
                         )
                       : items.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'Tidak ada video tersedia',
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: textSecondaryColor),
                           ),
                         )
                       : ListView.separated(
@@ -210,27 +219,32 @@ class _VideoListState extends State<VideoList>
                                                         context,
                                                         error,
                                                         stackTrace,
-                                                      ) => SizedBox(
+                                                      ) => Container(
                                                         width: 270,
                                                         height: 150,
+                                                        color:
+                                                            colorScheme.surface,
                                                         child: Center(
                                                           child: Icon(
-                                                            Icons.broken_image,
+                                                            Icons
+                                                                .broken_image,
                                                             size: 40,
                                                             color:
-                                                                Colors.white70,
+                                                                textSecondaryColor,
                                                           ),
                                                         ),
                                                       ),
                                                 )
-                                              : SizedBox(
+                                              : Container(
                                                   width: 270,
                                                   height: 150,
+                                                  color: colorScheme.surface,
                                                   child: Center(
                                                     child: Icon(
                                                       Icons.videocam_off,
                                                       size: 40,
-                                                      color: Colors.white70,
+                                                      color:
+                                                          textSecondaryColor,
                                                     ),
                                                   ),
                                                 ),
@@ -243,16 +257,18 @@ class _VideoListState extends State<VideoList>
                                                   ),
                                                   child: DecoratedBox(
                                                     decoration: BoxDecoration(
-                                                      color: Colors.black54,
+                                                      color: overlayColor,
                                                       shape: BoxShape.circle,
                                                     ),
-                                                    child: const Padding(
-                                                      padding: EdgeInsets.all(
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
                                                         8.0,
                                                       ),
                                                       child: Icon(
                                                         Icons.play_arrow,
-                                                        color: Colors.white,
+                                                        color:
+                                                            textPrimaryColor,
                                                         size: 40,
                                                       ),
                                                     ),
@@ -268,8 +284,8 @@ class _VideoListState extends State<VideoList>
                                       video.title,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
+                                      style: TextStyle(
+                                        color: textPrimaryColor,
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                         height: 1.2,

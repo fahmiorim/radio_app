@@ -42,16 +42,27 @@ class _LoginScreenState extends State<LoginScreen> {
     if (err == null) {
       // sukses
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Text('Login berhasil', style: TextStyle(color: Colors.white)),
+              Icon(
+                Icons.check_circle,
+                color: Theme.of(context).colorScheme.surface,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Login berhasil',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(
+                      color: Theme.of(context).colorScheme.surface,
+                    ),
+              ),
             ],
           ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
         ),
       );
 
@@ -66,7 +77,20 @@ class _LoginScreenState extends State<LoginScreen> {
       // gagal
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(
+            err,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -96,7 +120,18 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login Google gagal: $e')),
+        SnackBar(
+          content: Text(
+            'Login Google gagal: $e',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+          ),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
   }
@@ -108,16 +143,28 @@ class _LoginScreenState extends State<LoginScreen> {
       final shouldExit = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Keluar Aplikasi'),
-          content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+          title: Text(
+            'Keluar Aplikasi',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          content: Text(
+            'Apakah Anda yakin ingin keluar dari aplikasi?',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Tidak'),
+              child: Text(
+                'Tidak',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Ya, Keluar'),
+              child: Text(
+                'Ya, Keluar',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
             ),
           ],
         ),
@@ -196,11 +243,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.92),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surface
+                                .withOpacity(0.92),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.08),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -212,15 +265,31 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 TextFormField(
                                   controller: _emailC,
-                                  style: const TextStyle(color: Colors.black87),
-                                  decoration: const InputDecoration(
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
+                                  decoration: InputDecoration(
                                     labelText: 'Email',
-                                    labelStyle: TextStyle(
-                                      color: Colors.black54,
-                                    ),
+                                    labelStyle: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
+                                        ),
                                     prefixIcon: Icon(
                                       Icons.email,
-                                      color: Colors.black54,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
                                     ),
                                   ),
                                   keyboardType: TextInputType.emailAddress,
@@ -235,23 +304,42 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const SizedBox(height: 16),
                                 TextFormField(
                                   controller: _passC,
-                                  style: const TextStyle(color: Colors.black87),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
+                                      ),
                                   obscureText: _obscure,
                                   decoration: InputDecoration(
                                     labelText: 'Password',
-                                    labelStyle: const TextStyle(
-                                      color: Colors.black54,
-                                    ),
-                                    prefixIcon: const Icon(
+                                    labelStyle: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withOpacity(0.7),
+                                        ),
+                                    prefixIcon: Icon(
                                       Icons.lock,
-                                      color: Colors.black54,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withOpacity(0.7),
                                     ),
                                     suffixIcon: IconButton(
                                       icon: Icon(
                                         _obscure
                                             ? Icons.visibility
                                             : Icons.visibility_off,
-                                        color: Colors.black54,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withOpacity(0.7),
                                       ),
                                       onPressed: () =>
                                           setState(() => _obscure = !_obscure),
@@ -277,7 +365,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                               () => _rememberMe = val ?? false,
                                             ),
                                     ),
-                                    const Text('Ingat saya'),
+                                    Text(
+                                      'Ingat saya',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                          ),
+                                    ),
                                     const Spacer(),
                                     TextButton(
                                       onPressed: loading
@@ -286,12 +384,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                               context,
                                               AppRoutes.forgotPassword,
                                             ),
-                                      child: const Text(
+                                      child: Text(
                                         'Lupa Password?',
-                                        style: TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -304,42 +407,60 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: ElevatedButton(
                                     onPressed: loading ? null : _login,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                     ),
                                     child: loading
-                                        ? const SizedBox(
+                                        ? SizedBox(
                                             height: 20,
                                             width: 20,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
-                                              color: Colors.white,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
                                             ),
                                           )
-                                        : const Text(
+                                        : Text(
                                             'MASUK',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge
+                                                ?.copyWith(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimary,
+                                                ),
                                           ),
                                   ),
                                 ),
 
                                 const SizedBox(height: 16),
-                                const Row(
+                                Row(
                                   children: [
-                                    Expanded(child: Divider()),
+                                    const Expanded(child: Divider()),
                                     Padding(
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                       ),
-                                      child: Text('ATAU'),
+                                      child: Text(
+                                        'ATAU',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
+                                            ),
+                                      ),
                                     ),
-                                    Expanded(child: Divider()),
+                                    const Expanded(child: Divider()),
                                   ],
                                 ),
                                 const SizedBox(height: 16),
@@ -355,12 +476,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                       'assets/google.png',
                                       height: 24,
                                     ),
-                                    label: const Text(
+                                    label: Text(
                                       'Masuk dengan Google',
-                                      style: TextStyle(
-                                        color: Colors.black87,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                     ),
                                     style: OutlinedButton.styleFrom(
                                       side: const BorderSide(
@@ -377,7 +503,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Text('Belum punya akun?'),
+                                    Text(
+                                      'Belum punya akun?',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
+                                          ),
+                                    ),
                                     TextButton(
                                       onPressed: loading
                                           ? null
@@ -385,12 +521,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                               context,
                                               AppRoutes.register,
                                             ),
-                                      child: const Text(
+                                      child: Text(
                                         'Daftar',
-                                        style: TextStyle(
-                                          color: Colors.blue,
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                     ),
                                   ],

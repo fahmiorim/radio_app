@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/chat_model.dart';
+import '../../../config/color_scheme_extension.dart';
 
 class ChatMessageItem extends StatelessWidget {
   final ChatMessage message;
@@ -17,6 +18,8 @@ class ChatMessageItem extends StatelessWidget {
   Widget build(BuildContext context) {
     // batas lebar bubble maks 75% layar
     final maxBubbleWidth = MediaQuery.of(context).size.width * 0.75;
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
@@ -48,12 +51,10 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     isCurrentUser ? 'You' : message.username,
-                    style: TextStyle(
+                    style: textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w500,
-                      fontSize: 13.0,
-                      color: isCurrentUser
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey,
+                      color:
+                          isCurrentUser ? colors.primary : colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -65,8 +66,8 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isCurrentUser
-                        ? Theme.of(context).primaryColor
-                        : Colors.grey[200],
+                        ? colors.sentMessageBubble
+                        : colors.receivedMessageBubble,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(12.0),
                       topRight: const Radius.circular(12.0),
@@ -87,9 +88,10 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     message.message,
-                    style: TextStyle(
-                      color: isCurrentUser ? Colors.white : Colors.black87,
-                      fontSize: 15.0,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: isCurrentUser
+                          ? colors.sentMessageText
+                          : colors.receivedMessageText,
                     ),
                   ),
                 ),
@@ -101,7 +103,9 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     time,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 11.0),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
