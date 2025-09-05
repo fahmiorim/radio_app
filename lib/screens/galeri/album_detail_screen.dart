@@ -42,15 +42,18 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 16, color: Colors.white),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.onBackground,
+                ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () =>
                 context.read<AlbumProvider>().fetchAlbumDetail(widget.slug),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
             ),
             child: const Text('Coba Lagi'),
           ),
@@ -62,7 +65,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Stack(
         children: [
           // MiniPlayer di sini akan muncul di atas konten
@@ -74,13 +77,26 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
+                  colors: [
+                    Theme.of(context).colorScheme.surface,
+                    Theme.of(context).colorScheme.background,
+                  ],
                 ),
               ),
               child: Stack(
                 children: [
-                  AppTheme.bubble(context, size: 200, top: -50, right: -50),
-                  AppTheme.bubble(context, size: 150, bottom: -30, left: -30),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 200,
+                    top: -50,
+                    right: -50,
+                  ),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 150,
+                    bottom: -30,
+                    left: -30,
+                  ),
                 ],
               ),
             ),
@@ -89,10 +105,10 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           Consumer<AlbumProvider>(
             builder: (context, provider, _) {
               if (provider.isLoadingDetail && provider.albumDetail == null) {
-                return const Center(
+                return Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primary,
+                      Theme.of(context).colorScheme.primary,
                     ),
                   ),
                 );
@@ -134,7 +150,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           pinned: true,
           backgroundColor: Colors.transparent,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
+          iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
           flexibleSpace: FlexibleSpaceBar(
             centerTitle: true,
             background: Stack(
@@ -148,19 +164,19 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                       imageUrl: album.coverUrl,
                       fit: BoxFit.cover,
                       placeholder: (context, url) =>
-                          Container(color: AppColors.surface),
+                          Container(color: AppColors.lightSurface),
                       errorWidget: (context, url, error) => Container(
-                        color: AppColors.surface,
-                        child: const Icon(
+                        color: AppColors.lightSurface,
+                        child: Icon(
                           Icons.error,
-                          color: Colors.white54,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                           size: 40,
                         ),
                       ),
                     ),
                   )
                 else
-                  Container(color: AppColors.surface),
+                  Container(color: AppColors.lightSurface),
 
                 // Overlay gradient supaya judul kebaca
                 Positioned.fill(
@@ -183,15 +199,17 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
             ),
             title: Text(
               album.name,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
                 shadows: [
                   Shadow(
                     offset: Offset(1, 1),
                     blurRadius: 3.0,
-                    color: Colors.black45,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.black.withOpacity(0.6)
+                        : Colors.black45,
                   ),
                 ],
               ),
@@ -208,12 +226,12 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                 album.description?.trim().isNotEmpty == true
                     ? album.description!.trim()
                     : 'Tidak ada deskripsi',
-                style: const TextStyle(color: Colors.white, fontSize: 16.0),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16.0),
               ),
               const SizedBox(height: 20),
               Text(
                 'Total Foto: ${photos.length}',
-                style: const TextStyle(fontSize: 14, color: Colors.white70),
+                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
               ),
               const SizedBox(height: 16),
             ]),
@@ -251,17 +269,20 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                     tag: 'photo-${photo.id}',
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
-                      child: CachedNetworkImage(
-                        imageUrl: photoUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            Container(color: AppColors.surface),
-                        errorWidget: (context, url, error) => Container(
-                          color: AppColors.surface,
-                          child: const Icon(
-                            Icons.broken_image,
-                            color: Colors.white54,
-                            size: 40,
+                      child: Builder(
+                        builder: (context) => CachedNetworkImage(
+                          imageUrl: photoUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Theme.of(context).colorScheme.surface,
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Theme.of(context).colorScheme.surface,
+                            child: Icon(
+                              Icons.broken_image,
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              size: 40,
+                            ),
                           ),
                         ),
                       ),
@@ -272,15 +293,15 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
             ),
           )
         else
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(32.0),
               child: Center(
                 child: Text(
                   'Belum ada foto di album ini',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -293,7 +314,6 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
     );
   }
 
-  // _bubble method removed - using AppTheme.bubble instead
 }
 
 /// Viewer foto full-screen dengan PhotoView + Hero + cache reuse
@@ -305,10 +325,10 @@ class _PhotoViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
       ),
       body: Center(
         child: Hero(
@@ -317,7 +337,7 @@ class _PhotoViewer extends StatelessWidget {
             imageProvider: CachedNetworkImageProvider(imageUrl),
             minScale: PhotoViewComputedScale.contained,
             maxScale: PhotoViewComputedScale.covered * 2,
-            backgroundDecoration: const BoxDecoration(color: Colors.black),
+            backgroundDecoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
           ),
         ),
       ),

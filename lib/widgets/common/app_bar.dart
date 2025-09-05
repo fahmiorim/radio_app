@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -14,12 +13,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double? titleSpacing;
   final Widget? leading;
   final bool automaticallyImplyLeading;
-  final TextStyle? titleStyle;
   final double? toolbarHeight;
   final ShapeBorder? shape;
-  final IconThemeData? iconTheme;
   final bool primary;
-  final double? titleSpacingNavigation;
   final Widget? flexibleSpace;
 
   const CustomAppBar({
@@ -36,29 +32,30 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.titleSpacing,
     this.leading,
     this.automaticallyImplyLeading = true,
-    this.titleStyle,
     this.toolbarHeight = kToolbarHeight,
     this.shape,
-    this.iconTheme,
     this.primary = true,
-    this.titleSpacingNavigation,
     this.flexibleSpace,
   }) : super(key: key);
 
   // Factory constructor untuk kasus-kasus khusus
   factory CustomAppBar.transparent({
     required String title,
-    Color? titleColor = Colors.white,
-    Color? iconColor = Colors.white,
     List<Widget>? actions,
     Widget? leading,
+    Color? titleColor,
+    Color? iconColor,
+    required BuildContext context,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return CustomAppBar(
       title: title,
       backgroundColor: Colors.transparent,
       elevation: 0,
-      titleColor: titleColor,
-      iconColor: iconColor,
+      titleColor: titleColor ?? theme.textTheme.titleLarge?.color,
+      iconColor: iconColor ?? theme.iconTheme.color,
       actions: actions,
       leading: leading,
       flexibleSpace: Container(
@@ -66,7 +63,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.transparent, AppColors.primary],
+            colors: [
+              Colors.transparent,
+              isDark
+                  ? theme.colorScheme.surface.withOpacity(0.7)
+                  : theme.colorScheme.primary.withOpacity(0.8),
+            ],
           ),
         ),
       ),
@@ -77,53 +79,80 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required String title,
     List<Widget>? actions,
     bool showBackButton = true,
+    required BuildContext context,
+    Widget? leading,
+    Color? backgroundColor,
+    Color? titleColor,
+    Color? iconColor,
   }) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return CustomAppBar(
       title: title,
-      backgroundColor: const Color(0xFF121212),
-      titleColor: Colors.white,
-      iconColor: Colors.white,
+      backgroundColor: backgroundColor ?? colors.surface.withOpacity(0.9),
+      titleColor: titleColor ?? theme.textTheme.titleLarge?.color,
+      iconColor: iconColor ?? theme.iconTheme.color,
       actions: actions,
       showBackButton: showBackButton,
+      leading: leading,
+      elevation: isDark ? 4 : 1,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appBarTheme = theme.appBarTheme;
-    final scaffoldBackgroundColor = theme.scaffoldBackgroundColor;
+    final colors = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Gunakan warna dari theme
+    final effectiveTitleColor =
+        titleColor ??
+        (isDark ? textTheme.titleLarge?.color : colors.onPrimary) ??
+        colors.onSurface;
+
+    final effectiveIconColor =
+        iconColor ??
+        (isDark ? theme.iconTheme.color : colors.onPrimary) ??
+        colors.onSurface;
 
     return AppBar(
+      iconTheme: IconThemeData(
+        color: effectiveIconColor,
+        size: theme.iconTheme.size ?? 24,
+      ),
       title: Text(
         title,
-        style:
-            titleStyle ??
-            TextStyle(
-              color: titleColor ?? appBarTheme.titleTextStyle?.color,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
+        style: textTheme.titleLarge?.copyWith(
+          color: effectiveTitleColor,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       centerTitle: centerTitle,
       automaticallyImplyLeading: automaticallyImplyLeading,
       backgroundColor:
           backgroundColor ??
-          appBarTheme.backgroundColor ??
-          scaffoldBackgroundColor,
+          (isDark ? theme.colorScheme.surface : theme.colorScheme.primary),
       elevation: elevation,
       flexibleSpace: flexibleSpace,
       actions: actions,
       bottom: bottom,
-      iconTheme:
-          iconTheme ??
-          IconThemeData(color: iconColor ?? appBarTheme.iconTheme?.color),
-      leading: leading ?? (showBackButton ? const BackButton() : null),
-      titleSpacing: titleSpacing,
+      leading:
+          leading ??
+          (showBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  color: effectiveIconColor,
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+              : null),
+      titleSpacing: titleSpacing ?? NavigationToolbar.kMiddleSpacing,
       toolbarHeight: toolbarHeight,
       shape: shape,
       primary: primary,
-      titleTextStyle: titleStyle,
     );
   }
 

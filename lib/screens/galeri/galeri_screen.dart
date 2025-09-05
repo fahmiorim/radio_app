@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
@@ -49,45 +48,51 @@ class _GaleriScreenState extends State<GaleriScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: AppColors.backgroundDark,
-      appBar: CustomAppBar.transparent(title: 'Galeri'),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: CustomAppBar.transparent(
+        context: context,
+        title: 'Galeri',
+      ),
       body: Stack(
         children: [
           // Background with gradient and bubbles
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
-                ),
-              ),
+              color: colors.background,
               child: Stack(
                 children: [
                   // Large bubble top right
                   AppTheme.bubble(
-                    context,
+                    context: context,
                     size: 200,
                     top: -50,
                     right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
                   ),
                   // Medium bubble bottom left
                   AppTheme.bubble(
-                    context,
+                    context: context,
                     size: 150,
                     bottom: -30,
                     left: -30,
+                    opacity: isDarkMode ? 0.08 : 0.03,
+                    usePrimaryColor: true,
                   ),
                   // Small bubble center
                   AppTheme.bubble(
-                    context,
+                    context: context,
                     size: 50,
                     top: 100,
                     left: 100,
-                    opacity: 0.05,
+                    opacity: isDarkMode ? 0.06 : 0.02,
+                    usePrimaryColor: true,
                   ),
                 ],
               ),
@@ -98,23 +103,23 @@ class _GaleriScreenState extends State<GaleriScreen> {
             child: RefreshIndicator(
               key: _refreshIndicatorKey,
               onRefresh: _handleRefresh,
-              color: AppColors.primary,
-              backgroundColor: Colors.white,
+              color: colors.primary,
+              backgroundColor: colors.surface,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   // Content
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 4.0,
+                      horizontal: 16.0,
+                      vertical: 8.0,
                     ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         const VideoList(),
-                        const SizedBox(height: 1),
+                        const SizedBox(height: 16),
                         const AlbumList(),
-                        const SizedBox(height: 8), // Reduced space
+                        const SizedBox(height: 16),
                       ]),
                     ),
                   ),

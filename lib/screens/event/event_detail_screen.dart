@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
@@ -14,107 +13,141 @@ class EventDetailScreen extends StatelessWidget {
   const EventDetailScreen({super.key, required this.event});
 
   Widget _buildInfoCard(String title, String value, {IconData? icon}) {
-    return Card(
-      color: const Color(0xFF1E1E1E),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (icon != null)
-              Row(
-                children: [
-                  Icon(icon, color: AppColors.textSecondary, size: 20),
-                  const SizedBox(width: 8),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final colors = theme.colorScheme;
+        
+        return Card(
+          color: colors.surface,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: colors.outline.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (icon != null)
+                  Row(
+                    children: [
+                      Icon(
+                        icon,
+                        color: colors.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  )
+                else
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              )
-            else
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            const SizedBox(height: 8),
-            value.trim().isNotEmpty
-                ? Html(
-                    data: value,
-                    style: {
-                      "body": Style(
-                        margin: Margins.zero,
-                        padding: HtmlPaddings.zero,
-                        color: AppColors.textPrimary,
-                        fontSize: FontSize(14.0),
-                        lineHeight: LineHeight(1.5),
-                      ),
-                      "p": Style(
-                        margin: Margins.zero,
-                        padding: HtmlPaddings.only(bottom: 8.0),
-                      ),
-                      "a": Style(
-                        color: AppColors.primary,
-                        textDecoration: TextDecoration.none,
-                      ),
-                      "strong": Style(fontWeight: FontWeight.bold),
-                      "em": Style(fontStyle: FontStyle.italic),
-                    },
-                  )
-                : const SizedBox.shrink(),
-          ],
-        ),
-      ),
+                const SizedBox(height: 8),
+                value.trim().isNotEmpty
+                    ? Html(
+                        data: value,
+                        style: {
+                          "body": Style(
+                            margin: Margins.zero,
+                            padding: HtmlPaddings.zero,
+                            color: colors.onSurfaceVariant,
+                            fontSize: FontSize(14.0),
+                            lineHeight: LineHeight(1.5),
+                          ),
+                          "p": Style(
+                            margin: Margins.zero,
+                            padding: HtmlPaddings.only(bottom: 8.0),
+                          ),
+                          "a": Style(
+                            color: colors.primary,
+                            textDecoration: TextDecoration.none,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          "strong": Style(fontWeight: FontWeight.bold),
+                          "em": Style(fontStyle: FontStyle.italic),
+                        },
+                      )
+                    : const SizedBox.shrink(),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _detailImage(String url) {
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: url.isEmpty
-            ? Container(
-                color: const Color(0xFF1E1E1E),
-                child: const Center(
-                  child: Icon(
-                    Icons.event_available,
-                    size: 80,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              )
-            : CachedNetworkImage(
-                imageUrl: url,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => const Center(
-                  child: SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-                errorWidget: (_, __, ___) => Container(
-                  color: const Color(0xFF1E1E1E),
-                  child: const Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 48,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
               ),
+              child: url.isEmpty
+                  ? Center(
+                      child: Icon(
+                        Icons.event_available,
+                        size: 80,
+                        color: colors.onSurfaceVariant.withOpacity(0.5),
+                      ),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: url,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Center(
+                        child: CircularProgressIndicator(
+                          color: colors.primary,
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: colors.error,
+                              size: 40,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Gagal memuat gambar',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -130,13 +163,16 @@ class EventDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: colors.background,
       appBar: CustomAppBar.transparent(
+        context: context,
         title: event.judul,
-        titleColor: AppColors.textPrimary,
-        iconColor: AppColors.textPrimary,
+        titleColor: colors.onBackground,
+        iconColor: colors.onBackground,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -153,21 +189,24 @@ class EventDetailScreen extends StatelessWidget {
               // Background gradient + bubbles
               Positioned.fill(
                 child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [AppColors.primary, AppColors.backgroundDark],
-                    ),
-                  ),
+                  color: colors.background,
                   child: Stack(
                     children: [
-                      AppTheme.bubble(context, size: 200, top: -50, right: -50),
                       AppTheme.bubble(
-                        context,
+                        context: context,
+                        size: 200,
+                        top: -50,
+                        right: -50,
+                        opacity: isDarkMode ? 0.1 : 0.03,
+                        usePrimaryColor: true,
+                      ),
+                      AppTheme.bubble(
+                        context: context,
                         size: 150,
                         bottom: -30,
                         left: -30,
+                        opacity: isDarkMode ? 0.15 : 0.04,
+                        usePrimaryColor: true,
                       ),
                     ],
                   ),
@@ -197,35 +236,34 @@ class EventDetailScreen extends StatelessWidget {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    event.judul,
-                                    style: theme.textTheme.headlineSmall?.copyWith(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.bold,
+                                  child: Builder(
+                                    builder: (context) => Text(
+                                      event.judul,
+                                      style: theme.textTheme.headlineSmall?.copyWith(
+                                        color: Theme.of(context).textTheme.bodySmall?.color,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
                                     color: event.status == 'active'
-                                        ? Colors.green.withOpacity(0.2)
-                                        : Colors.red.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
+                                        ? colors.tertiaryContainer
+                                        : colors.errorContainer,
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Text(
-                                    event.status == 'active'
-                                        ? 'Aktif'
-                                        : 'Tidak Aktif',
-                                    style: TextStyle(
+                                    event.status == 'active' ? 'Aktif' : 'Tidak Aktif',
+                                    style: theme.textTheme.labelMedium?.copyWith(
                                       color: event.status == 'active'
-                                          ? Colors.green
-                                          : Colors.red,
-                                      fontSize: 12,
+                                          ? colors.onTertiaryContainer
+                                          : colors.onErrorContainer,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),

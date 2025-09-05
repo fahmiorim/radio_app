@@ -6,13 +6,17 @@ class AppHeaderSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        color: colorScheme.surface,
+        gradient: LinearGradient(
           colors: [
-            Color.fromARGB(255, 2, 45, 155),
-            Color.fromARGB(255, 2, 42, 128),
+            colorScheme.surface,
+            colorScheme.surfaceVariant,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -20,15 +24,15 @@ class AppHeaderSkeleton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Shimmer.fromColors(
-        baseColor: Colors.grey[700]!,
-        highlightColor: Colors.grey[600]!,
+        baseColor: isDark ? colorScheme.surfaceVariant : Colors.grey[300]!,
+        highlightColor: isDark ? colorScheme.surface : Colors.grey[100]!,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -40,7 +44,7 @@ class AppHeaderSkeleton extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: Colors.grey[400],
+                    color: colorScheme.onSurface.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -51,12 +55,12 @@ class AppHeaderSkeleton extends StatelessWidget {
                   child: Text(
                     'ODAN FM',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Colors.transparent,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
                       fontFamily: 'Poppins',
-                      backgroundColor: Colors.grey[400],
+                      backgroundColor: colorScheme.onSurface.withOpacity(0.1),
                     ),
                   ),
                 ),
@@ -67,7 +71,7 @@ class AppHeaderSkeleton extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Colors.grey[400],
+                color: colorScheme.onSurface.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
             ),

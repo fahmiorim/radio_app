@@ -11,7 +11,6 @@ import 'package:radio_odan_app/models/video_model.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 
 class AllVideosScreen extends StatefulWidget {
@@ -144,31 +143,48 @@ class _AllVideosScreenState extends State<AllVideosScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      appBar: const CustomAppBar(title: 'Semua Video'),
+      backgroundColor: colors.background,
+      appBar: CustomAppBar(
+        title: 'Semua Video',
+        titleColor: colors.onBackground,
+        iconColor: colors.onBackground,
+      ),
       body: Stack(
         children: [
-          // Background gradient + bubble
+          // Background bubbles
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
-                ),
-              ),
+              color: colors.background,
               child: Stack(
                 children: [
-                  AppTheme.bubble(context, size: 200, top: -50, right: -50),
-                  AppTheme.bubble(context, size: 150, bottom: -30, left: -30),
                   AppTheme.bubble(
-                    context,
+                    context: context,
+                    size: 200,
+                    top: -50,
+                    right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 150,
+                    bottom: -30,
+                    left: -30,
+                    opacity: isDarkMode ? 0.15 : 0.04,
+                    usePrimaryColor: true,
+                  ),
+                  AppTheme.bubble(
+                    context: context,
                     size: 80,
                     top: 100,
                     left: 100,
-                    opacity: 0.05,
+                    opacity: isDarkMode ? 0.08 : 0.02,
+                    usePrimaryColor: true,
                   ),
                 ],
               ),
@@ -182,7 +198,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                 return RefreshIndicator(
                   key: _refreshIndicatorKey,
                   onRefresh: _onRefresh,
-                  color: AppColors.primary,
+                  color: colors.primary,
                   child: _buildVideoList(vp),
                 );
               },
@@ -190,54 +206,154 @@ class _AllVideosScreenState extends State<AllVideosScreen>
           ),
         ],
       ),
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.only(bottom: 0), // Adjust padding as needed
-        child: MiniPlayer(),
-      ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
   // _bubble method removed - using AppTheme.bubble instead
 
+  Widget _buildLoadingSkeleton() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 3,
+      itemBuilder: (_, __) => Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 100,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: colors.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 16,
+                      width: 200,
+                      color: colors.surfaceVariant,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 12,
+                      width: 150,
+                      color: colors.surfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildVideoList(VideoProvider vp) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     if (vp.isLoadingAll && vp.allVideos.isEmpty) {
-      return const Center(child: CupertinoActivityIndicator());
+      return _buildLoadingSkeleton();
     }
 
     if (vp.hasErrorAll && vp.allVideos.isEmpty) {
       return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: colors.error),
+              const SizedBox(height: 16),
+              Text(
+                'Gagal memuat video',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colors.onBackground,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                vp.errorMessageAll,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _onRefresh,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.primary,
+                  foregroundColor: colors.onPrimary,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text('Coba Lagi'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (vp.allVideos.isEmpty) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.white70, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              vp.errorMessageAll,
-              style: const TextStyle(color: Colors.white70),
-              textAlign: TextAlign.center,
+            Icon(
+              Icons.videocam_off_outlined,
+              size: 64,
+              color: colors.onSurfaceVariant.withOpacity(0.5),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => vp.fetchAllVideos(),
-              child: const Text('Coba Lagi'),
+            Text(
+              'Belum ada video yang tersedia',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Cek kembali nanti untuk video terbaru',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant.withOpacity(0.7),
+              ),
             ),
           ],
         ),
       );
     }
 
-    final itemCount = vp.allVideos.length + (vp.hasMore ? 1 : 0);
-
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
-      itemCount: itemCount,
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+      itemCount: vp.allVideos.length + (vp.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= vp.allVideos.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Center(child: CupertinoActivityIndicator()),
-          );
+          return _isLoadingMore
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              : const SizedBox();
         }
         final video = vp.allVideos[index];
         return _buildVideoItem(video);
@@ -246,38 +362,97 @@ class _AllVideosScreenState extends State<AllVideosScreen>
   }
 
   Widget _buildVideoItem(VideoModel video) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white.withOpacity(0.1),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            video.safeThumbnailUrl,
-            width: 100,
-            height: 60,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              width: 100,
-              height: 60,
-              color: Colors.grey[800],
-              child: const Icon(Icons.videocam_off, color: Colors.white54),
-            ),
+      color: colors.surface,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: colors.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _openYoutube(video.watchUrl),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Thumbnail
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  video.safeThumbnailUrl,
+                  width: 100,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    width: 100,
+                    height: 60,
+                    color: colors.surfaceVariant,
+                    child: Icon(
+                      Icons.videocam_off_outlined,
+                      color: colors.onSurfaceVariant.withOpacity(0.5),
+                    ),
+                  ),
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 100,
+                      height: 60,
+                      color: colors.surfaceVariant,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Video info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      video.title,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: colors.onSurface,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(video.createdAt),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Play button
+              Icon(
+                Icons.play_circle_outline_rounded,
+                color: colors.primary,
+                size: 32,
+              ),
+            ],
           ),
         ),
-        title: Text(
-          video.title,
-          style: const TextStyle(color: Colors.white),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Text(
-          _formatDate(video.createdAt),
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
-        ),
-        onTap: () => _openYoutube(video.watchUrl),
-        trailing: const Icon(Icons.play_circle_outline, color: Colors.white70),
       ),
     );
   }

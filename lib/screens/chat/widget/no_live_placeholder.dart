@@ -138,7 +138,12 @@ class NoLivePlaceholder extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(25),
-                        border: Border.all(color: AppColors.border, width: 1.5),
+                        border: Border.all(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.darkBorder
+                              : AppColors.lightBorder,
+                          width: 1.5,
+                        ),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,

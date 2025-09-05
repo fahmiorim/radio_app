@@ -57,7 +57,10 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
         if (error != null || artikel == null) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: CustomAppBar.transparent(title: 'Error'),
+            appBar: CustomAppBar.transparent(
+              context: context,
+              title: 'Error',
+            ),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -90,7 +93,10 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: CustomAppBar.transparent(title: artikel.title),
+          appBar: CustomAppBar.transparent(
+            context: context,
+            title: artikel.title,
+          ),
           body: RefreshIndicator(
             onRefresh: _loadArticle,
             color: Theme.of(context).primaryColor,

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
-
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
@@ -115,34 +113,39 @@ class _ArtikelScreenState extends State<ArtikelScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: CustomAppBar.transparent(title: 'Artikel'),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: CustomAppBar.transparent(
+        context: context,
+        title: 'Artikel',
+      ),
       body: Stack(
         children: [
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).scaffoldBackgroundColor,
-                  ],
-                ),
-              ),
+              color: theme.colorScheme.background,
               child: Stack(
                 children: [
-                  AppTheme.bubble(context, size: 200, top: 50, right: -50),
+                  // Top-right bubble
                   AppTheme.bubble(
-                    context,
+                    context: context,
+                    size: 200,
+                    top: 50,
+                    right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                  // Bottom-left bubble
+                  AppTheme.bubble(
+                    context: context,
                     size: 150,
                     bottom: -30,
                     left: -30,
-                    opacity:
-                        AppColors.bubbleDefaultOpacity *
-                        0.6, // 60% dari opacity default
+                    opacity: isDarkMode ? 0.08 : 0.03,
+                    usePrimaryColor: true,
                   ),
                 ],
               ),
@@ -155,6 +158,9 @@ class _ArtikelScreenState extends State<ArtikelScreen>
   }
 
   Widget _buildBody(ArtikelProvider p) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    
     if (p.isLoading && p.artikels.isEmpty) {
       return const ArtikelAllSkeleton();
     }
@@ -164,21 +170,32 @@ class _ArtikelScreenState extends State<ArtikelScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            Icon(
+              Icons.error_outline,
+              color: colors.error,
+              size: 48,
+            ),
             const SizedBox(height: 16),
-            Text(
-              'Gagal memuat artikel: ${p.error}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0),
+              child: Text(
+                'Gagal memuat artikel: ${p.error}',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurface.withOpacity(0.7),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () => p.refresh(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                backgroundColor: colors.primary,
+                foregroundColor: colors.onPrimary,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('Coba Lagi'),
             ),

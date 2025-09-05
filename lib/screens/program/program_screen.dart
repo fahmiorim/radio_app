@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/program_model.dart';
 import 'package:radio_odan_app/providers/program_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
@@ -91,8 +90,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: CustomAppBar.transparent(
+        context: context,
         title: 'Semua Program',
         actions: [
           IconButton(
@@ -108,33 +111,32 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
           // Bubble/Wave Background
           Positioned.fill(
             child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
-                ),
-              ),
+              color: theme.colorScheme.background,
               child: Stack(
                 children: [
                   AppTheme.bubble(
-                    context,
+                    context: context,
                     size: 200,
                     top: -50,
                     right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
                   ),
                   AppTheme.bubble(
-                    context,
+                    context: context,
                     size: 150,
                     bottom: -30,
                     left: -30,
+                    opacity: isDarkMode ? 0.08 : 0.03,
+                    usePrimaryColor: true,
                   ),
                   AppTheme.bubble(
-                    context,
+                    context: context,
                     size: 50,
                     top: 100,
                     left: 100,
-                    opacity: 0.05,
+                    opacity: isDarkMode ? 0.06 : 0.02,
+                    usePrimaryColor: true,
                   ),
                 ],
               ),
@@ -161,27 +163,50 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
         // Error & kosong
         if (provider.listError != null && provider.allPrograms.isEmpty) {
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: colors.error,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Gagal memuat daftar program',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colors.onBackground,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     provider.listError!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => provider.loadList(cacheFirst: false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     child: const Text('Coba Lagi'),
                   ),
                 ],
@@ -192,17 +217,25 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
         // Kosong tanpa error
         if (provider.allPrograms.isEmpty) {
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.radio, size: 64, color: Colors.grey),
+                Icon(
+                  Icons.radio,
+                  size: 64,
+                  color: colors.onSurfaceVariant.withOpacity(0.6),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Belum ada program tersedia',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -247,11 +280,11 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -312,10 +345,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
     );
   }
 
-  Widget _thumbPlaceholder() => Container(
-    color: AppColors.primary.withOpacity(0.1),
-    alignment: Alignment.center,
-    child: const Icon(Icons.radio, size: 32, color: AppColors.primary),
+  Widget _thumbPlaceholder() => Builder(
+    builder: (context) => Container(
+      color: Theme.of(context).primaryColor.withOpacity(0.1),
+      alignment: Alignment.center,
+      child: Icon(Icons.radio, size: 32, color: Theme.of(context).primaryColor),
+    ),
   );
 
   Widget _thumbLoading() => const Center(

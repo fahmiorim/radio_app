@@ -64,67 +64,77 @@ class _BottomNavState extends State<BottomNav> {
       ),
 
       /// BottomNav
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          bottomNavigationBarTheme: BottomNavigationBarThemeData(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            selectedItemColor: Theme.of(context).primaryColor,
+            unselectedItemColor: Colors.grey.shade600,
+            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.normal,
             ),
-          ],
+            elevation: 8,
+            type: BottomNavigationBarType.fixed,
+            showSelectedLabels: true,
+            showUnselectedLabels: true,
+          ),
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.black.withOpacity(
-            0.8,
-          ), // tambahkan warna latar belakang
-          elevation: 0,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.grey,
-          onTap: (index) async {
-            if (index == 3) {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChangeNotifierProvider(
-                    create: (_) => LiveChatProvider(roomId: 1)..init(),
-                    child: const LiveChatScreen(roomId: 1),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) async {
+              if (index == 3) {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChangeNotifierProvider(
+                      create: (_) => LiveChatProvider(roomId: 1)..init(),
+                      child: const LiveChatScreen(roomId: 1),
+                    ),
                   ),
-                ),
-              );
+                );
 
-              if (result == 'goHome') {
+                if (result == 'goHome') {
+                  setState(() {
+                    _currentIndex = 0;
+                  });
+                }
+              } else {
                 setState(() {
-                  _currentIndex = 0;
+                  _currentIndex = index;
                 });
               }
-            } else {
-              setState(() {
-                _currentIndex = index;
-              });
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              label: "Home",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.article_outlined),
-              label: "Artikel",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.photo_library_outlined),
-              label: "Galeri",
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline),
-              label: "Chat",
-            ),
-          ],
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                label: "Home",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.article_outlined),
+                label: "Artikel",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.photo_library_outlined),
+                label: "Galeri",
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline),
+                label: "Chat",
+              ),
+            ],
+          ),
         ),
       ),
     );

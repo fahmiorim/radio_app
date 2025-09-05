@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
@@ -101,35 +100,39 @@ class _AllEventsScreenState extends State<AllEventsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
     return Scaffold(
       key: const Key('all_events_screen'),
-      appBar: CustomAppBar.transparent(title: 'Semua Event'),
-      backgroundColor: Theme.of(context).colorScheme.background,
+      appBar: CustomAppBar.transparent(
+        context: context,
+        title: 'Semua Event',
+      ),
+      backgroundColor: colors.background,
       body: Stack(
         children: [
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Theme.of(context).colorScheme.primary,
-                    Theme.of(context).colorScheme.background,
-                  ],
-                ),
-              ),
+              color: colors.surface,
               child: Stack(
                 children: [
-                  AppTheme.bubble(context, size: 200, top: 50, right: -50),
                   AppTheme.bubble(
-                    context,
+                    context: context,
+                    size: 200,
+                    top: 50,
+                    right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                  AppTheme.bubble(
+                    context: context,
                     size: 250,
                     bottom: -50,
                     left: -50,
-                    opacity:
-                        AppColors.bubbleDefaultOpacity *
-                        0.6, // 60% dari opacity default
+                    opacity: isDarkMode ? 0.15 : 0.04,
+                    usePrimaryColor: true,
                   ),
                 ],
               ),
@@ -150,30 +153,50 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         }
 
         if (provider.error != null && provider.events.isEmpty) {
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.error_outline,
-                    color: Theme.of(context).colorScheme.error,
+                    color: colors.error,
                     size: 48,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Text(
-                    'Gagal memuat event:\n${provider.error}',
+                    'Gagal memuat event',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colors.onBackground,
+                    ),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onBackground.withOpacity(0.7),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.error!,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: () => provider.refresh(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors.primary,
+                      foregroundColor: colors.onPrimary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     child: const Text('Coba Lagi'),
                   ),
                 ],
@@ -183,14 +206,35 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         }
 
         if (provider.events.isEmpty) {
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          
           return Center(
-            child: Text(
-              'Tidak ada event yang tersedia',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onBackground.withOpacity(0.7),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.event_available_outlined,
+                  size: 48,
+                  color: colors.onSurfaceVariant.withOpacity(0.6),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Tidak ada event yang tersedia',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Cek kembali nanti untuk event terbaru',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           );
         }

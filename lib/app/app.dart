@@ -15,6 +15,7 @@ import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
+import 'package:radio_odan_app/providers/theme_provider.dart';
 
 import 'package:radio_odan_app/config/api_client.dart';
 
@@ -42,6 +43,7 @@ class _RadioAppState extends State<RadioApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ProgramProvider()),
@@ -52,14 +54,14 @@ class _RadioAppState extends State<RadioApp> {
         ChangeNotifierProvider(create: (_) => AlbumProvider()),
         ChangeNotifierProvider(create: (_) => RadioStationProvider()),
       ],
-      child: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
+      child: Consumer2<AuthProvider, ThemeProvider>(
+        builder: (context, authProvider, themeProvider, _) {
           return MaterialApp(
             title: 'Odan FM',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
-            themeMode: ThemeMode.system,
+            themeMode: themeProvider.themeMode,
             initialRoute: AppRoutes.splash,
             onGenerateRoute: AppRoutes.onGenerateRoute,
             builder: (context, child) {

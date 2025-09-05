@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
+import 'package:radio_odan_app/providers/theme_provider.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/services/user_service.dart';
 
@@ -24,25 +25,29 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
-    final user = userProvider.user; // UserModel?
+    final user = userProvider.user;
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
     final size = MediaQuery.of(context).size;
 
     return SizedBox(
       width: size.width * 0.82,
       child: Drawer(
-        backgroundColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [theme.primaryColor, theme.scaffoldBackgroundColor],
+            color: colorScheme.surface,
+            border: Border(
+              right: BorderSide(
+                color: colorScheme.outline.withOpacity(0.1),
+                width: 1,
+              ),
             ),
           ),
           child: Stack(
             children: [
+              // Background decorative elements
               Positioned(
                 top: -50,
                 right: -50,
@@ -51,7 +56,7 @@ class AppDrawer extends StatelessWidget {
                   height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
+                    color: colorScheme.primary.withOpacity(0.05),
                   ),
                 ),
               ),
@@ -63,7 +68,7 @@ class AppDrawer extends StatelessWidget {
                   height: 150,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.05),
+                    color: colorScheme.tertiary.withOpacity(0.05),
                   ),
                 ),
               ),
@@ -75,13 +80,12 @@ class AppDrawer extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.primaryColor.withOpacity(0.9),
-                            theme.primaryColor.withOpacity(0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                        color: colorScheme.surfaceContainerHighest,
+                        border: Border(
+                          bottom: BorderSide(
+                            color: colorScheme.outline.withOpacity(0.1),
+                            width: 1,
+                          ),
                         ),
                       ),
                       child: Row(
@@ -95,7 +99,7 @@ class AppDrawer extends StatelessWidget {
                                 Text(
                                   user?.name ?? 'Nama Pengguna',
                                   style: textTheme.titleMedium?.copyWith(
-                                    color: Colors.white,
+                                    color: colorScheme.onSurface,
                                     fontWeight: FontWeight.bold,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -104,7 +108,7 @@ class AppDrawer extends StatelessWidget {
                                 Text(
                                   user?.email ?? 'email@example.com',
                                   style: textTheme.bodySmall?.copyWith(
-                                    color: Colors.white70,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -124,17 +128,20 @@ class AppDrawer extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               children: [
                                 _buildMenuItem(
+                                  context: context,
                                   icon: Icons.edit,
                                   title: "Edit Profile",
                                   onTap: () =>
                                       _navigateToEditProfile(context, user),
                                 ),
                                 _buildMenuItem(
+                                  context: context,
                                   icon: Icons.star,
                                   title: "Nilai Kami",
                                   onTap: () {},
                                 ),
                                 _buildMenuItem(
+                                  context: context,
                                   icon: Icons.logout_rounded,
                                   title: "Logout",
                                   iconColor: Colors.redAccent,
@@ -149,6 +156,27 @@ class AppDrawer extends StatelessWidget {
                                     }
                                   },
                                 ),
+                                // Theme Toggle
+                                Consumer<ThemeProvider>(
+                                  builder: (context, themeProvider, _) =>
+                                      _buildMenuItem(
+                                        context: context,
+                                        icon: Icons.light_mode,
+                                        title: "Tema Gelap",
+                                        onTap: () {
+                                          themeProvider.toggleTheme(
+                                            !themeProvider.isDarkMode,
+                                          );
+                                        },
+                                        trailing: Switch.adaptive(
+                                          value: themeProvider.isDarkMode,
+                                          onChanged: (value) {
+                                            themeProvider.toggleTheme(value);
+                                          },
+                                          activeColor: colorScheme.primary,
+                                        ),
+                                      ),
+                                ),
                               ],
                             ),
                           ),
@@ -159,7 +187,9 @@ class AppDrawer extends StatelessWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Divider(color: Colors.white24),
+                                Divider(
+                                  color: colorScheme.outline.withOpacity(0.1),
+                                ),
                                 const SizedBox(height: 10),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -167,13 +197,13 @@ class AppDrawer extends StatelessWidget {
                                     Icon(
                                       Icons.radio,
                                       size: 18,
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
                                       "Odan FM",
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.8),
+                                        color: colorScheme.onSurfaceVariant,
                                         fontSize: 14,
                                       ),
                                     ),
@@ -181,9 +211,10 @@ class AppDrawer extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  "v1.0.0",
+                                  "v2.0.0",
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
+                                    color: colorScheme.onSurfaceVariant
+                                        .withOpacity(0.7),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -272,39 +303,54 @@ class AppDrawer extends StatelessWidget {
   }
 
   Widget _buildMenuItem({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required VoidCallback onTap,
-    Color iconColor = Colors.white,
+    Color? iconColor,
+    Widget? trailing,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final defaultIconColor = iconColor ?? colorScheme.primary;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: isDark
+            ? Colors.white.withOpacity(0.1)
+            : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.1)
+              : colorScheme.outlineVariant,
+        ),
       ),
       child: ListTile(
         leading: Container(
           height: 40,
           width: 40,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: isDark
+                ? Colors.white.withOpacity(0.15)
+                : colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: iconColor),
+          child: Icon(icon, color: defaultIconColor),
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: colorScheme.onSurfaceVariant,
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
         ),
         trailing: Icon(
           Icons.chevron_right,
-          color: Colors.white.withOpacity(0.7),
+          color: colorScheme.onSurfaceVariant.withOpacity(0.7),
         ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

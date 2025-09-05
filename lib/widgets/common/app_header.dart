@@ -98,7 +98,10 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
       height: 40,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.8), width: 1.5),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), 
+          width: 1.5,
+        ),
       ),
       child: ClipOval(
         child: CachedNetworkImage(
@@ -112,29 +115,40 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
   }
 
   Widget _buildShimmerAvatar() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Container(width: 40, height: 40, color: Colors.white),
+      baseColor: colorScheme.surfaceVariant,
+      highlightColor: colorScheme.surface,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          shape: BoxShape.circle,
+        ),
+      ),
     );
   }
 
   Widget _buildInitialsAvatar(String initial) {
+    final theme = Theme.of(context);
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: theme.colorScheme.primaryContainer.withOpacity(0.2),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+        border: Border.all(
+          color: theme.colorScheme.onPrimaryContainer.withOpacity(0.5),
+          width: 1.5,
+        ),
       ),
       child: Center(
         child: Text(
           initial,
-          style: const TextStyle(
-            color: Colors.white,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.onPrimaryContainer,
             fontWeight: FontWeight.bold,
-            fontSize: 16,
           ),
         ),
       ),
@@ -160,10 +174,11 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            color: Theme.of(context).colorScheme.surface,
+            gradient: LinearGradient(
               colors: [
-                Color.fromARGB(255, 2, 45, 155),
-                Color.fromARGB(255, 2, 42, 128),
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).colorScheme.surfaceVariant,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -171,7 +186,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Theme.of(context).shadowColor.withOpacity(0.2),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -189,25 +204,24 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
                       children: [
                         TextSpan(
                           text: 'ODAN',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.2,
                             fontFamily: 'Poppins',
                             shadows: [
                               Shadow(
-                                color: Colors.black.withOpacity(0.3),
-                                offset: const Offset(0, 2),
-                                blurRadius: 4,
+                                color: Theme.of(context).shadowColor.withOpacity(0.3),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
                               ),
                             ],
                           ),
                         ),
                         TextSpan(
                           text: ' FM',
-                          style: TextStyle(
-                            color: Colors.amber[300],
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,

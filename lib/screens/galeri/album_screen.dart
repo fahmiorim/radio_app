@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
+import 'package:intl/intl.dart';
 
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/models/album_model.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
@@ -114,39 +114,49 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
-      appBar: const CustomAppBar(title: 'Semua Album'),
-      body: _buildBody(),
-      bottomNavigationBar: const Padding(
-        padding: EdgeInsets.only(bottom: 0),
-        child: MiniPlayer(),
+      backgroundColor: colors.background,
+      appBar: CustomAppBar(
+        title: 'Semua Album',
+        titleColor: colors.onBackground,
+        iconColor: colors.onBackground,
       ),
+      body: _buildBody(),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
   Widget _buildBody() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Stack(
       children: [
         // Background
         Positioned.fill(
           child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [AppColors.primary, AppColors.backgroundDark],
-              ),
-            ),
+            color: colors.background,
             child: Stack(
               children: [
-                AppTheme.bubble(context, size: 200, top: -50, right: -50),
                 AppTheme.bubble(
-                  context,
+                  context: context,
+                  size: 200,
+                  top: -50,
+                  right: -50,
+                  opacity: isDarkMode ? 0.1 : 0.03,
+                  usePrimaryColor: true,
+                ),
+                AppTheme.bubble(
+                  context: context,
                   size: 150,
                   bottom: -30,
                   left: -30,
-                  opacity: 0.05,
+                  opacity: isDarkMode ? 0.15 : 0.04,
+                  usePrimaryColor: true,
                 ),
               ],
             ),
@@ -157,40 +167,86 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
           builder: (context, albumProvider, _) {
             // Initial loading
             if (albumProvider.isLoadingAll && albumProvider.allAlbums.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-              );
+              return _buildLoadingSkeleton();
             }
 
             // Error state
             if (albumProvider.hasErrorAll && albumProvider.allAlbums.isEmpty) {
               return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      albumProvider.errorMessageAll,
-                      style: const TextStyle(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _refreshAlbums,
-                      child: const Text('Coba Lagi'),
-                    ),
-                  ],
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: colors.error,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Gagal memuat album',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colors.onBackground,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        albumProvider.errorMessageAll,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _refreshAlbums,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: colors.primary,
+                          foregroundColor: colors.onPrimary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Coba Lagi'),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
 
             // Empty state
             if (albumProvider.allAlbums.isEmpty) {
-              return const Center(
-                child: Text(
-                  'Tidak ada album yang tersedia',
-                  style: TextStyle(color: Colors.white),
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.photo_album_outlined,
+                      size: 64,
+                      color: colors.onSurfaceVariant.withOpacity(0.5),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Belum ada album yang tersedia',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Cek kembali nanti untuk album terbaru',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant.withOpacity(0.7),
+                      ),
+                    ),
+                  ],
                 ),
               );
             }
@@ -201,7 +257,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
 
             return RefreshIndicator(
               onRefresh: _refreshAlbums,
-              color: AppColors.primary,
+              color: Theme.of(context).colorScheme.primary,
               child: GridView.builder(
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(
@@ -218,12 +274,12 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                 itemBuilder: (context, index) {
                   // Footer loader
                   if (index >= albumProvider.allAlbums.length) {
-                    return const Center(
+                    return Center(
                       child: Padding(
-                        padding: EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: CircularProgressIndicator(
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.primary,
+                            Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ),
@@ -241,133 +297,229 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
     );
   }
 
-  // _bubble method removed - using AppTheme.bubble instead
-}
-
-class _AlbumCard extends StatelessWidget {
-  final AlbumModel album;
-  const _AlbumCard({required this.album});
-
-  @override
-  Widget build(BuildContext context) {
-    final coverUrl = album.coverUrl;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AlbumDetailScreen(slug: album.slug),
-          ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
+  Widget _buildLoadingSkeleton() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: 4,
+      itemBuilder: (_, __) => Card(
+        margin: EdgeInsets.zero,
+        color: colors.surface,
+        elevation: 1,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.18),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          side: BorderSide(
+            color: colors.outline.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cover with overlay and text
-            Expanded(
-              child: Stack(
-                fit: StackFit.expand,
+            Container(
+              height: 150,
+              decoration: BoxDecoration(
+                color: colors.surfaceVariant,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Cover image
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
-                    ),
-                    child: Hero(
-                      tag: 'album-${album.slug}',
-                      child: CachedNetworkImage(
-                        imageUrl: coverUrl.isNotEmpty ? coverUrl : '',
-                        fit: BoxFit.cover,
-                        placeholder: (context, _) =>
-                            Container(color: AppColors.surfaceLight),
-                        errorWidget: (context, _, __) => Container(
-                          color: AppColors.surfaceLight,
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.photo_album,
-                            color: Colors.white54,
-                            size: 40,
-                          ),
-                        ),
-                      ),
-                    ),
+                  Container(
+                    height: 16,
+                    color: colors.surfaceVariant,
+                    margin: const EdgeInsets.only(bottom: 8),
                   ),
-                  // Gradient overlay
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.75),
-                          ],
-                        ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        color: colors.surfaceVariant,
                       ),
-                    ),
-                  ),
-                  // Title & meta
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          album.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            height: 1.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.photo_library,
-                              size: 14,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${album.photosCount ?? 0} Foto',
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      const SizedBox(width: 4),
+                      Container(
+                        width: 60,
+                        height: 12,
+                        color: colors.surfaceVariant,
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 12,
+                        height: 12,
+                        color: colors.surfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        width: 40,
+                        height: 12,
+                        color: colors.surfaceVariant,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  // Date formatting is handled in _AlbumCard
+}
+
+class _AlbumCard extends StatelessWidget {
+  const _AlbumCard({required this.album});
+
+  final AlbumModel album;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      color: colors.surface,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: colors.outline.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _navigateToAlbumDetail(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAlbumCover(colors),
+            _buildAlbumInfo(theme, colors),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlbumCover(ColorScheme colors) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      child: CachedNetworkImage(
+        imageUrl: album.coverUrl,
+        width: double.infinity,
+        height: 150,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => Container(
+          color: colors.surfaceVariant,
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+            ),
+          ),
+        ),
+        errorWidget: (_, __, ___) => Container(
+          color: colors.surfaceVariant,
+          padding: const EdgeInsets.all(16),
+          child: Icon(Icons.error_outline, color: colors.error),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAlbumInfo(ThemeData theme, ColorScheme colors) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAlbumTitle(theme, colors),
+          const SizedBox(height: 4),
+          _buildAlbumMetadata(theme, colors),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAlbumTitle(ThemeData theme, ColorScheme colors) {
+    return Text(
+      album.title,
+      style: theme.textTheme.titleMedium?.copyWith(
+        color: colors.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildAlbumMetadata(ThemeData theme, ColorScheme colors) {
+    return Row(
+      children: [
+        _buildInfoChip(
+          icon: Icons.photo_library_outlined,
+          text: '${album.totalPhotos} Foto',
+          theme: theme,
+          colors: colors,
+        ),
+        const SizedBox(width: 12),
+        if (album is PhotoModel)
+          _buildInfoChip(
+            icon: Icons.calendar_today_outlined,
+            text: _formatDate((album as PhotoModel).createdAt),
+            theme: theme,
+            colors: colors,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String text,
+    required ThemeData theme,
+    required ColorScheme colors,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: colors.onSurfaceVariant),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    return DateFormat('dd/MM/yyyy').format(date);
+  }
+
+  void _navigateToAlbumDetail(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AlbumDetailScreen(slug: album.slug),
       ),
     );
   }

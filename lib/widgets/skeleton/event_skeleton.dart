@@ -34,7 +34,7 @@ class EventCardSkeleton extends StatelessWidget {
       baseColor: Colors.grey[800]!,
       highlightColor: Colors.grey[700]!,
       child: Card(
-        color: AppColors.surface.withOpacity(0.9),
+        color: AppColors.darkSurface.withOpacity(0.9),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
         child: Padding(

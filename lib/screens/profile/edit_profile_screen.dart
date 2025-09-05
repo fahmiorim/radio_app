@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/services/user_service.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -57,36 +56,47 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
     int maxLines = 1,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: TextFormField(
         controller: controller,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface,
+        ),
         keyboardType: keyboardType,
         maxLines: maxLines,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+          labelStyle: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.1),
-          prefixIcon: Icon(icon, color: AppColors.primary),
+          fillColor: colorScheme.surfaceContainerHighest,
+          prefixIcon: Icon(icon, color: colorScheme.primary),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            borderSide: BorderSide(
+              color: colorScheme.outlineVariant.withOpacity(0.5),
+              width: 1,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
@@ -107,15 +117,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.backgroundDark],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: colorScheme.surface,
         child: Stack(
           children: [
             // Background bubbles
@@ -127,7 +134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
+                  color: colorScheme.primary.withOpacity(0.05),
                 ),
               ),
             ),
@@ -139,7 +146,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
+                  color: colorScheme.tertiary.withOpacity(0.05),
                 ),
               ),
             ),
@@ -151,7 +158,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
+                  color: colorScheme.secondary.withOpacity(0.05),
                 ),
               ),
             ),
@@ -159,15 +166,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             CustomScrollView(
               slivers: [
                 SliverAppBar(
-                  title: const Text('Edit Profile'),
-                  backgroundColor: Colors.transparent,
-                  elevation: 0,
-                  iconTheme: const IconThemeData(color: Colors.white),
-                  titleTextStyle: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  title: Text(
+                    'Edit Profile',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  backgroundColor: colorScheme.surface,
+                  elevation: 0,
+                  iconTheme: IconThemeData(color: colorScheme.onSurface),
                   floating: true,
                   snap: true,
                   pinned: true,
@@ -189,7 +197,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: AppColors.primary,
+                                    color: colorScheme.primary,
                                     width: 3,
                                   ),
                                 ),
@@ -209,13 +217,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   onTap: _getImage,
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.primary,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.camera_alt,
-                                      color: Colors.white,
+                                      color: colorScheme.onPrimary,
                                       size: 20,
                                     ),
                                   ),
@@ -227,12 +235,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         const SizedBox(height: 20),
 
                         _buildTextField(
+                          context: context,
                           controller: _nameController,
                           label: 'Nama Lengkap',
                           icon: Icons.person_outline,
                         ),
                         const SizedBox(height: 16),
                         _buildTextField(
+                          context: context,
                           controller: _emailController,
                           label: 'Email',
                           icon: Icons.email_outlined,
@@ -240,6 +250,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 16),
                         _buildTextField(
+                          context: context,
                           controller: _phoneController,
                           label: 'Nomor Telepon',
                           icon: Icons.phone_android_outlined,
@@ -247,6 +258,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 16),
                         _buildTextField(
+                          context: context,
                           controller: _addressController,
                           label: 'Alamat',
                           icon: Icons.location_on_outlined,
@@ -254,55 +266,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         const SizedBox(height: 30),
 
-                        Container(
+                        SizedBox(
                           height: 50,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.primary,
-                                AppColors.primaryDark,
-                              ],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                            ),
-                            borderRadius: BorderRadius.circular(25),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _updateProfile,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
+                              minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(25),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
+                                ? SizedBox(
+                                    width: 24,
+                                    height: 24,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                                      strokeWidth: 2.5,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                                        colorScheme.onPrimary,
                                       ),
                                     ),
                                   )
-                                : const Text(
-                                    'SIMPAN PERUBAHAN',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.2,
-                                      color: Colors.white,
-                                    ),
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.save_alt_rounded,
+                                        size: 20,
+                                        color:
+                                            Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Colors.white
+                                            : Colors.white,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const Text('Simpan Perubahan'),
+                                    ],
                                   ),
                           ),
                         ),

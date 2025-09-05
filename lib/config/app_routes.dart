@@ -23,7 +23,6 @@ import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/models/event_model.dart';
 
 // Screens (Galeri)
-import 'package:radio_odan_app/screens/galeri/video_screen.dart';
 import 'package:radio_odan_app/screens/galeri/album_screen.dart';
 
 // Screens (Profile & Player)
@@ -164,9 +163,6 @@ class AppRoutes {
 
       case allEvents:
         return const AllEventsScreen();
-
-      case allVideos:
-        return const AllVideosScreen();
 
       case albumList:
         return const AllAlbumsScreen();

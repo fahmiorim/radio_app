@@ -155,16 +155,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
         children: [
           // Background gradient
           Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.backgroundDark,
-                    // pastikan warna ini ada di AppColors kamu
-                    AppColors.backgroundDarker,
-                  ],
+            child: Builder(
+              builder: (context) => Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Theme.of(context).colorScheme.background,
+                      Theme.of(context).colorScheme.surface,
+                    ],
+                  ),
                 ),
               ),
             ),

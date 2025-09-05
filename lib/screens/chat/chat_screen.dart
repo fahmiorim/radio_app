@@ -116,7 +116,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void _showOnlineUsers(BuildContext context, LiveChatProvider prov) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -128,12 +128,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'User Online',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'Pengguna Online',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 const SizedBox(height: 16),
                 Flexible(

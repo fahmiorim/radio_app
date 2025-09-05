@@ -164,9 +164,10 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
         return Scaffold(
           backgroundColor: AppColors.backgroundDark,
           appBar: CustomAppBar.transparent(
+            context: context,
             title: program?.namaProgram ?? 'Detail Program',
-            titleColor: AppColors.textPrimary,
-            iconColor: AppColors.textPrimary,
+            titleColor: Theme.of(context).colorScheme.onSurface,
+            iconColor: Theme.of(context).colorScheme.onSurface,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {
@@ -182,24 +183,27 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
               // Background gradient + bubbles
               Positioned.fill(
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [AppColors.primary, AppColors.backgroundDark],
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).scaffoldBackgroundColor,
+                      ],
                     ),
                   ),
                   child: Stack(
                     children: [
-                      AppTheme.bubble(context, size: 200, top: -50, right: -50),
+                      AppTheme.bubble(context: context, size: 200, top: -50, right: -50),
                       AppTheme.bubble(
-                        context,
+                        context: context,
                         size: 150,
                         bottom: -30,
                         left: -30,
                       ),
                       AppTheme.bubble(
-                        context,
+                        context: context,
                         size: 50,
                         top: 100,
                         left: 100,
