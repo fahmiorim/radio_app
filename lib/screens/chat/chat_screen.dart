@@ -107,7 +107,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to send message: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -116,7 +116,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void _showOnlineUsers(BuildContext context, LiveChatProvider prov) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -127,9 +127,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'Pengguna Online',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Flexible(
@@ -140,19 +143,26 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       final user = prov.onlineUsers[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Colors.grey[800],
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           child: Text(
                             user.username.substring(0, 1).toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary),
                           ),
                         ),
                         title: Text(
                           user.username,
-                          style: const TextStyle(color: Colors.white),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         subtitle: Text(
                           'Bergabung ${prov.formatTime(user.joinTime)}',
-                          style: TextStyle(color: Colors.grey[400]),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       );
                     },
@@ -276,10 +286,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                         ),
                         child: Text(
                           '$unreadCount pesan baru',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimary,
+                                  fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),

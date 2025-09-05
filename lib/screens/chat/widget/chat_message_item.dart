@@ -25,9 +25,8 @@ class ChatMessageItem extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isCurrentUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
           // avatar lawan bicara di kiri
           if (!isCurrentUser) ...[
@@ -53,8 +52,9 @@ class ChatMessageItem extends StatelessWidget {
                     isCurrentUser ? 'You' : message.username,
                     style: textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color:
-                          isCurrentUser ? colors.primary : colors.onSurfaceVariant,
+                      color: isCurrentUser
+                          ? colors.primary
+                          : colors.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -112,6 +112,7 @@ class ChatMessageItem extends StatelessWidget {
             ),
           ),
 
+          // avatar pengirim (user) di kanan
           if (isCurrentUser) ...[
             const SizedBox(width: 4),
             _Avatar(url: message.userAvatar),
