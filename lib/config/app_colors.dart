@@ -73,8 +73,10 @@ class AppColors {
   static const Color lightCardSurface = Color(0xFFFFFFFF);
   static const Color lightDivider = Color(0x1F000000);
   static const Color lightBorder = Color(0xFFDADCE0);
-  static const Color lightBubble = Color(0xFFBBDEFB);
-  static const Color lightBubbleText = Color(0xFF0D47A1);
+  static const Color lightSentBubble = lightPrimary;
+  static const Color lightSentBubbleText = Color(0xFFFFFFFF);
+  static const Color lightReceivedBubble = Color(0xFFEEEEEE);
+  static const Color lightReceivedBubbleText = Color(0xDD000000);
 
   // ========== Dark Theme ==========
   static const Color darkPrimary = Color(0xFF90CAF9); // Lighter blue for better visibility on dark backgrounds
@@ -91,8 +93,10 @@ class AppColors {
   static const Color darkCardSurface = Color(0xFF1E1E1E);
   static const Color darkDivider = Color(0x1FFFFFFF);
   static const Color darkBorder = Color(0xFF424242);
-  static const Color darkBubble = Color(0xFF1E1E1E);
-  static const Color darkBubbleText = Color(0xFFFFFFFF);
+  static const Color darkSentBubble = darkPrimary;
+  static const Color darkSentBubbleText = darkTextPrimary;
+  static const Color darkReceivedBubble = darkSurface;
+  static const Color darkReceivedBubbleText = Color(0xFFFFFFFF);
 
   // ========== Common Colors ==========
   static const Color accent = Color(0xFF34A853);
