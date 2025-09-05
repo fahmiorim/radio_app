@@ -1,4 +1,4 @@
-package com.odanfm.radio
+package com.example.radioapp
 
 import io.flutter.embedding.android.FlutterActivity
 
