@@ -48,13 +48,16 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     isCurrentUser ? 'You' : message.username,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 13.0,
-                      color: isCurrentUser
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13.0,
+                          color: isCurrentUser
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color,
+                        ),
                   ),
                 ),
                 Container(
@@ -87,10 +90,12 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     message.message,
-                    style: TextStyle(
-                      color: isCurrentUser ? Colors.white : Colors.black87,
-                      fontSize: 15.0,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: isCurrentUser
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
+                          fontSize: 15.0,
+                        ),
                   ),
                 ),
                 Padding(
@@ -101,7 +106,10 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   child: Text(
                     time,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 11.0),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(fontSize: 11.0),
                   ),
                 ),
               ],
