@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../config/app_colors.dart';
 
 class AppHeaderSkeleton extends StatelessWidget {
   const AppHeaderSkeleton({super.key});
@@ -31,8 +32,8 @@ class AppHeaderSkeleton extends StatelessWidget {
         ],
       ),
       child: Shimmer.fromColors(
-        baseColor: isDark ? colorScheme.surfaceVariant : Colors.grey[300]!,
-        highlightColor: isDark ? colorScheme.surface : Colors.grey[100]!,
+        baseColor: isDark ? colorScheme.surfaceVariant : AppColors.grey300,
+        highlightColor: isDark ? colorScheme.surface : AppColors.grey100,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -55,7 +56,7 @@ class AppHeaderSkeleton extends StatelessWidget {
                   child: Text(
                     'ODAN FM',
                     style: TextStyle(
-                      color: Colors.transparent,
+                      color: AppColors.transparent,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,

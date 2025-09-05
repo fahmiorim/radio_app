@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../config/app_colors.dart';
 
 class AlbumListSkeleton extends StatelessWidget {
   const AlbumListSkeleton({super.key});
@@ -18,13 +19,13 @@ class AlbumListSkeleton extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: Colors.grey[850]!, // dark theme base
-          highlightColor: Colors.grey[700]!, // shimmer highlight
+          baseColor: AppColors.grey850, // dark theme base
+          highlightColor: AppColors.grey700, // shimmer highlight
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
             height: 180,
             decoration: BoxDecoration(
-              color: Colors.grey[850],
+              color: AppColors.grey850,
               borderRadius: BorderRadius.circular(12),
             ),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -52,7 +53,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return CustomAppBar(
       title: title,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColors.transparent,
       elevation: 0,
       titleColor: titleColor ?? theme.textTheme.titleLarge?.color,
       iconColor: iconColor ?? theme.iconTheme.color,
@@ -64,7 +65,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.transparent,
+              AppColors.transparent,
               isDark
                   ? theme.colorScheme.surface.withOpacity(0.7)
                   : theme.colorScheme.primary.withOpacity(0.8),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 import 'package:radio_odan_app/providers/live_chat_provider.dart';
 import 'package:radio_odan_app/screens/home/home_screen.dart';
@@ -54,7 +55,10 @@ class _BottomNavState extends State<BottomNav> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [Colors.black.withOpacity(0.9), Colors.transparent],
+                  colors: [
+                    AppColors.black.withOpacity(0.9),
+                    AppColors.transparent,
+                  ],
                 ),
               ),
               child: const MiniPlayer(),
@@ -69,7 +73,7 @@ class _BottomNavState extends State<BottomNav> {
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor: Colors.grey.shade600,
+            unselectedItemColor: AppColors.grey600,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.normal,
@@ -85,7 +89,7 @@ class _BottomNavState extends State<BottomNav> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: AppColors.grey.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),

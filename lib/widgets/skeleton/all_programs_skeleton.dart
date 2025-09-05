@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../config/app_colors.dart';
 
 class AllProgramsSkeleton extends StatelessWidget {
   final int itemCount;
@@ -19,13 +20,13 @@ class AllProgramsSkeleton extends StatelessWidget {
             children: [
               // Image placeholder
               Shimmer.fromColors(
-                baseColor: Colors.grey[850]!,
-                highlightColor: Colors.grey[700]!,
+                baseColor: AppColors.grey850,
+                highlightColor: AppColors.grey700,
                 child: Container(
                   width: 120,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.grey[850],
+                    color: AppColors.grey850,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -37,39 +38,39 @@ class AllProgramsSkeleton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Shimmer.fromColors(
-                      baseColor: Colors.grey[850]!,
-                      highlightColor: Colors.grey[700]!,
+                      baseColor: AppColors.grey850,
+                      highlightColor: AppColors.grey700,
                       child: Container(
                         width: double.infinity,
                         height: 16,
                         decoration: BoxDecoration(
-                          color: Colors.grey[850],
+                          color: AppColors.grey850,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Shimmer.fromColors(
-                      baseColor: Colors.grey[850]!,
-                      highlightColor: Colors.grey[700]!,
+                      baseColor: AppColors.grey850,
+                      highlightColor: AppColors.grey700,
                       child: Container(
                         width: 100,
                         height: 14,
                         decoration: BoxDecoration(
-                          color: Colors.grey[850],
+                          color: AppColors.grey850,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Shimmer.fromColors(
-                      baseColor: Colors.grey[850]!,
-                      highlightColor: Colors.grey[700]!,
+                      baseColor: AppColors.grey850,
+                      highlightColor: AppColors.grey700,
                       child: Container(
                         width: 60,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: Colors.grey[850],
+                          color: AppColors.grey850,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

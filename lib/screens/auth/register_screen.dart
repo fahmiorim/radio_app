@@ -81,7 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Anda harus menyetujui Syarat & Ketentuan'),
-            backgroundColor: Colors.orange.shade700,
+            backgroundColor: AppColors.orange700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -333,7 +333,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Buat Akun Baru',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
+                          color: AppColors.white,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -350,7 +350,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Name
                       TextFormField(
                         controller: _nameC,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.white),
                         decoration: _inputDecoration(
                           context,
                           label: 'Nama Lengkap',
@@ -365,7 +365,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextFormField(
                         controller: _emailC,
                         keyboardType: TextInputType.emailAddress,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.white),
                         decoration: _inputDecoration(
                           context,
                           label: 'Email',
@@ -380,7 +380,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextFormField(
                         controller: _passC,
                         obscureText: _obscure,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.white),
                         decoration: _inputDecoration(
                           context,
                           label: 'Password',
@@ -407,13 +407,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Strength bar
                       LinearProgressIndicator(
                         value: strength,
-                        backgroundColor: Colors.grey[800],
+                        backgroundColor: AppColors.grey800,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           strength < 0.3
                               ? colorScheme.error
                               : (strength < 0.7
-                                  ? Colors.orange
-                                  : Colors.green),
+                                  ? AppColors.orange
+                                  : AppColors.green),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -422,7 +422,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       TextFormField(
                         controller: _confirmC,
                         obscureText: _obscure,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: AppColors.white),
                         decoration: _inputDecoration(
                           context,
                           label: 'Konfirmasi Password',
@@ -444,8 +444,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       setState(() => _agreeTerms = v ?? false),
                             fillColor: WidgetStateProperty.resolveWith<Color>(
                               (states) => states.contains(WidgetState.selected)
-                                  ? Colors.white
-                                  : Colors.transparent,
+                                  ? AppColors.white
+                                  : AppColors.transparent,
                             ),
                             side: BorderSide(
                               color: colorScheme.onSurface.withOpacity(0.7),
@@ -465,7 +465,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   const TextSpan(
                                     text: 'Syarat & Ketentuan',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
                                     ),
@@ -479,7 +479,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   const TextSpan(
                                     text: 'Kebijakan Privasi',
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
                                     ),
@@ -496,7 +496,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ElevatedButton(
                         onPressed: loading ? null : _register,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
+                          backgroundColor: AppColors.white,
                           foregroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -563,7 +563,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         label: const Text(
                           'Google',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -604,7 +604,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: const Text(
                               'Masuk di sini',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.white,
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
                               ),
@@ -622,10 +622,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           // Loading overlay
           if (loading)
             Container(
-              color: Colors.black26,
+              color: AppColors.black.withOpacity(0.26),
               child: const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
                 ),
               ),
             ),

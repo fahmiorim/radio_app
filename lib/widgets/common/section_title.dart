@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class SectionTitle extends StatelessWidget {
   final String title;
@@ -26,7 +27,7 @@ class SectionTitle extends StatelessWidget {
                 const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.white,
                   letterSpacing: 0.5,
                 ),
           ),
@@ -37,7 +38,7 @@ class SectionTitle extends StatelessWidget {
                 "Lihat Semua",
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.amber[300],
+                  color: AppColors.amber300,
                   fontWeight: FontWeight.w500,
                 ),
               ),

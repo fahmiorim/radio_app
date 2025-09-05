@@ -34,7 +34,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Link reset password telah dikirim. Cek email Anda.'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.green,
         ),
       );
       // Arahkan ke layar verifikasi/info atau kembali ke login
@@ -46,7 +46,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: AppColors.red));
     }
   }
 
@@ -119,7 +119,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                     height: 20,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Colors.white,
+                                      color: AppColors.white,
                                     ),
                                   )
                                 : const Text('Kirim Link Reset'),

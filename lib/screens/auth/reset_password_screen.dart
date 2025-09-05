@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email; // bisa diisi otomatis dari argumen
@@ -51,14 +52,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Password berhasil direset. Silakan login.'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.green,
         ),
       );
       Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (r) => false);
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: Colors.red));
+      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: AppColors.red));
     }
   }
 
@@ -123,7 +124,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: AppColors.white,
                           ),
                         )
                       : const Text('Reset Password'),

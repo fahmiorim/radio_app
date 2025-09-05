@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../config/app_colors.dart';
 
 class PenyiarSkeleton extends StatelessWidget {
   final int itemCount;
@@ -20,25 +21,25 @@ class PenyiarSkeleton extends StatelessWidget {
             child: Column(
               children: [
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
+                  baseColor: AppColors.grey850,
+                  highlightColor: AppColors.grey700,
                   child: Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: AppColors.grey850,
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
+                  baseColor: AppColors.grey850,
+                  highlightColor: AppColors.grey700,
                   child: Container(
                     width: 60,
                     height: 14,
-                    color: Colors.grey[850],
+                    color: AppColors.grey850,
                   ),
                 ),
               ],

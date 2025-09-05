@@ -7,6 +7,7 @@ import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/providers/theme_provider.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/services/user_service.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -144,7 +145,7 @@ class AppDrawer extends StatelessWidget {
                                   context: context,
                                   icon: Icons.logout_rounded,
                                   title: "Logout",
-                                  iconColor: Colors.redAccent,
+                                  iconColor: AppColors.redAccent,
                                   onTap: () async {
                                     await UserService.logout();
                                     if (context.mounted) {
@@ -241,7 +242,7 @@ class AppDrawer extends StatelessWidget {
     if (userProvider.isLoading) {
       return CircleAvatar(
         radius: size / 2,
-        backgroundColor: Colors.white24,
+        backgroundColor: AppColors.white24,
         child: const SizedBox(
           width: 20,
           height: 20,
@@ -258,7 +259,7 @@ class AppDrawer extends StatelessWidget {
         imageUrl: url,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: size / 2,
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.white,
           child: CircleAvatar(
             radius: (size / 2) - 3,
             backgroundImage: imageProvider,
@@ -266,7 +267,7 @@ class AppDrawer extends StatelessWidget {
         ),
         placeholder: (_, __) => CircleAvatar(
           radius: size / 2,
-          backgroundColor: Colors.white24,
+          backgroundColor: AppColors.white24,
           child: const SizedBox(
             width: 20,
             height: 20,
@@ -274,12 +275,12 @@ class AppDrawer extends StatelessWidget {
           ),
         ),
         errorWidget: (_, __, ___) =>
-            _buildInitialsAvatar(size, Colors.blueGrey, user),
+            _buildInitialsAvatar(size, AppColors.blueGrey, user),
       );
     }
 
     // Fallback ke inisial
-    return _buildInitialsAvatar(size, Colors.blueGrey, user);
+    return _buildInitialsAvatar(size, AppColors.blueGrey, user);
   }
 
   Widget _buildInitialsAvatar(double size, Color color, UserModel? user) {
@@ -294,7 +295,7 @@ class AppDrawer extends StatelessWidget {
       child: Text(
         initial,
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.white,
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
@@ -319,12 +320,12 @@ class AppDrawer extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: isDark
-            ? Colors.white.withOpacity(0.1)
+            ? AppColors.white.withOpacity(0.1)
             : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? Colors.white.withOpacity(0.1)
+              ? AppColors.white.withOpacity(0.1)
               : colorScheme.outlineVariant,
         ),
       ),
@@ -334,7 +335,7 @@ class AppDrawer extends StatelessWidget {
           width: 40,
           decoration: BoxDecoration(
             color: isDark
-                ? Colors.white.withOpacity(0.15)
+                ? AppColors.white.withOpacity(0.15)
                 : colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -354,7 +355,7 @@ class AppDrawer extends StatelessWidget {
         ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        hoverColor: Colors.white.withOpacity(0.1),
+        hoverColor: AppColors.white.withOpacity(0.1),
       ),
     );
   }
