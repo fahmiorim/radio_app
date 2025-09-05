@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.backgroundDark],
+            colors: [AppColors.lightPrimary, AppColors.lightBackground],
           ),
         ),
         child: Stack(
@@ -42,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.backgroundDark.withValues(alpha: 0.1),
+                  color: AppColors.lightBackground.withValues(alpha: 0.1),
                 ),
               ),
             ),
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 400,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.backgroundDark.withValues(alpha: 0.1),
+                  color: AppColors.lightBackground.withValues(alpha: 0.1),
                 ),
               ),
             ),

@@ -285,7 +285,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [AppColors.primary, AppColors.backgroundDark],
+                  colors: [AppColors.lightPrimary, AppColors.lightBackground],
                 ),
               ),
               child: Stack(
@@ -497,7 +497,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         onPressed: loading ? null : _register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.white,
-                          foregroundColor: AppColors.primary,
+                          foregroundColor: AppColors.lightPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -511,7 +511,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.primary,
+                                    AppColors.lightPrimary,
                                   ),
                                 ),
                               )

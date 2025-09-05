@@ -41,7 +41,7 @@ Aplikasi mendukung tema terang dan gelap. Untuk menggunakan tema:
 theme: Theme.of(context),
 
 // Mengakses warna kustom
-color: AppColors.primary,
+color: AppColors.lightPrimary,
 
 // Menggunakan teks style
 textTheme: AppTheme.textTheme,

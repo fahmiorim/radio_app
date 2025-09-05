@@ -144,13 +144,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     if (_initialLoading) {
       return const Scaffold(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.lightPrimary,
         body: Center(child: CircularProgressIndicator(color: AppColors.white)),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.primary,
+      backgroundColor: AppColors.lightPrimary,
       body: Stack(
         children: [
           // Background gradient
@@ -183,7 +183,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       'Verifikasi Email',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.textPrimary,
+                        color: AppColors.lightTextPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -204,13 +204,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           const Icon(
                             Icons.mark_email_read_outlined,
                             size: 64,
-                            color: AppColors.textPrimary,
+                            color: AppColors.lightTextPrimary,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Periksa Email Anda',
                             style: theme.textTheme.titleLarge?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: AppColors.lightTextPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -219,7 +219,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Kami telah mengirimkan link verifikasi ke:',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: AppColors.lightTextSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -227,7 +227,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             widget.email,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textPrimary,
+                              color: AppColors.lightTextPrimary,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -236,7 +236,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Klik link verifikasi di email Anda, lalu kembali ke aplikasi dan tekan "Cek status".',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: AppColors.lightTextSecondary,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -256,7 +256,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           side: const BorderSide(
-                            color: AppColors.textPrimary,
+                            color: AppColors.lightTextPrimary,
                             width: 1.5,
                           ),
                         ),
@@ -309,7 +309,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         'Kembali ke Halaman Login',
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.textPrimary,
+                          color: AppColors.lightTextPrimary,
                           decoration: TextDecoration.underline,
                         ),
                       ),

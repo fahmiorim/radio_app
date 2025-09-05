@@ -60,7 +60,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.primary, AppColors.backgroundDark],
+            colors: [AppColors.lightPrimary, AppColors.lightBackground],
           ),
         ),
         child: Center(
