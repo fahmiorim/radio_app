@@ -103,19 +103,4 @@ class AppColors {
   static const Color chatInputBackground = _ChatColors.inputBackground;
   static const Color chatHintText = _ChatColors.hintText;
 
-  // ========== Deprecated (Kept for backward compatibility) ==========
-  @Deprecated('Use AppColors.lightPrimary instead')
-  static const Color primary = lightPrimary;
-
-  @Deprecated('Use AppColors.lightBackground instead')
-  static const Color backgroundDark = lightBackground;
-
-  @Deprecated('Use AppColors.lightTextPrimary instead')
-  static const Color textPrimary = lightTextPrimary;
-
-  @Deprecated('Use AppColors.lightTextSecondary instead')
-  static const Color textSecondary = lightTextSecondary;
-
-  @Deprecated('Use AppColors.lightCardSurface instead')
-  static const Color cardSurface = lightCardSurface;
 }

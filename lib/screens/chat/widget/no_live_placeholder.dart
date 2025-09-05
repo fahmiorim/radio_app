@@ -39,7 +39,7 @@ class NoLivePlaceholder extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.cardSurface.withOpacity(0.7),
+                    color: AppColors.lightCardSurface.withOpacity(0.7),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: AppColors().liveIndicator.withOpacity(0.3),
@@ -70,7 +70,7 @@ class NoLivePlaceholder extends StatelessWidget {
               Text(
                 'Siaran belum dimulai atau sedang dalam jeda.\nNantikan siaran berikutnya!',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.lightTextSecondary,
                   fontSize: 14,
                   height: 1.5,
                 ),

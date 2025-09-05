@@ -59,7 +59,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             if (icon != null)
               Row(
                 children: [
-                  Icon(icon, color: AppColors.textSecondary, size: 20),
+                  Icon(icon, color: AppColors.lightTextSecondary, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     title,
@@ -93,7 +93,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                         padding: HtmlPaddings.only(bottom: 8.0),
                       ),
                       "a": Style(
-                        color: AppColors.primary,
+                        color: AppColors.lightPrimary,
                         textDecoration: TextDecoration.none,
                       ),
                       "strong": Style(fontWeight: FontWeight.bold),
@@ -120,7 +120,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                   child: Icon(
                     Icons.radio,
                     size: 80,
-                    color: AppColors.textSecondary,
+                    color: AppColors.lightTextSecondary,
                   ),
                 ),
               )
@@ -140,7 +140,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                     child: Icon(
                       Icons.radio,
                       size: 80,
-                      color: AppColors.textSecondary,
+                      color: AppColors.lightTextSecondary,
                     ),
                   ),
                 ),
@@ -254,7 +254,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                       const Icon(
                         Icons.radio,
                         size: 64,
-                        color: AppColors.textSecondary,
+                        color: AppColors.lightTextSecondary,
                       ),
                       const SizedBox(height: 16),
                       Text(
