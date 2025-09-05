@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:967860960628:android:b49ea298d7b150f5a68021",
         "android_client_info": {
-          "package_name": "com.odanfm.radio"
+          "package_name": "com.example.radioapp"
         }
       },
       "oauth_client": [
@@ -17,7 +17,7 @@
           "client_id": "967860960628-8gfb31a2nafea07168nndef3g3pdopsl.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.odanfm.radio",
+            "package_name": "com.example.radioapp",
             "certificate_hash": "afd24d253a1f524415d9a7ca3da8a890ec3d81fb"
           }
         },
