@@ -41,13 +41,19 @@ class ChatMessageItem extends StatelessWidget {
                   : CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 4.0, bottom: 2.0, right: 4.0),
+                  padding: const EdgeInsets.only(
+                    left: 4.0,
+                    bottom: 2.0,
+                    right: 4.0,
+                  ),
                   child: Text(
                     isCurrentUser ? 'You' : message.username,
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 13.0,
-                      color: isCurrentUser ? Theme.of(context).primaryColor : Colors.grey,
+                      color: isCurrentUser
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey,
                     ),
                   ),
                 ),

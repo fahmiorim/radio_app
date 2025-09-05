@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
-import '../models/album_model.dart';
-import '../services/album_service.dart';
+import 'package:radio_odan_app/models/album_model.dart';
+import 'package:radio_odan_app/services/album_service.dart';
 
 class AlbumProvider with ChangeNotifier {
   final AlbumService _svc = AlbumService.I;

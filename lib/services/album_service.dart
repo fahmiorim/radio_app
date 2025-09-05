@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import '../config/api_client.dart';
-import '../config/app_api_config.dart';
-import '../models/album_model.dart';
+import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/config/app_api_config.dart';
+import 'package:radio_odan_app/models/album_model.dart';
 
 class AlbumService {
   AlbumService._();

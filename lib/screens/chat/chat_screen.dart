@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/live_chat_provider.dart';
-import '../../providers/user_provider.dart';
-import 'chat/chat_message_item.dart';
-import 'chat/message_input_field.dart';
-import 'chat/unread_messages_label.dart';
-import 'chat/no_live_placeholder.dart';
+import 'package:radio_odan_app/providers/live_chat_provider.dart';
+import 'package:radio_odan_app/providers/user_provider.dart';
+import 'package:radio_odan_app/screens/chat/widget/chat_message_item.dart';
+import 'package:radio_odan_app/screens/chat/widget/message_input_field.dart';
+import 'package:radio_odan_app/screens/chat/widget/unread_messages_label.dart';
+import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;

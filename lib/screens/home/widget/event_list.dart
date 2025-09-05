@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../../widgets/section_title.dart';
-import '../../../widgets/skeleton/event_skeleton.dart';
-import '../../../providers/event_provider.dart';
-import '../../../screens/event/all_events_screen.dart';
+import 'package:radio_odan_app/widgets/common/section_title.dart';
+import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
+import 'package:radio_odan_app/providers/event_provider.dart';
+import 'package:radio_odan_app/screens/event/event_screen.dart';
+import 'package:radio_odan_app/screens/event/event_detail_screen.dart';
 
 class EventList extends StatefulWidget {
   const EventList({super.key});
@@ -138,6 +139,14 @@ class _EventListState extends State<EventList>
                 final url = e.gambarUrl;
 
                 return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventDetailScreen(event: e),
+                      ),
+                    );
+                  },
                   child: Container(
                     width: 180,
                     margin: const EdgeInsets.only(right: 12),

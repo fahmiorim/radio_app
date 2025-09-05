@@ -6,9 +6,9 @@ import 'package:just_audio/just_audio.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 
-import '../audio/audio_player_manager.dart';
-import '../models/now_playing.dart';
-import '../models/radio_station.dart';
+import 'package:radio_odan_app/audio/audio_player_manager.dart';
+import 'package:radio_odan_app/models/now_playing.dart';
+import 'package:radio_odan_app/models/radio_station.dart';
 
 class RadioStationProvider with ChangeNotifier {
   RadioStation? _currentStation;

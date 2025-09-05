@@ -1,4 +1,4 @@
-import '../config/app_api_config.dart';
+import 'package:radio_odan_app/config/app_api_config.dart';
 
 class VideoModel {
   final int id;

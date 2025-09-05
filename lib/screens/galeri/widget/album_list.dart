@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:collection/collection.dart';
 
-import '../../../models/album_model.dart';
-import '../../../providers/album_provider.dart';
-import '../../../config/app_routes.dart';
-import '../../../widgets/skeleton/album_list_skeleton.dart';
-import '../../../widgets/section_title.dart';
-import '../album_detail_screen.dart';
+import 'package:radio_odan_app/models/album_model.dart';
+import 'package:radio_odan_app/providers/album_provider.dart';
+import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/widgets/skeleton/album_list_skeleton.dart';
+import 'package:radio_odan_app/widgets/common/section_title.dart';
+import 'package:radio_odan_app/screens/galeri/album_detail_screen.dart';
 
 class AlbumList extends StatefulWidget {
   const AlbumList({super.key});

@@ -2,8 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 
-import '../config/api_client.dart';
-import '../models/user_model.dart';
+import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/models/user_model.dart';
 
 class AuthResult {
   final bool status;

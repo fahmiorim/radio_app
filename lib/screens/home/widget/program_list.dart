@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../../widgets/section_title.dart';
-import '../../../widgets/skeleton/program_skeleton.dart';
-import '../../../models/program_model.dart';
-import '../../../providers/program_provider.dart';
-import '../../../screens/program/all_programs_screen.dart';
-import '../../../screens/program/program_detail_screen.dart';
+import 'package:radio_odan_app/widgets/common/section_title.dart';
+import 'package:radio_odan_app/widgets/skeleton/program_skeleton.dart';
+import 'package:radio_odan_app/models/program_model.dart';
+import 'package:radio_odan_app/providers/program_provider.dart';
+import 'package:radio_odan_app/screens/program/program_screen.dart';
+import 'package:radio_odan_app/screens/program/program_detail_screen.dart';
 
 class ProgramList extends StatefulWidget {
   const ProgramList({super.key});

@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import '../config/app_api_config.dart';
+import 'package:radio_odan_app/config/app_api_config.dart';
 
 class Artikel {
   final int id;

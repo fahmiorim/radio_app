@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../config/app_colors.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class EventSkeleton extends StatelessWidget {
   const EventSkeleton({super.key});
@@ -35,9 +35,7 @@ class EventCardSkeleton extends StatelessWidget {
       highlightColor: Colors.grey[700]!,
       child: Card(
         color: AppColors.surface.withOpacity(0.9),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -46,7 +44,7 @@ class EventCardSkeleton extends StatelessWidget {
             children: [
               // Image placeholder
               AspectRatio(
-                aspectRatio: 16/9,
+                aspectRatio: 16 / 9,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: Colors.white24,

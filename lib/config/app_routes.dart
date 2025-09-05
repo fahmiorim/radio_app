@@ -1,40 +1,40 @@
 import 'package:flutter/material.dart';
 
 // Navigation
-import '../navigation/bottom_nav.dart';
+import 'package:radio_odan_app/navigation/bottom_nav.dart';
 
 // Screens (Auth & Splash)
-import '../screens/splash/splash_screen.dart';
-import '../screens/auth/login_screen.dart';
-import '../screens/auth/register_screen.dart';
-import '../screens/auth/forgot_password_screen.dart';
-import '../screens/auth/verification_screen.dart';
-import '../screens/auth/reset_password_screen.dart'; // opsional
+import 'package:radio_odan_app/screens/splash/splash_screen.dart';
+import 'package:radio_odan_app/screens/auth/login_screen.dart';
+import 'package:radio_odan_app/screens/auth/register_screen.dart';
+import 'package:radio_odan_app/screens/auth/forgot_password_screen.dart';
+import 'package:radio_odan_app/screens/auth/verification_screen.dart';
+import 'package:radio_odan_app/screens/auth/reset_password_screen.dart'; // opsional
 
 // Screens (Program)
-import '../screens/program/all_programs_screen.dart';
-import '../screens/program/program_detail_screen.dart';
-import '../screens/event/all_events_screen.dart';
-import '../screens/event/event_detail_screen.dart';
+import 'package:radio_odan_app/screens/program/program_screen.dart';
+import 'package:radio_odan_app/screens/program/program_detail_screen.dart';
+import 'package:radio_odan_app/screens/event/event_screen.dart';
+import 'package:radio_odan_app/screens/event/event_detail_screen.dart';
 
 // Screens (Artikel)
-import '../screens/artikel/artikel_detail_screen.dart';
-import '../models/artikel_model.dart';
-import '../models/event_model.dart';
+import 'package:radio_odan_app/screens/artikel/artikel_detail_screen.dart';
+import 'package:radio_odan_app/models/artikel_model.dart';
+import 'package:radio_odan_app/models/event_model.dart';
 
 // Screens (Galeri)
-import '../screens/galeri/all_videos_screen.dart';
-import '../screens/galeri/all_albums_screen.dart';
+import 'package:radio_odan_app/screens/galeri/video_screen.dart';
+import 'package:radio_odan_app/screens/galeri/album_screen.dart';
 
 // Screens (Profile & Player)
-import '../screens/profile/edit_profile_screen.dart';
-import '../screens/full_player/full_player.dart';
+import 'package:radio_odan_app/screens/profile/edit_profile_screen.dart';
+import 'package:radio_odan_app/screens/player/player_screen.dart';
 
 // Services
-import '../services/auth_service.dart';
+import 'package:radio_odan_app/services/auth_service.dart';
 
 // 404
-import '../screens/common/not_found_screen.dart';
+import 'package:radio_odan_app/screens/common/not_found_screen.dart';
 
 class AppRoutes {
   // --- Route Names ---

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../config/app_routes.dart';
+import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {

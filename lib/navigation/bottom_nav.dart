@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/live_chat_provider.dart';
-import '../screens/home/home_screen.dart';
-import '../screens/artikel/artikel_screen.dart';
-import '../screens/galeri/galeri_screen.dart';
-import '../screens/chat/live_chat_screen.dart';
-import '../widgets/mini_player.dart';
-import '../widgets/app_drawer.dart';
+import 'package:radio_odan_app/providers/live_chat_provider.dart';
+import 'package:radio_odan_app/screens/home/home_screen.dart';
+import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
+import 'package:radio_odan_app/screens/galeri/galeri_screen.dart';
+import 'package:radio_odan_app/screens/chat/chat_screen.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
+import 'package:radio_odan_app/widgets/common/app_drawer.dart';
 
 class BottomNav extends StatefulWidget {
   final int initialIndex;

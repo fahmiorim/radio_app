@@ -1,5 +1,5 @@
 import 'package:intl/intl.dart';
-import '../config/app_api_config.dart';
+import 'package:radio_odan_app/config/app_api_config.dart';
 
 class Event {
   final int id;
@@ -57,7 +57,11 @@ class Event {
     return Event(
       id: _parseInt(json['id']),
       judul: (json['judul'] ?? json['title'] ?? '').toString(),
-      user: json['user'] ?? json['penyiarName'] ?? json['author'] ?? 'Tidak ada data',
+      user:
+          json['user'] ??
+          json['penyiarName'] ??
+          json['author'] ??
+          'Tidak ada data',
       tanggal: _parseDate(json['tanggal'] ?? json['date']),
       deskripsi: _stripHtml(json['deskripsi'] ?? json['content']),
       gambar: (json['gambar'] ?? json['image'] ?? json['cover'] ?? '')

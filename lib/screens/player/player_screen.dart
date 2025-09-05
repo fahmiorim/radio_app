@@ -2,10 +2,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
-import '../../audio/audio_player_manager.dart';
+import 'package:radio_odan_app/audio/audio_player_manager.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../providers/radio_station_provider.dart';
-import '../../config/app_colors.dart';
+import 'package:radio_odan_app/providers/radio_station_provider.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -99,7 +99,11 @@ class _FullPlayerState extends State<FullPlayer> {
         foregroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20, color: AppColors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            size: 20,
+            color: AppColors.white,
+          ),
           onPressed: () {
             // Update the provider state before navigating back
             if (mounted) {
@@ -157,7 +161,10 @@ class _FullPlayerState extends State<FullPlayer> {
                   const SizedBox(height: 4),
                   Text(
                     artist,
-                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

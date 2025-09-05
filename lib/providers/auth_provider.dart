@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
-import '../config/api_client.dart';
+import 'package:radio_odan_app/models/user_model.dart';
+import 'package:radio_odan_app/services/auth_service.dart';
+import 'package:radio_odan_app/config/api_client.dart';
 
 class AuthProvider with ChangeNotifier {
   UserModel? _user;
@@ -97,13 +97,13 @@ class AuthProvider with ChangeNotifier {
         if ((_token ?? '').isNotEmpty) {
           ApiClient.I.setBearer(_token!);
           print('Bearer token set successfully');
-          
+
           // Save token to secure storage
           final storage = const FlutterSecureStorage();
           await storage.write(key: 'user_token', value: _token);
           print('Token saved to secure storage');
         }
-        
+
         return null; // Success, no error
       } else {
         // If failed, return error message

@@ -5,8 +5,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/program_model.dart';
 import 'package:radio_odan_app/providers/program_provider.dart';
-import 'package:radio_odan_app/widgets/app_bar.dart';
-import 'package:radio_odan_app/widgets/mini_player.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/all_programs_skeleton.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 

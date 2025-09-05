@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../config/app_colors.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class MessageInputField extends StatelessWidget {
   final TextEditingController controller;

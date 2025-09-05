@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
-import '../../../widgets/section_title.dart';
-import '../../../widgets/skeleton/artikel_skeleton.dart';
-import '../../../models/artikel_model.dart';
-import '../../../providers/artikel_provider.dart';
-import '../../../screens/artikel/artikel_screen.dart';
-import '../../../screens/artikel/artikel_detail_screen.dart';
+import 'package:radio_odan_app/widgets/common/section_title.dart';
+import 'package:radio_odan_app/widgets/skeleton/artikel_skeleton.dart';
+import 'package:radio_odan_app/models/artikel_model.dart';
+import 'package:radio_odan_app/providers/artikel_provider.dart';
+import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
+import 'package:radio_odan_app/screens/artikel/artikel_detail_screen.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -136,7 +136,7 @@ class ArtikelListState extends State<ArtikelList>
                     context,
                     MaterialPageRoute(
                       builder: (_) => ArtikelDetailScreen(
-                        artikelSlug: artikel.id.toString(),
+                        artikelSlug: artikel.slug,
                       ),
                     ),
                   );
@@ -155,8 +155,10 @@ class ArtikelListState extends State<ArtikelList>
                                 width: double.infinity,
                                 height: double.infinity,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) => _buildLoadingThumb(),
-                                errorWidget: (context, url, error) => _buildPlaceholderImage(),
+                                placeholder: (context, url) =>
+                                    _buildLoadingThumb(),
+                                errorWidget: (context, url, error) =>
+                                    _buildPlaceholderImage(),
                               ),
                       ),
                     ),
@@ -166,18 +168,20 @@ class ArtikelListState extends State<ArtikelList>
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       artikel.publishedAt != null
-                          ? DateFormat('dd MMM yyyy').format(artikel.publishedAt!)
+                          ? DateFormat(
+                              'dd MMM yyyy',
+                            ).format(artikel.publishedAt!)
                           : '',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white70,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.white70),
                     ),
                   ],
                 ),

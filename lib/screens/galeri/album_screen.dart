@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 
-import '../../config/app_colors.dart';
-import '../../providers/album_provider.dart';
-import '../../models/album_model.dart';
-import '../../widgets/app_bar.dart';
-import '../../widgets/mini_player.dart';
-import '../../config/app_theme.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/providers/album_provider.dart';
+import 'package:radio_odan_app/models/album_model.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 import 'album_detail_screen.dart';
 
 class AllAlbumsScreen extends StatefulWidget {
@@ -140,12 +140,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
             ),
             child: Stack(
               children: [
-                AppTheme.bubble(
-                  context,
-                  size: 200,
-                  top: -50,
-                  right: -50,
-                ),
+                AppTheme.bubble(context, size: 200, top: -50, right: -50),
                 AppTheme.bubble(
                   context,
                   size: 150,

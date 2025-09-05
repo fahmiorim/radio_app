@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
-import '../../config/app_colors.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
-import 'package:radio_odan_app/widgets/app_bar.dart';
-import 'package:radio_odan_app/widgets/mini_player.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
 
 class AllEventsScreen extends StatefulWidget {
@@ -121,18 +121,15 @@ class _AllEventsScreenState extends State<AllEventsScreen>
               ),
               child: Stack(
                 children: [
-                  AppTheme.bubble(
-                    context,
-                    size: 200,
-                    top: 50,
-                    right: -50,
-                  ),
+                  AppTheme.bubble(context, size: 200, top: 50, right: -50),
                   AppTheme.bubble(
                     context,
                     size: 250,
                     bottom: -50,
                     left: -50,
-                    opacity: AppColors.bubbleDefaultOpacity * 0.6, // 60% dari opacity default
+                    opacity:
+                        AppColors.bubbleDefaultOpacity *
+                        0.6, // 60% dari opacity default
                   ),
                 ],
               ),
@@ -243,11 +240,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
       elevation: 2,
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRoutes.eventDetail,
-            arguments: e,
-          );
+          Navigator.pushNamed(context, AppRoutes.eventDetail, arguments: e);
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

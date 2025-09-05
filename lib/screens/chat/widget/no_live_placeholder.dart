@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../config/app_colors.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class NoLivePlaceholder extends StatelessWidget {
   final VoidCallback? onNotify;
@@ -13,7 +13,8 @@ class NoLivePlaceholder extends StatelessWidget {
     // Define gradient colors here since they can't be const
     final gradientColors = [
       AppColors.liveIndicator,
-      Color.lerp(AppColors.liveIndicator, Colors.white, 0.2) ?? AppColors.liveIndicator,
+      Color.lerp(AppColors.liveIndicator, Colors.white, 0.2) ??
+          AppColors.liveIndicator,
     ];
     return Container(
       color: AppColors.chatBackground,
@@ -137,10 +138,7 @@ class NoLivePlaceholder extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: AppColors.border,
-                          width: 1.5,
-                        ),
+                        border: Border.all(color: AppColors.border, width: 1.5),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,

@@ -1,4 +1,4 @@
-import '../config/app_api_config.dart';
+import 'package:radio_odan_app/config/app_api_config.dart';
 
 class Penyiar {
   final int id;
@@ -27,7 +27,7 @@ class Penyiar {
       phone: json['phone']?.toString(),
       avatar: (json['avatar'] ?? '').toString(),
       isActive: json['is_active'] == 1 || json['is_active'] == true,
-      programSiaran: json['program_siaran'] != null 
+      programSiaran: json['program_siaran'] != null
           ? (json['program_siaran'] as List).toList()
           : null,
     );

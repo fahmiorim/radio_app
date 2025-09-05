@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'dart:developer' as developer;
 
-import '../models/penyiar_model.dart';
-import '../config/api_client.dart';
+import 'package:radio_odan_app/models/penyiar_model.dart';
+import 'package:radio_odan_app/config/api_client.dart';
 
 class PenyiarService {
   PenyiarService._();

@@ -3,11 +3,11 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../providers/program_provider.dart';
-import '../../config/app_colors.dart';
-import '../../widgets/app_bar.dart';
-import '../../widgets/mini_player.dart';
-import '../../config/app_theme.dart';
+import 'package:radio_odan_app/providers/program_provider.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 
 class ProgramDetailScreen extends StatefulWidget {
   const ProgramDetailScreen({super.key});
@@ -191,12 +191,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                   ),
                   child: Stack(
                     children: [
-                      AppTheme.bubble(
-                        context,
-                        size: 200,
-                        top: -50,
-                        right: -50,
-                      ),
+                      AppTheme.bubble(context, size: 200, top: -50, right: -50),
                       AppTheme.bubble(
                         context,
                         size: 150,

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-import '../../../../models/penyiar_model.dart';
-import '../../../../providers/penyiar_provider.dart';
-import '../../../../widgets/section_title.dart';
-import '../../../../widgets/skeleton/penyiar_skeleton.dart';
+import 'package:radio_odan_app/models/penyiar_model.dart';
+import 'package:radio_odan_app/providers/penyiar_provider.dart';
+import 'package:radio_odan_app/widgets/common/section_title.dart';
+import 'package:radio_odan_app/widgets/skeleton/penyiar_skeleton.dart';
 
 class PenyiarList extends StatefulWidget {
   const PenyiarList({super.key});

@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'dart:developer' as developer;
 
-import '../config/api_client.dart';
-import '../models/program_model.dart';
+import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/models/program_model.dart';
 
 class ProgramService {
   ProgramService._();

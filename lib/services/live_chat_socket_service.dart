@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
-import '../config/api_client.dart';
-import '../config/pusher_config.dart';
+import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/config/pusher_config.dart';
 
 class LiveChatSocketService {
   LiveChatSocketService._();

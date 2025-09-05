@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
-import '../services/user_service.dart';
+import 'package:radio_odan_app/models/user_model.dart';
+import 'package:radio_odan_app/services/user_service.dart';
 
 class UserProvider with ChangeNotifier {
   static const Duration _refreshCooldown = Duration(seconds: 30);

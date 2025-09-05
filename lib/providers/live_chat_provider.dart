@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 
-import '../models/chat_model.dart';
-import '../models/live_message_model.dart';
-import '../services/live_chat_service.dart';
-import '../services/live_chat_socket_service.dart';
+import 'package:radio_odan_app/models/chat_model.dart';
+import 'package:radio_odan_app/models/live_message_model.dart';
+import 'package:radio_odan_app/services/live_chat_service.dart';
+import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 
 class LiveChatProvider with ChangeNotifier {
   final int roomId;

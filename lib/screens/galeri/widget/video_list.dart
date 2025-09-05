@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
 
-import '../../../config/app_routes.dart';
-import '../../../models/video_model.dart';
-import '../../../providers/video_provider.dart';
-import '../../../widgets/skeleton/video_list_skeleton.dart';
-import '../../../widgets/section_title.dart';
+import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/models/video_model.dart';
+import 'package:radio_odan_app/providers/video_provider.dart';
+import 'package:radio_odan_app/widgets/skeleton/video_list_skeleton.dart';
+import 'package:radio_odan_app/widgets/common/section_title.dart';
 
 class VideoList extends StatefulWidget {
   const VideoList({super.key});
@@ -164,7 +164,8 @@ class _VideoListState extends State<VideoList>
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           itemCount: items.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 16),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 16),
                           itemBuilder: (context, index) {
                             final video = items[index];
                             final thumbnailUrl = _thumbUrl(video);
@@ -187,27 +188,40 @@ class _VideoListState extends State<VideoList>
                                                   width: 270,
                                                   height: 150,
                                                   fit: BoxFit.cover,
-                                                  loadingBuilder: (context, child, progress) {
-                                                    if (progress == null) return child;
-                                                    return SizedBox(
-                                                      width: 270,
-                                                      height: 150,
-                                                      child: const Center(
-                                                        child: CircularProgressIndicator(),
+                                                  loadingBuilder:
+                                                      (
+                                                        context,
+                                                        child,
+                                                        progress,
+                                                      ) {
+                                                        if (progress == null)
+                                                          return child;
+                                                        return SizedBox(
+                                                          width: 270,
+                                                          height: 150,
+                                                          child: const Center(
+                                                            child:
+                                                                CircularProgressIndicator(),
+                                                          ),
+                                                        );
+                                                      },
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) => SizedBox(
+                                                        width: 270,
+                                                        height: 150,
+                                                        child: Center(
+                                                          child: Icon(
+                                                            Icons.broken_image,
+                                                            size: 40,
+                                                            color:
+                                                                Colors.white70,
+                                                          ),
+                                                        ),
                                                       ),
-                                                    );
-                                                  },
-                                                  errorBuilder: (context, error, stackTrace) => SizedBox(
-                                                    width: 270,
-                                                    height: 150,
-                                                    child: Center(
-                                                      child: Icon(
-                                                        Icons.broken_image,
-                                                        size: 40,
-                                                        color: Colors.white70,
-                                                      ),
-                                                    ),
-                                                  ),
                                                 )
                                               : SizedBox(
                                                   width: 270,
@@ -224,21 +238,25 @@ class _VideoListState extends State<VideoList>
                                             Positioned.fill(
                                               child: Center(
                                                 child: AnimatedSwitcher(
-                                                  duration: const Duration(milliseconds: 200),
-                                                  child: DecoratedBox(
-                                                decoration: BoxDecoration(
-                                                  color: Colors.black54,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                                child: const Padding(
-                                                  padding: EdgeInsets.all(8.0),
-                                                  child: Icon(
-                                                    Icons.play_arrow,
-                                                    color: Colors.white,
-                                                    size: 40,
+                                                  duration: const Duration(
+                                                    milliseconds: 200,
                                                   ),
-                                                ),
-                                              ),
+                                                  child: DecoratedBox(
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.black54,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Padding(
+                                                      padding: EdgeInsets.all(
+                                                        8.0,
+                                                      ),
+                                                      child: Icon(
+                                                        Icons.play_arrow,
+                                                        color: Colors.white,
+                                                        size: 40,
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),

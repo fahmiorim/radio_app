@@ -4,9 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
-import '../models/user_model.dart';
-import '../providers/user_provider.dart';
-import 'skeleton/app_header_skeleton.dart';
+import 'package:radio_odan_app/models/user_model.dart';
+import 'package:radio_odan_app/providers/user_provider.dart';
+import 'package:radio_odan_app/widgets/skeleton/app_header_skeleton.dart';
 
 class AppHeader extends StatefulWidget {
   final VoidCallback? onMenuTap;

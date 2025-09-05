@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
-import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';

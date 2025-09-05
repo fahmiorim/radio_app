@@ -7,12 +7,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../models/video_model.dart';
-import '../../providers/video_provider.dart';
-import '../../widgets/app_bar.dart';
-import '../../widgets/mini_player.dart';
-import '../../config/app_colors.dart';
-import '../../config/app_theme.dart';
+import 'package:radio_odan_app/models/video_model.dart';
+import 'package:radio_odan_app/providers/video_provider.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 
 class AllVideosScreen extends StatefulWidget {
   const AllVideosScreen({Key? key}) : super(key: key);
@@ -81,7 +81,8 @@ class _AllVideosScreenState extends State<AllVideosScreen>
 
     final vp = context.read<VideoProvider>();
     final currentVideos = vp.allVideos;
-    final shouldRefresh = _lastVideos == null ||
+    final shouldRefresh =
+        _lastVideos == null ||
         !const DeepCollectionEquality().equals(_lastVideos, currentVideos);
 
     if (shouldRefresh) {
@@ -160,18 +161,8 @@ class _AllVideosScreenState extends State<AllVideosScreen>
               ),
               child: Stack(
                 children: [
-                  AppTheme.bubble(
-                    context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                  ),
-                  AppTheme.bubble(
-                    context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                  ),
+                  AppTheme.bubble(context, size: 200, top: -50, right: -50),
+                  AppTheme.bubble(context, size: 150, bottom: -30, left: -30),
                   AppTheme.bubble(
                     context,
                     size: 80,

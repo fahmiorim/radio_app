@@ -6,20 +6,20 @@ import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 
 // Providers
-import '../../providers/program_provider.dart';
-import '../../providers/event_provider.dart';
-import '../../providers/artikel_provider.dart';
-import '../../providers/penyiar_provider.dart';
+import 'package:radio_odan_app/providers/program_provider.dart';
+import 'package:radio_odan_app/providers/event_provider.dart';
+import 'package:radio_odan_app/providers/artikel_provider.dart';
+import 'package:radio_odan_app/providers/penyiar_provider.dart';
 
 // Widgets
-import '../../widgets/app_header.dart';
-import '../../widgets/app_drawer.dart';
+import 'package:radio_odan_app/widgets/common/app_header.dart';
+import 'package:radio_odan_app/widgets/common/app_drawer.dart';
 
 // Home Widgets
-import 'widgets/penyiar_list.dart';
-import 'widgets/program_list.dart';
-import 'widgets/event_list.dart';
-import 'widgets/artikel_list.dart';
+import 'package:radio_odan_app/screens/home/widget/penyiar_list.dart';
+import 'package:radio_odan_app/screens/home/widget/program_list.dart';
+import 'package:radio_odan_app/screens/home/widget/event_list.dart';
+import 'package:radio_odan_app/screens/home/widget/artikel_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -145,12 +145,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   child: Stack(
                     children: [
                       // Top-right bubble (large)
-                      AppTheme.bubble(
-                        context,
-                        size: 200,
-                        top: -50,
-                        right: -50,
-                      ),
+                      AppTheme.bubble(context, size: 200, top: -50, right: -50),
                       // Bottom-left bubble (medium)
                       AppTheme.bubble(
                         context,

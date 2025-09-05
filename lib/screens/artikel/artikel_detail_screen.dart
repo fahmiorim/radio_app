@@ -5,9 +5,9 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:radio_odan_app/providers/artikel_provider.dart';
-import 'package:radio_odan_app/widgets/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/loading/loading_widget.dart';
-import 'package:radio_odan_app/widgets/mini_player.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
 
 class ArtikelDetailScreen extends StatefulWidget {
   final String artikelSlug;
@@ -71,7 +71,9 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                   ElevatedButton(
                     onPressed: _loadArticle,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).scaffoldBackgroundColor,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
                     child: const Text('Coba Lagi'),
@@ -118,7 +120,9 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 200,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.05),
                             ),
                           ),
                         ),
@@ -130,7 +134,9 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 150,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.05),
                             ),
                           ),
                         ),
@@ -142,7 +148,9 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 50,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.05),
                             ),
                           ),
                         ),
@@ -161,10 +169,11 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                       // Judul
                       Text(
                         artikel.title,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                       ),
                       const SizedBox(height: 8),
 
@@ -179,9 +188,12 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                           const SizedBox(width: 4),
                           Text(
                             artikel.user,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
                           ),
                           const SizedBox(width: 16),
                           const Icon(
@@ -192,9 +204,12 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                           const SizedBox(width: 4),
                           Text(
                             artikel.formattedDate,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
                           ),
                         ],
                       ),

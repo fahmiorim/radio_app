@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import '../../../models/program_model.dart';
-import '../../../services/program_service.dart';
+import 'package:radio_odan_app/models/program_model.dart';
+import 'package:radio_odan_app/services/program_service.dart';
 
 class ProgramProvider with ChangeNotifier {
   final ProgramService _svc = ProgramService.I;
-  
 
   // ===== Today =====
   List<ProgramModel> _today = [];

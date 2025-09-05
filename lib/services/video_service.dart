@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../models/video_model.dart';
-import '../config/api_client.dart';
+import 'package:radio_odan_app/models/video_model.dart';
+import 'package:radio_odan_app/config/api_client.dart';
 
 class VideoService {
   VideoService._();

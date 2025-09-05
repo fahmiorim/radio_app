@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
-import '../audio/audio_player_manager.dart';
-import '../config/app_routes.dart';
-import '../providers/radio_station_provider.dart';
+import 'package:radio_odan_app/audio/audio_player_manager.dart';
+import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/providers/radio_station_provider.dart';
 
 class MiniPlayer extends StatefulWidget {
   const MiniPlayer({super.key});
@@ -22,7 +22,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
       width: 42,
       height: 42,
       fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) => const Icon(Icons.music_note, size: 24, color: Colors.white70),
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.music_note, size: 24, color: Colors.white70),
     );
   }
 
@@ -84,7 +85,8 @@ class _MiniPlayerState extends State<MiniPlayer> {
                             height: 42,
                             width: 42,
                             fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => _buildDefaultCover(),
+                            errorWidget: (context, url, error) =>
+                                _buildDefaultCover(),
                           )
                         : _buildDefaultCover(),
                   ),
@@ -160,7 +162,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
 
                           return IconButton(
                             icon: Icon(
-                              radioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
+                              radioProvider.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
                               color: Colors.white,
                             ),
                             onPressed: () async {
