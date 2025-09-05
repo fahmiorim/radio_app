@@ -17,15 +17,17 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Configuration
 
-The application requires API endpoints to be provided at runtime. Set `BASE_URL` using either `--dart-define` when launching the app or a
-`.env` file in the project root.
+The application requires API and asset URLs along with Pusher credentials to be provided at runtime. Set `API_BASE_URL`, `ASSET_BASE_URL`, `PUSHER_APP_KEY`, `PUSHER_CLUSTER`, and `PUSHER_AUTH_ENDPOINT` using either `--dart-define` when launching the app or a `.env` file in the project root.
 
 ### Using `--dart-define`
 
 ```bash
 flutter run \
-  --dart-define=BASE_URL=https://example.com \
-
+  --dart-define=API_BASE_URL=https://api.example.com \
+  --dart-define=ASSET_BASE_URL=https://example.com \
+  --dart-define=PUSHER_APP_KEY=exampleKey \
+  --dart-define=PUSHER_CLUSTER=exampleCluster \
+  --dart-define=PUSHER_AUTH_ENDPOINT=https://example.com/broadcasting/auth
 ```
 
 ### Using a `.env` file
@@ -33,5 +35,10 @@ flutter run \
 Create a `.env` file in the project root:
 
 ```env
-BASE_URL=https://example.com
+API_BASE_URL=https://api.example.com
+ASSET_BASE_URL=https://example.com
+
+PUSHER_APP_KEY=exampleKey
+PUSHER_CLUSTER=exampleCluster
+PUSHER_AUTH_ENDPOINT=https://example.com/broadcasting/auth
 ```
