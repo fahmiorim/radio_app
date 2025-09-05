@@ -73,15 +73,15 @@ class _FullPlayerState extends State<FullPlayer> {
       );
     }
 
-    final cover = (nowPlaying?.artUrl.isNotEmpty ?? false)
+    final cover = nowPlaying?.artUrl?.isNotEmpty == true
         ? nowPlaying!.artUrl
         : (currentStation.coverUrl ?? '');
 
-    final title = (nowPlaying?.title.isNotEmpty ?? false)
+    final title = nowPlaying?.title?.isNotEmpty == true
         ? nowPlaying!.title
         : (currentStation.title ?? 'Unknown Title');
 
-    final artist = (nowPlaying?.artist.isNotEmpty ?? false)
+    final artist = nowPlaying?.artist?.isNotEmpty == true
         ? nowPlaying!.artist
         : (currentStation.host ?? 'Unknown');
 

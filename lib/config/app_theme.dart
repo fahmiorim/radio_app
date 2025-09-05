@@ -322,7 +322,8 @@ class AppTheme {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final color = usePrimaryColor
-        ? (isDark ? AppColors.darkPrimary : AppColors.lightPrimary).withOpacity(opacity)
+        ? (isDark ? const Color.fromARGB(255, 0, 0, 0) : AppColors.lightPrimary)
+              .withOpacity(opacity)
         : (isDark ? Colors.grey[800]! : Colors.grey[200]!).withOpacity(opacity);
 
     return Positioned(

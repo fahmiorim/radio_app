@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Config
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 
 // Providers
@@ -128,8 +127,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
     final theme = Theme.of(context);
-    final colors = AppColors();
-    
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,

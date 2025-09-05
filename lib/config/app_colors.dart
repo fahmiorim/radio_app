@@ -55,34 +55,37 @@ class _SystemUIColors {
   static const Color systemNavigationBar = Color(0xFF121212);
 }
 
-/// A collection of all color constants used throughout the app.
-/// Organized by theme and component for better maintainability.
 class AppColors {
   // ========== Light Theme ==========
-  static const Color lightPrimary = Color(
-    0xFF0D47A1,
-  ); // Biru tua yang lebih tegas
-  static const Color lightBackground = Color(
-    0xFF0D47A1,
-  ); // Biru muda yang lebih tegas
+  static const Color lightPrimary = Color(0xFF1976D2); // Medium blue
+  static const Color lightBackground = Color(0xFF0D47A1); // Darker blue
   static const Color lightSurface = Color(
-    0xFF0D47A1,
-  ); // Biru sangat muda untuk surface
+    0xFF0D1B2A,
+  ); // Very dark blue (almost black)
 
   // Light Text Colors
-  static const Color lightTextPrimary = Color(0xFF0D47A1);
-  static const Color lightTextSecondary = Color(0xFF0D47A1);
-  static const Color lightTextTertiary = Color(0xFF1A73E8);
-  static const Color lightTextHint = Color(0xFF5E97F6);
+  static const Color lightTextPrimary = Color.fromARGB(
+    255,
+    35,
+    35,
+    35,
+  ); // White for better contrast
+  static const Color lightTextSecondary = Color(0xFFBBDEFB); // Light blue
+  static const Color lightTextTertiary = Color(0xFF90CAF9); // Lighter blue
+  static const Color lightTextHint = Color(0xFF64B5F6); // Medium light blue
 
   // Light UI Colors
-  static const Color lightCardSurface = Color(0xFFE8F4FF);
-  static const Color lightDivider = Color(0x66000000);
-  static const Color lightBorder = Color(0xFF90CBF9);
-  static const Color lightSentBubble = lightPrimary;
-  static const Color lightSentBubbleText = Color(0xFFFFFFFF);
-  static const Color lightReceivedBubble = Color(0xFFEEEEEE);
-  static const Color lightReceivedBubbleText = Color(0xDD000000);
+  static const Color lightCardSurface = Color(
+    0x1AFFFFFF,
+  ); // Semi-transparent white
+  static const Color lightDivider = Color(0x33FFFFFF); // Semi-transparent white
+  static const Color lightBorder = Color(
+    0x33FFFFFF,
+  ); // Semi-transparent white border
+  static const Color lightSentBubble = Color(0xFF1976D2); // Medium blue
+  static const Color lightSentBubbleText = Color(0xFFFFFFFF); // White text
+  static const Color lightReceivedBubble = Color(0xFF1E1E1E); // Dark gray
+  static const Color lightReceivedBubbleText = Color(0xFFFFFFFF); // White text
 
   // ========== Dark Theme ==========
   static const Color darkPrimary = Color(
