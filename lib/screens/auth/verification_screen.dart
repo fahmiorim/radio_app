@@ -127,7 +127,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: ok ? Colors.green : Colors.red,
+        backgroundColor: ok ? AppColors.green : AppColors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -145,7 +145,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     if (_initialLoading) {
       return const Scaffold(
         backgroundColor: AppColors.primary,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.white)),
       );
     }
 
@@ -192,10 +192,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: AppColors.white.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: AppColors.white.withOpacity(0.2),
                           width: 1,
                         ),
                       ),
@@ -288,7 +288,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: AppColors.white,
                                 ),
                               )
                             : const Icon(Icons.verified),

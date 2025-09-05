@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../../config/app_colors.dart';
 
 class ProgramSkeleton extends StatelessWidget {
   final int itemCount;
@@ -25,13 +26,13 @@ class ProgramSkeleton extends StatelessWidget {
               children: [
                 // shimmer gambar
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!, // dark mode
-                  highlightColor: Colors.grey[700]!,
+                  baseColor: AppColors.grey850, // dark mode
+                  highlightColor: AppColors.grey700,
                   child: Container(
                     height: 225,
                     width: 160,
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: AppColors.grey850,
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -39,13 +40,13 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 8),
                 // shimmer judul program
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
+                  baseColor: AppColors.grey850,
+                  highlightColor: AppColors.grey700,
                   child: Container(
                     width: 120,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: AppColors.grey850,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -53,13 +54,13 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 4),
                 // shimmer nama penyiar
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
+                  baseColor: AppColors.grey850,
+                  highlightColor: AppColors.grey700,
                   child: Container(
                     width: 100,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: AppColors.grey850,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -67,13 +68,13 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 2),
                 // shimmer hari & jam
                 Shimmer.fromColors(
-                  baseColor: Colors.grey[850]!,
-                  highlightColor: Colors.grey[700]!,
+                  baseColor: AppColors.grey850,
+                  highlightColor: AppColors.grey700,
                   child: Container(
                     width: 80,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: Colors.grey[850],
+                      color: AppColors.grey850,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),

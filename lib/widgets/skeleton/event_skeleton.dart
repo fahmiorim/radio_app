@@ -31,8 +31,8 @@ class EventCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[800]!,
-      highlightColor: Colors.grey[700]!,
+      baseColor: AppColors.grey800,
+      highlightColor: AppColors.grey700,
       child: Card(
         color: AppColors.darkSurface.withOpacity(0.9),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -47,7 +47,7 @@ class EventCardSkeleton extends StatelessWidget {
                 aspectRatio: 16 / 9,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: AppColors.white24,
                     borderRadius: BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
@@ -58,7 +58,7 @@ class EventCardSkeleton extends StatelessWidget {
                 height: 20,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -68,7 +68,7 @@ class EventCardSkeleton extends StatelessWidget {
                 height: 16,
                 width: 120,
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: AppColors.white24,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
