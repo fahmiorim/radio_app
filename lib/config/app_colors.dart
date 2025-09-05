@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 
 // ========== Component Color Classes ==========
 class _PlayerColors {
-  static const Color background = Color(0xFF121212);
-  static const Color controls = Color(0xFFFFFFFF);
-  static const Color progressBackground = Color(0x4DFFFFFF);
-  static const Color progressPlayed = Color(0xFF1E88E5);
-  static const Color progressBuffered = Color(0x66FFFFFF);
-  static const Color liveIndicator = Color(0xFFFE2C55);
-  static const Color liveBadge = Color(0xFFFF0000);
+  final Color background = const Color(0xFF121212);
+  final Color controls = const Color(0xFFFFFFFF);
+  final Color progressBackground = const Color(0x4DFFFFFF);
+  final Color progressPlayed = const Color(0xFF1E88E5);
+  final Color progressBuffered = const Color(0x66FFFFFF);
+  final Color liveIndicator = const Color(0xFFFE2C55);
+  final Color liveBadge = const Color(0xFFFF0000);
 }
 
 class _ButtonColors {
-  static const Color primary = Color(0xFF1E88E5);
-  static const Color primaryText = Color(0xFFFFFFFF);
-  static const Color secondary = Color(0x1FFFFFFF);
-  static const Color secondaryText = Color(0xFFFFFFFF);
+  final Color primary = const Color(0xFF1E88E5);
+  final Color primaryText = const Color(0xFFFFFFFF);
+  final Color secondary = const Color(0x1FFFFFFF);
+  final Color secondaryText = const Color(0xFFFFFFFF);
 }
 
 class _InputColors {
@@ -59,36 +59,44 @@ class _SystemUIColors {
 /// Organized by theme and component for better maintainability.
 class AppColors {
   // ========== Light Theme ==========
-  static const Color lightPrimary = Color(0xFF2196F3);
-  static const Color lightBackground = Color(0xFFE3F2FD);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  
+  static const Color lightPrimary = Color(
+    0xFF0D47A1,
+  ); // Biru tua yang lebih tegas
+  static const Color lightBackground = Color(
+    0xFF0D47A1,
+  ); // Biru muda yang lebih tegas
+  static const Color lightSurface = Color(
+    0xFF0D47A1,
+  ); // Biru sangat muda untuk surface
+
   // Light Text Colors
   static const Color lightTextPrimary = Color(0xFF0D47A1);
-  static const Color lightTextSecondary = Color(0xFF1976D2);
-  static const Color lightTextTertiary = Color(0xFF5F6368);
-  static const Color lightTextHint = Color(0xFF9AA0A6);
-  
+  static const Color lightTextSecondary = Color(0xFF0D47A1);
+  static const Color lightTextTertiary = Color(0xFF1A73E8);
+  static const Color lightTextHint = Color(0xFF5E97F6);
+
   // Light UI Colors
-  static const Color lightCardSurface = Color(0xFFFFFFFF);
-  static const Color lightDivider = Color(0x1F000000);
-  static const Color lightBorder = Color(0xFFDADCE0);
+  static const Color lightCardSurface = Color(0xFFE8F4FF);
+  static const Color lightDivider = Color(0x66000000);
+  static const Color lightBorder = Color(0xFF90CBF9);
   static const Color lightSentBubble = lightPrimary;
   static const Color lightSentBubbleText = Color(0xFFFFFFFF);
   static const Color lightReceivedBubble = Color(0xFFEEEEEE);
   static const Color lightReceivedBubbleText = Color(0xDD000000);
 
   // ========== Dark Theme ==========
-  static const Color darkPrimary = Color(0xFF90CAF9); // Lighter blue for better visibility on dark backgrounds
+  static const Color darkPrimary = Color(
+    0xFF90CAF9,
+  ); // Lighter blue for better visibility on dark backgrounds
   static const Color darkBackground = Color(0xFF121212);
   static const Color darkSurface = Color(0xFF1E1E1E);
-  
+
   // Dark Text Colors
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFFB0BEC5);
   static const Color darkTextTertiary = Color(0xFF757575);
   static const Color darkTextHint = Color(0xFF9E9E9E);
-  
+
   // Dark UI Colors
   static const Color darkCardSurface = Color(0xFF1E1E1E);
   static const Color darkDivider = Color(0x1FFFFFFF);
@@ -105,7 +113,7 @@ class AppColors {
   static const Color warning = Color(0xFFFFC107);
   static const Color info = Color(0xFF2196F3);
   static const Color disabled = Color(0xFF9E9E9E);
-  
+
   // ========== Component Colors ==========
   static final player = _PlayerColors();
   static final button = _ButtonColors();
@@ -134,9 +142,9 @@ class AppColors {
   static const Color blueGrey = Colors.blueGrey;
 
   // ========== Live/Streaming Colors ==========
-  static const Color liveIndicator = _PlayerColors.liveIndicator;
-  static const Color liveBadge = _PlayerColors.liveBadge;
-  
+  Color get liveIndicator => player.liveIndicator;
+  Color get liveBadge => player.liveBadge;
+
   // ========== Chat Colors ==========
   static const Color chatBackground = _ChatColors.background;
   static const Color chatInputBackground = _ChatColors.inputBackground;
@@ -145,28 +153,28 @@ class AppColors {
   // ========== Deprecated (Kept for backward compatibility) ==========
   @Deprecated('Use AppColors.lightPrimary instead')
   static const Color primary = lightPrimary;
-  
+
   @Deprecated('Use AppColors.lightBackground instead')
   static const Color backgroundDark = lightBackground;
-  
+
   @Deprecated('Use AppColors.lightTextPrimary instead')
   static const Color textPrimary = lightTextPrimary;
-  
+
   @Deprecated('Use AppColors.lightTextSecondary instead')
   static const Color textSecondary = lightTextSecondary;
-  
+
   @Deprecated('Use AppColors.lightTextTertiary instead')
   static const Color textTertiary = lightTextTertiary;
-  
+
   @Deprecated('Use AppColors.lightTextHint instead')
   static const Color textHint = lightTextHint;
-  
+
   @Deprecated('Use AppColors.lightCardSurface instead')
   static const Color cardSurface = lightCardSurface;
-  
+
   @Deprecated('Use AppColors.lightDivider instead')
   static const Color dividerColor = lightDivider;
-  
+
   @Deprecated('Use AppColors.lightBorder instead')
   static const Color borderColor = lightBorder;
 }

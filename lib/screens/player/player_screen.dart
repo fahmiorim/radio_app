@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/audio/audio_player_manager.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -36,7 +36,10 @@ class _FullPlayerState extends State<FullPlayer> {
 
   Future<void> _initializePlayer() async {
     try {
-      final radioProvider = Provider.of<RadioStationProvider>(context, listen: false);
+      final radioProvider = Provider.of<RadioStationProvider>(
+        context,
+        listen: false,
+      );
       final currentStation = radioProvider.currentStation;
       if (currentStation != null) {
         await _audioManager.playRadio(currentStation);
@@ -44,7 +47,9 @@ class _FullPlayerState extends State<FullPlayer> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memutar radio. Coba lagi nanti.')),
+          const SnackBar(
+            content: Text('Gagal memutar radio. Coba lagi nanti.'),
+          ),
         );
       }
     }
@@ -86,16 +91,20 @@ class _FullPlayerState extends State<FullPlayer> {
         title: Text(
           'Now Playing',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
         ),
         centerTitle: true,
         backgroundColor: AppColors.transparent,
         foregroundColor: AppColors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 20, color: AppColors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            size: 20,
+            color: AppColors.white,
+          ),
           onPressed: () {
             if (mounted) Navigator.pop(context);
           },
@@ -117,7 +126,8 @@ class _FullPlayerState extends State<FullPlayer> {
                             imageUrl: cover,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorWidget: (context, url, error) => _buildDefaultCover(),
+                            errorWidget: (context, url, error) =>
+                                _buildDefaultCover(),
                           )
                         : _buildDefaultCover(),
                   ),
@@ -127,16 +137,19 @@ class _FullPlayerState extends State<FullPlayer> {
 
             // === Title & Host & LIVE ===
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     title,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -144,23 +157,28 @@ class _FullPlayerState extends State<FullPlayer> {
                   const SizedBox(height: 4),
                   Text(
                     artist,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.liveBadge,
+                      color: AppColors().liveBadge,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       'LIVE',
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -169,7 +187,10 @@ class _FullPlayerState extends State<FullPlayer> {
 
             // === Progress Bar ===
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 15),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 40.0,
+                vertical: 15,
+              ),
               child: StreamBuilder<Duration>(
                 stream: _audioManager.player.positionStream,
                 builder: (context, snapshot) {
@@ -177,10 +198,13 @@ class _FullPlayerState extends State<FullPlayer> {
                   final duration = _audioManager.player.duration;
 
                   // Jika durasi null (umum untuk radio live), jadikan indeterminate
-                  final isIndeterminate = duration == null || duration.inMilliseconds <= 0;
+                  final isIndeterminate =
+                      duration == null || duration.inMilliseconds <= 0;
                   double? progress;
                   if (!isIndeterminate) {
-                    final denom = duration!.inMilliseconds == 0 ? 1 : duration.inMilliseconds;
+                    final denom = duration!.inMilliseconds == 0
+                        ? 1
+                        : duration.inMilliseconds;
                     progress = (pos.inMilliseconds / denom).clamp(0.0, 1.0);
                     if (progress.isNaN) progress = 0.0;
                   }
@@ -192,7 +216,9 @@ class _FullPlayerState extends State<FullPlayer> {
                         child: LinearProgressIndicator(
                           value: isIndeterminate ? null : progress,
                           backgroundColor: AppColors.white.withAlpha(30),
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.red),
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.red,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -213,7 +239,8 @@ class _FullPlayerState extends State<FullPlayer> {
                     final isPlaying = state?.playing ?? false;
                     final processing = state?.processingState;
                     final isLoading =
-                        processing == ProcessingState.loading || processing == ProcessingState.buffering;
+                        processing == ProcessingState.loading ||
+                        processing == ProcessingState.buffering;
 
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -221,8 +248,12 @@ class _FullPlayerState extends State<FullPlayer> {
                         // Favorite
                         IconButton(
                           icon: Icon(
-                            isFavorited ? Icons.favorite : Icons.favorite_border,
-                            color: isFavorited ? AppColors.green : AppColors.grey,
+                            isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: isFavorited
+                                ? AppColors.green
+                                : AppColors.grey,
                           ),
                           iconSize: 28,
                           onPressed: () {
@@ -230,13 +261,15 @@ class _FullPlayerState extends State<FullPlayer> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  isFavorited ? 'Added to favorites' : 'Removed from favorites',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
+                                  isFavorited
+                                      ? 'Added to favorites'
+                                      : 'Removed from favorites',
+                                  style: Theme.of(context).textTheme.bodyMedium
                                       ?.copyWith(color: Colors.white),
                                 ),
-                                backgroundColor: isFavorited ? AppColors.green : AppColors.grey,
+                                backgroundColor: isFavorited
+                                    ? AppColors.green
+                                    : AppColors.grey,
                               ),
                             );
                           },
@@ -254,14 +287,16 @@ class _FullPlayerState extends State<FullPlayer> {
                           child: isLoading
                               ? const Center(
                                   child: CircularProgressIndicator(
-                                    color: AppColors.player.background,
+                                    color: AppColors.white,
                                     strokeWidth: 2,
                                   ),
                                 )
                               : IconButton(
                                   iconSize: 40,
-                                  color: AppColors.player.background,
-                                  icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
+                                  color: AppColors.white,
+                                  icon: Icon(
+                                    isPlaying ? Icons.pause : Icons.play_arrow,
+                                  ),
                                   onPressed: () async {
                                     await radioProvider.togglePlayPause();
                                   },
