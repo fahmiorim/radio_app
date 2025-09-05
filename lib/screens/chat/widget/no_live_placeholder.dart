@@ -12,9 +12,9 @@ class NoLivePlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     // Define gradient colors here since they can't be const
     final gradientColors = [
-      AppColors().liveIndicator,
-      Color.lerp(AppColors().liveIndicator, Colors.white, 0.2) ??
-          AppColors().liveIndicator,
+      AppColors.liveIndicator,
+      Color.lerp(AppColors.liveIndicator, Colors.white, 0.2) ??
+          AppColors.liveIndicator,
     ];
     return Container(
       color: AppColors.chatBackground,
@@ -42,14 +42,14 @@ class NoLivePlaceholder extends StatelessWidget {
                     color: AppColors.lightCardSurface.withOpacity(0.7),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors().liveIndicator.withOpacity(0.3),
+                      color: AppColors.liveIndicator.withOpacity(0.3),
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.radio_outlined,
                     size: 64,
-                    color: AppColors().liveIndicator.withOpacity(0.8),
+                    color: AppColors.liveIndicator.withOpacity(0.8),
                   ),
                 ),
               ),
@@ -99,7 +99,7 @@ class NoLivePlaceholder extends StatelessWidget {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors().liveIndicator.withOpacity(0.3),
+                            color: AppColors.liveIndicator.withOpacity(0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

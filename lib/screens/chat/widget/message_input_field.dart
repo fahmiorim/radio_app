@@ -50,7 +50,7 @@ class MessageInputField extends StatelessWidget {
               icon: const Icon(Icons.send, color: AppColors.white, size: 20),
               padding: const EdgeInsets.all(12),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors().liveIndicator,
+                backgroundColor: AppColors.lightPrimary,
                 shape: const CircleBorder(),
               ),
               onPressed: onSend,

@@ -73,6 +73,8 @@ class AppColors {
   static const Color error = Color(0xFFB00020);
   static const Color success = Color(0xFF4CAF50);
   static const Color disabled = Color(0xFF9E9E9E);
+  static const Color liveBadge = Color(0xFFE53935); // Vibrant red for live badge
+  static const Color liveIndicator = Color(0xFFFF3D00); // Orange-red color for live indicator
 
   // ========== Component Colors ==========
   static final player = _PlayerColors();

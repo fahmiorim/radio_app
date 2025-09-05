@@ -170,7 +170,7 @@ class _FullPlayerState extends State<FullPlayer> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors().liveBadge,
+                      color: AppColors.liveBadge,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
