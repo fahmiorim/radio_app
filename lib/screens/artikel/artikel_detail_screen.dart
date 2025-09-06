@@ -4,6 +4,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/loading/loading_widget.dart';
@@ -186,10 +187,10 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                       // Penulis & Tanggal
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.person_outline,
                             size: 16,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -202,10 +203,10 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                                 ),
                           ),
                           const SizedBox(width: 16),
-                          const Icon(
+                          Icon(
                             Icons.calendar_today,
                             size: 14,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -232,11 +233,14 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               height: 200,
-                              color: Colors.grey[800],
+                              color: AppColors.grey800,
                               alignment: Alignment.center,
-                              child: const Icon(
+                              child: Icon(
                                 Icons.broken_image,
-                                color: Colors.white54,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.54),
                               ),
                             ),
                           ),
@@ -249,24 +253,24 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                           data: content,
                           style: {
                             "html": Style(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: FontSize(16.0),
                               lineHeight: LineHeight(1.6),
                             ),
                             "body": Style(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: FontSize(16.0),
                               lineHeight: LineHeight(1.6),
                             ),
                             "p": Style(margin: Margins.only(bottom: 16)),
                             "h1": Style(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: FontSize(24.0),
                               fontWeight: FontWeight.bold,
                               margin: Margins.only(top: 24, bottom: 16),
                             ),
                             "h2": Style(
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: FontSize(20.0),
                               fontWeight: FontWeight.bold,
                               margin: Margins.only(top: 20, bottom: 14),
@@ -304,9 +308,14 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                               },
                         )
                       else
-                        const Text(
+                        Text(
                           'Konten belum tersedia.',
-                          style: TextStyle(color: Colors.white70),
+                          style: TextStyle(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
+                          ),
                         ),
                       const SizedBox(height: 80),
                     ],

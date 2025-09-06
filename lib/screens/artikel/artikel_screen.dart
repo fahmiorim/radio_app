@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/skeleton/artikel_all_skeleton.dart';
@@ -236,7 +237,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           onTap: () {
             Navigator.of(context).push(

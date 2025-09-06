@@ -8,6 +8,7 @@ import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/widgets/skeleton/album_list_skeleton.dart';
 import 'package:radio_odan_app/widgets/common/section_title.dart';
 import 'package:radio_odan_app/screens/galeri/album_detail_screen.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class AlbumList extends StatefulWidget {
   const AlbumList({super.key});
@@ -129,10 +130,10 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return Container(color: Colors.grey[300]);
+                        return Container(color: AppColors.grey300);
                       },
                       errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey[200],
+                        color: AppColors.grey200,
                         alignment: Alignment.center,
                         child: const Icon(Icons.broken_image, size: 32),
                       ),
@@ -146,9 +147,9 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.transparent,
-                              Colors.transparent,
+                              AppColors.black.withOpacity(0.7),
+                              AppColors.transparent,
+                              AppColors.transparent,
                             ],
                             stops: const [0.0, 0.4, 1.0],
                           ),
@@ -166,21 +167,21 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.55),
+                          color: AppColors.black.withOpacity(0.55),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.photo_library_outlined,
                               size: 14,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                             const SizedBox(width: 2),
                             Text(
                               '${album.photosCount ?? 0}',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -194,7 +195,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                     Positioned.fill(
                       child: Hero(
                         tag: 'album-${album.slug}',
-                        child: Container(color: Colors.transparent),
+                        child: Container(color: AppColors.transparent),
                       ),
                     ),
                   ],
@@ -211,8 +212,8 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                   // Title
                   Text(
                     album.name,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,
                       height: 1.1,
@@ -224,7 +225,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                   Text(
                     '${album.photosCount ?? 0} Foto',
                     style: TextStyle(
-                      color: Colors.grey[400],
+                      color: AppColors.grey400,
                       fontSize: 10,
                       height: 1.2,
                     ),
@@ -284,10 +285,15 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                       ),
                     )
                   : items.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'Tidak ada album tersedia',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                        ),
                       ),
                     )
                   : GridView.builder(

@@ -7,6 +7,7 @@ import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/screens/event/event_screen.dart';
 import 'package:radio_odan_app/screens/event/event_detail_screen.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class EventList extends StatefulWidget {
   const EventList({super.key});
@@ -71,7 +72,7 @@ class _EventListState extends State<EventList>
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
                 const SizedBox(height: 12),
                 Text(
                   'Gagal memuat data event',
@@ -81,7 +82,12 @@ class _EventListState extends State<EventList>
                 Text(
                   error,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
+                  style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
@@ -100,11 +106,16 @@ class _EventListState extends State<EventList>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionTitle(title: 'Event', onSeeAll: null),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               'Belum ada event',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.7),
+              ),
             ),
           ),
         ],
@@ -172,10 +183,10 @@ class _EventListState extends State<EventList>
                             e.judul,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onSurface,
                               height: 1.2,
                             ),
                           ),
@@ -187,9 +198,12 @@ class _EventListState extends State<EventList>
                               e.formattedTanggal,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white70,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.7),
                               ),
                             ),
                           ),
@@ -205,9 +219,14 @@ class _EventListState extends State<EventList>
   }
 
   Widget _thumbPlaceholder() => Container(
-    color: Colors.grey[900],
+    color: AppColors.grey900,
     alignment: Alignment.center,
-    child: const Icon(Icons.broken_image, size: 44, color: Colors.white38),
+    child: Icon(
+      Icons.broken_image,
+      size: 44,
+      color:
+          Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+    ),
   );
 
   Widget _thumbLoading() => const Center(

@@ -148,7 +148,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
         SliverAppBar(
           expandedHeight: 250.0,
           pinned: true,
-          backgroundColor: Colors.transparent,
+          backgroundColor: AppColors.transparent,
           elevation: 0,
           iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
           flexibleSpace: FlexibleSpaceBar(
@@ -186,9 +186,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withOpacity(0.65),
-                          Colors.black.withOpacity(0.15),
-                          Colors.transparent,
+                          AppColors.black.withOpacity(0.65),
+                          AppColors.black.withOpacity(0.15),
+                          AppColors.transparent,
                         ],
                         stops: const [0, .4, 1],
                       ),
@@ -208,8 +208,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                     offset: Offset(1, 1),
                     blurRadius: 3.0,
                     color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.black.withOpacity(0.6)
-                        : Colors.black45,
+                        ? AppColors.black.withOpacity(0.6)
+                        : AppColors.black.withOpacity(0.45),
                   ),
                 ],
               ),
