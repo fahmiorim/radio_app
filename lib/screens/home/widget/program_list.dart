@@ -84,11 +84,14 @@ class _ProgramListState extends State<ProgramList>
             title: 'Program Hari Ini',
             onSeeAll: () => _openAll(context),
           ),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               'Tidak ada program untuk hari ini',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
             ),
           ),
         ],
@@ -142,7 +145,7 @@ class _ProgramListState extends State<ProgramList>
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: url.isEmpty
-                              ? _buildPlaceholderImage()
+                              ? _buildPlaceholderImage(context)
                               : CachedNetworkImage(
                                   imageUrl: url,
                                   height: 200,
@@ -150,7 +153,7 @@ class _ProgramListState extends State<ProgramList>
                                   fit: BoxFit.cover,
                                   placeholder: (_, __) => _buildLoadingThumb(),
                                   errorWidget: (_, __, ___) =>
-                                      _buildPlaceholderImage(),
+                                      _buildPlaceholderImage(context),
                                 ),
                         ),
                         const SizedBox(height: 8),
@@ -158,10 +161,10 @@ class _ProgramListState extends State<ProgramList>
                           program.namaProgram,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -182,13 +185,17 @@ class _ProgramListState extends State<ProgramList>
     );
   }
 
-  Widget _buildPlaceholderImage() {
+  Widget _buildPlaceholderImage(BuildContext context) {
     return Container(
       height: 225,
       width: 160,
-      color: Colors.grey[900],
+      color: Theme.of(context).colorScheme.surface,
       alignment: Alignment.center,
-      child: const Icon(Icons.image, size: 44, color: Colors.white38),
+      child: Icon(
+        Icons.image,
+        size: 44,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+      ),
     );
   }
 
