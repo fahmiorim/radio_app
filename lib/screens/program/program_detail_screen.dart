@@ -220,9 +220,9 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
-                          color: Colors.red,
+                          color: Theme.of(context).colorScheme.error,
                           size: 48,
                         ),
                         const SizedBox(height: 16),

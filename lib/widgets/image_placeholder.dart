@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class ImagePlaceholder extends StatelessWidget {
   final IconData icon;
@@ -9,7 +10,7 @@ class ImagePlaceholder extends StatelessWidget {
     Key? key,
     this.icon = Icons.image,
     this.size = 100,
-    this.color = Colors.grey,
+    this.color = AppColors.grey,
   }) : super(key: key);
 
   @override

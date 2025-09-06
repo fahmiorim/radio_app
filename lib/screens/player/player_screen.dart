@@ -176,7 +176,7 @@ class _FullPlayerState extends State<FullPlayer> {
                     child: Text(
                       'LIVE',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
+                        color: AppColors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -265,7 +265,7 @@ class _FullPlayerState extends State<FullPlayer> {
                                       ? 'Added to favorites'
                                       : 'Removed from favorites',
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.white),
+                                      ?.copyWith(color: AppColors.white),
                                 ),
                                 backgroundColor: isFavorited
                                     ? AppColors.green

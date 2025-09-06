@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 // Config
 import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 // Providers
 import 'package:radio_odan_app/providers/program_provider.dart';
@@ -191,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       SliverToBoxAdapter(
                         child: Container(
                           width: double.infinity,
-                          color: Colors.transparent,
+                          color: AppColors.transparent,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16.0,
                             vertical: 12.0,

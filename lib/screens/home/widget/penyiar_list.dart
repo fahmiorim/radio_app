@@ -6,6 +6,7 @@ import 'package:radio_odan_app/models/penyiar_model.dart';
 import 'package:radio_odan_app/providers/penyiar_provider.dart';
 import 'package:radio_odan_app/widgets/common/section_title.dart';
 import 'package:radio_odan_app/widgets/skeleton/penyiar_skeleton.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class PenyiarList extends StatefulWidget {
   const PenyiarList({super.key});
@@ -68,10 +69,15 @@ class _PenyiarListState extends State<PenyiarList>
               child: vm.isLoading && vm.items.isEmpty
                   ? const PenyiarSkeleton()
                   : vm.items.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'Tidak ada data penyiar',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                        ),
                       ),
                     )
                   : ListView.builder(
@@ -98,11 +104,11 @@ class _PenyiarListState extends State<PenyiarList>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Gagal memuat data penyiar',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 12),
             ElevatedButton(onPressed: onRetry, child: const Text('Coba Lagi')),
@@ -129,9 +135,9 @@ class _PenyiarCard extends StatelessWidget {
           Container(
             width: 110,
             height: 160,
-            color: Colors.grey[900],
+            color: AppColors.grey900,
             child: penyiar.avatarUrl.isEmpty
-                ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                ? Icon(Icons.person, size: 50, color: AppColors.grey)
                 : CachedNetworkImage(
                     imageUrl: penyiar.avatarUrl,
                     fit: BoxFit.cover,
@@ -143,23 +149,23 @@ class _PenyiarCard extends StatelessWidget {
                       ),
                     ),
                     errorWidget: (_, __, ___) =>
-                        const Icon(Icons.person, size: 50, color: Colors.grey),
+                        Icon(Icons.person, size: 50, color: AppColors.grey),
                   ),
           ),
           // Nama overlay
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-            color: Colors.black.withOpacity(0.5),
+            color: AppColors.black.withOpacity(0.5),
             child: Text(
               penyiar.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),

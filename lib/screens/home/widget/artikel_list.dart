@@ -9,6 +9,7 @@ import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_detail_screen.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -86,11 +87,16 @@ class ArtikelListState extends State<ArtikelList>
             title: 'Program Hari Ini',
             onSeeAll: () => _openAll(context),
           ),
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               'Tidak ada program untuk hari ini',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.7),
+              ),
             ),
           ),
         ],
@@ -164,7 +170,7 @@ class ArtikelListState extends State<ArtikelList>
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -177,7 +183,11 @@ class ArtikelListState extends State<ArtikelList>
                           : '',
                       style: Theme.of(
                         context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                      ).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7)),
                     ),
                   ],
                 ),
@@ -199,9 +209,13 @@ class ArtikelListState extends State<ArtikelList>
     return Container(
       height: 225,
       width: 160,
-      color: Colors.grey[900],
+      color: AppColors.grey900,
       alignment: Alignment.center,
-      child: const Icon(Icons.image, size: 44, color: Colors.white38),
+      child: Icon(
+        Icons.image,
+        size: 44,
+        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+      ),
     );
   }
 

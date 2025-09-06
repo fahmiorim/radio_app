@@ -13,7 +13,7 @@ class NoLivePlaceholder extends StatelessWidget {
     // Define gradient colors here since they can't be const
     final gradientColors = [
       AppColors.liveIndicator,
-      Color.lerp(AppColors.liveIndicator, Colors.white, 0.2) ??
+      Color.lerp(AppColors.liveIndicator, AppColors.white, 0.2) ??
           AppColors.liveIndicator,
     ];
     return Container(
@@ -136,7 +136,7 @@ class NoLivePlaceholder extends StatelessWidget {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
+                        color: AppColors.transparent,
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(
                           color: Theme.of(context).brightness == Brightness.dark
