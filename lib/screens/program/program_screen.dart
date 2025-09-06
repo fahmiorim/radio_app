@@ -8,6 +8,7 @@ import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/all_programs_skeleton.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 // ⬇️ Import detail screen
 import 'package:radio_odan_app/screens/program/program_detail_screen.dart';
@@ -291,7 +292,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.transparent,
         child: InkWell(
           onTap: () {
             // 1) set selected di provider (hemat fetch kalau detail butuh data)
@@ -336,7 +337,8 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                 ),
                 const SizedBox(width: 16),
                 Expanded(child: _ProgramTexts(program: program)),
-                const Icon(Icons.chevron_right, color: Colors.white, size: 24),
+                Icon(Icons.chevron_right,
+                    color: Theme.of(context).colorScheme.onSurface, size: 24),
               ],
             ),
           ),
@@ -374,10 +376,10 @@ class _ProgramTexts extends StatelessWidget {
       children: [
         Text(
           program.namaProgram,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -387,12 +389,23 @@ class _ProgramTexts extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.schedule, size: 14, color: Colors.white70),
+              Icon(Icons.schedule,
+                  size: 14,
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withOpacity(0.7)),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   program.jadwal!,
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.7),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
