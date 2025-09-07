@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/audio/audio_player_manager.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
 
@@ -23,8 +22,11 @@ class _FullPlayerState extends State<FullPlayer> {
       'assets/odanlogo.png',
       width: double.infinity,
       fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) =>
-          const Icon(Icons.music_note, size: 100, color: AppColors.white),
+      errorBuilder: (context, error, stackTrace) => Icon(
+        Icons.music_note,
+        size: 100,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
     );
   }
 
@@ -57,21 +59,22 @@ class _FullPlayerState extends State<FullPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final radioProvider = Provider.of<RadioStationProvider>(context);
     final currentStation = radioProvider.currentStation;
     final nowPlaying = radioProvider.nowPlaying;
 
-    if (currentStation == null) {
-      return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
-        body: Center(
-          child: Text(
-            'No radio station selected',
-            style: Theme.of(context).textTheme.bodyMedium,
+      if (currentStation == null) {
+        return Scaffold(
+          backgroundColor: theme.colorScheme.background,
+          body: Center(
+            child: Text(
+              'No radio station selected',
+              style: theme.textTheme.bodyMedium,
+            ),
           ),
-        ),
-      );
-    }
+        );
+      }
 
     final cover = nowPlaying?.artUrl?.isNotEmpty == true
         ? nowPlaying!.artUrl
@@ -86,24 +89,24 @@ class _FullPlayerState extends State<FullPlayer> {
         : (currentStation.host ?? 'Unknown');
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         title: Text(
           'Now Playing',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
         ),
         centerTitle: true,
-        backgroundColor: AppColors.transparent,
-        foregroundColor: AppColors.white,
+        backgroundColor: Colors.transparent,
+        foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios,
             size: 20,
-            color: AppColors.white,
+            color: theme.colorScheme.onSurface,
           ),
           onPressed: () {
             if (mounted) Navigator.pop(context);
@@ -146,7 +149,7 @@ class _FullPlayerState extends State<FullPlayer> {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -157,9 +160,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   const SizedBox(height: 4),
                   Text(
                     artist,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -170,13 +171,13 @@ class _FullPlayerState extends State<FullPlayer> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.liveBadge,
+                      color: theme.colorScheme.error,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       'LIVE',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.white,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onError,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -215,9 +216,10 @@ class _FullPlayerState extends State<FullPlayer> {
                         height: 4,
                         child: LinearProgressIndicator(
                           value: isIndeterminate ? null : progress,
-                          backgroundColor: AppColors.white.withAlpha(30),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.red,
+                          backgroundColor:
+                              theme.colorScheme.onSurface.withAlpha(30),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            theme.colorScheme.primary,
                           ),
                         ),
                       ),
@@ -252,8 +254,8 @@ class _FullPlayerState extends State<FullPlayer> {
                                 ? Icons.favorite
                                 : Icons.favorite_border,
                             color: isFavorited
-                                ? AppColors.green
-                                : AppColors.grey,
+                                ? theme.colorScheme.secondary
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
                           iconSize: 28,
                           onPressed: () {
@@ -264,12 +266,15 @@ class _FullPlayerState extends State<FullPlayer> {
                                   isFavorited
                                       ? 'Added to favorites'
                                       : 'Removed from favorites',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: AppColors.white),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: isFavorited
+                                        ? theme.colorScheme.onSecondary
+                                        : theme.colorScheme.onSurface,
+                                  ),
                                 ),
                                 backgroundColor: isFavorited
-                                    ? AppColors.green
-                                    : AppColors.grey,
+                                    ? theme.colorScheme.secondary
+                                    : theme.colorScheme.onSurfaceVariant,
                               ),
                             );
                           },
@@ -281,19 +286,19 @@ class _FullPlayerState extends State<FullPlayer> {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                            color: AppColors.player.controls,
+                            color: theme.colorScheme.primary,
                             borderRadius: BorderRadius.circular(32),
                           ),
                           child: isLoading
-                              ? const Center(
+                              ? Center(
                                   child: CircularProgressIndicator(
-                                    color: AppColors.white,
+                                    color: theme.colorScheme.onPrimary,
                                     strokeWidth: 2,
                                   ),
                                 )
                               : IconButton(
                                   iconSize: 40,
-                                  color: AppColors.white,
+                                  color: theme.colorScheme.onPrimary,
                                   icon: Icon(
                                     isPlaying ? Icons.pause : Icons.play_arrow,
                                   ),
@@ -306,7 +311,10 @@ class _FullPlayerState extends State<FullPlayer> {
 
                         // Share
                         IconButton(
-                          icon: const Icon(Icons.share, color: AppColors.grey),
+                          icon: Icon(
+                            Icons.share,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                           iconSize: 28,
                           onPressed: () async {
                             final sTitle = currentStation.title ?? 'ODAN FM';
