@@ -18,34 +18,23 @@ class _ChatColors {
 
 class AppColors {
   // ========== Light Theme ==========
-  static const Color lightPrimary = Color(0xFF1976D2); // Medium blue
-  static const Color lightBackground = Color(0xFF0D47A1); // Darker blue
-  static const Color lightSurface = Color(
-    0xFF0D1B2A,
-  ); // Very dark blue (almost black)
+  static const Color lightPrimary = Color(0xFF6750A4); // Material 3 purple
+  static const Color lightBackground = Color(0xFFF8F9FA); // Soft gray background
+  static const Color lightSurface = Color(0xFFFFFFFF); // White surface
 
   // Light Text Colors
-  static const Color lightTextPrimary = Color.fromARGB(
-    255,
-    35,
-    35,
-    35,
-  ); // White for better contrast
-  static const Color lightTextSecondary = Color(0xFFBBDEFB); // Light blue
-  static const Color lightTextTertiary = Color(0xFF90CAF9); // Lighter blue
+  static const Color lightTextPrimary = Color(0xFF1C1B1F); // Near-black for contrast
+  static const Color lightTextSecondary = Color(0xFF49454F); // Dark gray
+  static const Color lightTextTertiary = Color(0xFF79747E); // Medium gray
 
   // Light UI Colors
-  static const Color lightCardSurface = Color(
-    0x1AFFFFFF,
-  ); // Semi-transparent white
-  static const Color lightDivider = Color(0x33FFFFFF); // Semi-transparent white
-  static const Color lightBorder = Color(
-    0x33FFFFFF,
-  ); // Semi-transparent white border
-  static const Color lightSentBubble = Color(0xFF1976D2); // Medium blue
+  static const Color lightCardSurface = Color(0xFFFFFFFF); // White card surface
+  static const Color lightDivider = Color(0x1F000000); // 12% black divider
+  static const Color lightBorder = Color(0x33000000); // 20% black border
+  static const Color lightSentBubble = lightPrimary; // Primary purple
   static const Color lightSentBubbleText = Color(0xFFFFFFFF); // White text
-  static const Color lightReceivedBubble = Color(0xFF1E1E1E); // Dark gray
-  static const Color lightReceivedBubbleText = Color(0xFFFFFFFF); // White text
+  static const Color lightReceivedBubble = Color(0xFFE0E0E0); // Light gray
+  static const Color lightReceivedBubbleText = lightTextPrimary; // Dark text
 
   // ========== Dark Theme ==========
   static const Color darkPrimary = Color(
