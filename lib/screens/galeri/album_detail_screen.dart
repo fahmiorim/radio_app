@@ -6,7 +6,7 @@ import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/models/album_model.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class AlbumDetailScreen extends StatefulWidget {
   final String slug;
@@ -68,39 +68,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
       backgroundColor: Theme.of(context).colorScheme.background,
       body: Stack(
         children: [
-          // MiniPlayer di sini akan muncul di atas konten
-          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
-          // Background dekoratif
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Theme.of(context).colorScheme.surface,
-                    Theme.of(context).colorScheme.background,
-                  ],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
 
           Consumer<AlbumProvider>(
             builder: (context, provider, _) {
@@ -128,6 +96,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               return _buildAlbumDetail(context, albumDetail);
             },
           ),
+
+          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
         ],
       ),
     );

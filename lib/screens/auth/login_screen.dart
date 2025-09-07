@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -182,20 +181,8 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // Background gradient
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.background,
-                    ],
-                  ),
-                ),
-                child: SafeArea(
+            const AppBackground(),
+            SafeArea(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(

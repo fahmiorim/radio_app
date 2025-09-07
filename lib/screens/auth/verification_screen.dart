@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -145,7 +145,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
     if (_initialLoading) {
       return Scaffold(
-        backgroundColor: colorScheme.primary,
         body: Center(
           child: CircularProgressIndicator(color: colorScheme.onPrimary),
         ),
@@ -153,21 +152,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.primary,
       body: Stack(
         children: [
-          // Background gradient
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [colorScheme.primary, colorScheme.background],
-                ),
-              ),
-            ),
-          ),
+          const AppBackground(),
 
           // Content
           SafeArea(
