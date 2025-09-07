@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email; // bisa diisi otomatis dari argumen
@@ -72,12 +73,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Reset Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
+      body: Stack(
+        children: [
+          const AppBackground(),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
               TextFormField(
                 controller: _tokenC,
                 decoration: const InputDecoration(
@@ -135,9 +139,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       : const Text('Reset Password'),
                 ),
               ),
-            ],
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
