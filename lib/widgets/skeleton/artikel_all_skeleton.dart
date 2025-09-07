@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../config/app_colors.dart';
 
 class ArtikelAllSkeleton extends StatelessWidget {
   final int itemCount;
@@ -9,6 +8,7 @@ class ArtikelAllSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: itemCount,
@@ -20,13 +20,13 @@ class ArtikelAllSkeleton extends StatelessWidget {
             children: [
               // Thumbnail shimmer
               Shimmer.fromColors(
-                baseColor: AppColors.grey850,
-                highlightColor: AppColors.grey700,
+                baseColor: theme.colorScheme.surfaceVariant,
+                highlightColor: theme.colorScheme.surface,
                 child: Container(
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: AppColors.grey850,
+                    color: theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -39,12 +39,12 @@ class ArtikelAllSkeleton extends StatelessWidget {
                   children: [
                     // Judul shimmer
                     Shimmer.fromColors(
-                      baseColor: AppColors.grey850,
-                      highlightColor: AppColors.grey700,
+                      baseColor: theme.colorScheme.surfaceVariant,
+                      highlightColor: theme.colorScheme.surface,
                       child: Container(
                         width: double.infinity,
                         height: 16,
-                        color: AppColors.grey850,
+                        color: theme.colorScheme.surfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -52,22 +52,22 @@ class ArtikelAllSkeleton extends StatelessWidget {
                     Row(
                       children: [
                         Shimmer.fromColors(
-                          baseColor: AppColors.grey850,
-                          highlightColor: AppColors.grey700,
+                          baseColor: theme.colorScheme.surfaceVariant,
+                          highlightColor: theme.colorScheme.surface,
                           child: Container(
                             width: 60,
                             height: 12,
-                            color: AppColors.grey850,
+                            color: theme.colorScheme.surfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 6),
                         Shimmer.fromColors(
-                          baseColor: AppColors.grey850,
-                          highlightColor: AppColors.grey700,
+                          baseColor: theme.colorScheme.surfaceVariant,
+                          highlightColor: theme.colorScheme.surface,
                           child: Container(
                             width: 40,
                             height: 12,
-                            color: AppColors.grey850,
+                            color: theme.colorScheme.surfaceVariant,
                           ),
                         ),
                       ],
@@ -75,12 +75,12 @@ class ArtikelAllSkeleton extends StatelessWidget {
                     const SizedBox(height: 4),
                     // Date shimmer
                     Shimmer.fromColors(
-                      baseColor: AppColors.grey850,
-                      highlightColor: AppColors.grey700,
+                      baseColor: theme.colorScheme.surfaceVariant,
+                      highlightColor: theme.colorScheme.surface,
                       child: Container(
                         width: 80,
                         height: 12,
-                        color: AppColors.grey850,
+                        color: theme.colorScheme.surfaceVariant,
                       ),
                     ),
                   ],

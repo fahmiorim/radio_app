@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../config/app_colors.dart';
 
 class ArtikelSkeleton extends StatelessWidget {
   final int itemCount;
@@ -9,6 +8,7 @@ class ArtikelSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SizedBox(
       height: 200,
       child: ListView.builder(
@@ -24,13 +24,13 @@ class ArtikelSkeleton extends StatelessWidget {
               children: [
                 // shimmer gambar
                 Shimmer.fromColors(
-                  baseColor: AppColors.grey850,
-                  highlightColor: AppColors.grey700,
+                  baseColor: theme.colorScheme.surfaceVariant,
+                  highlightColor: theme.colorScheme.surface,
                   child: Container(
                     height: 150,
                     width: 160,
                     decoration: BoxDecoration(
-                      color: AppColors.grey850,
+                      color: theme.colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -38,23 +38,23 @@ class ArtikelSkeleton extends StatelessWidget {
                 const SizedBox(height: 8),
                 // shimmer judul
                 Shimmer.fromColors(
-                  baseColor: AppColors.grey850,
-                  highlightColor: AppColors.grey700,
+                  baseColor: theme.colorScheme.surfaceVariant,
+                  highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 120,
                     height: 16,
-                    color: AppColors.grey850,
+                    color: theme.colorScheme.surfaceVariant,
                   ),
                 ),
                 const SizedBox(height: 4),
                 // shimmer tanggal
                 Shimmer.fromColors(
-                  baseColor: AppColors.grey850,
-                  highlightColor: AppColors.grey700,
+                  baseColor: theme.colorScheme.surfaceVariant,
+                  highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 80,
                     height: 12,
-                    color: AppColors.grey850,
+                    color: theme.colorScheme.surfaceVariant,
                   ),
                 ),
               ],

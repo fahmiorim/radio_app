@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class EventSkeleton extends StatelessWidget {
   const EventSkeleton({super.key});
@@ -30,11 +29,12 @@ class EventCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Shimmer.fromColors(
-      baseColor: AppColors.grey800,
-      highlightColor: AppColors.grey700,
+      baseColor: theme.colorScheme.surfaceVariant,
+      highlightColor: theme.colorScheme.surface,
       child: Card(
-        color: AppColors.darkSurface.withOpacity(0.9),
+        color: theme.colorScheme.surface.withOpacity(0.9),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
         child: Padding(
@@ -47,8 +47,8 @@ class EventCardSkeleton extends StatelessWidget {
                 aspectRatio: 16 / 9,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.white24,
-                    borderRadius: BorderRadius.all(Radius.circular(8)),
+                    color: theme.colorScheme.onSurface.withOpacity(0.1),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
               ),
@@ -58,7 +58,7 @@ class EventCardSkeleton extends StatelessWidget {
                 height: 20,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: AppColors.white24,
+                  color: theme.colorScheme.onSurface.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -68,7 +68,7 @@ class EventCardSkeleton extends StatelessWidget {
                 height: 16,
                 width: 120,
                 decoration: BoxDecoration(
-                  color: AppColors.white24,
+                  color: theme.colorScheme.onSurface.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
