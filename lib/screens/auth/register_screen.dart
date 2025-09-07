@@ -4,7 +4,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -81,7 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Anda harus menyetujui Syarat & Ketentuan'),
-            backgroundColor: AppColors.orange700,
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -406,13 +405,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Strength bar
                       LinearProgressIndicator(
                         value: strength,
-                        backgroundColor: AppColors.grey800,
+                        backgroundColor: theme.colorScheme.surfaceVariant,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          strength < 0.3
-                              ? colorScheme.error
-                              : (strength < 0.7
-                                  ? AppColors.orange
-                                  : AppColors.green),
+                          strength < 0.7
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.primary,
                         ),
                       ),
                       const SizedBox(height: 8),
