@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key});
@@ -6,45 +7,28 @@ class AppBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bubbleOpacity = theme.brightness == Brightness.dark ? 0.05 : 0.1;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return SizedBox.expand(
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.background,
-            ],
-          ),
-        ),
+        color: theme.colorScheme.background,
         child: Stack(
           children: [
-            Positioned(
-              top: -100,
-              right: -100,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.onPrimary.withOpacity(bubbleOpacity),
-                ),
-              ),
+            AppTheme.bubble(
+              context: context,
+              size: 200,
+              top: -50,
+              right: -50,
+              opacity: isDarkMode ? 0.1 : 0.03,
+              usePrimaryColor: true,
             ),
-            Positioned(
-              bottom: -150,
-              left: -50,
-              child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.onPrimary.withOpacity(bubbleOpacity),
-                ),
-              ),
+            AppTheme.bubble(
+              context: context,
+              size: 150,
+              bottom: -30,
+              left: -30,
+              opacity: isDarkMode ? 0.08 : 0.03,
+              usePrimaryColor: true,
             ),
           ],
         ),
