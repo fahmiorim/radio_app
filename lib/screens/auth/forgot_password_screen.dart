@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -30,11 +29,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
 
+    final theme = Theme.of(context);
     if (err == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link reset password telah dikirim. Cek email Anda.'),
-          backgroundColor: AppColors.green,
+        SnackBar(
+          content: const Text(
+              'Link reset password telah dikirim. Cek email Anda.'),
+          backgroundColor: theme.colorScheme.primary,
         ),
       );
       // Arahkan ke layar verifikasi/info atau kembali ke login
@@ -44,16 +45,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         arguments: _emailC.text.trim(),
       );
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: AppColors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: theme.colorScheme.error,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Lupa Password')),
       body: Container(
@@ -61,7 +64,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [colorScheme.primary, colorScheme.background],
+            colors: [theme.colorScheme.primary, theme.colorScheme.background],
           ),
         ),
         child: Center(
@@ -114,16 +117,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           height: 48,
                           child: ElevatedButton(
                             onPressed: _loading ? null : _submit,
-                              child: _loading
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: colorScheme.onPrimary,
-                                      ),
-                                    )
-                                  : const Text('Kirim Link Reset'),
+                            child: _loading
+                                ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: theme.colorScheme.onPrimary,
+                                    ),
+                                  )
+                                : const Text('Kirim Link Reset'),
                           ),
                         ),
 
