@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -142,6 +143,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     if (_initialLoading) {
       return Scaffold(
@@ -153,23 +155,33 @@ class _VerificationScreenState extends State<VerificationScreen> {
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.primary,
       body: Stack(
         children: [
-          // Background gradient
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [colorScheme.primary, colorScheme.background],
-                ),
+              color: colorScheme.background,
+              child: Stack(
+                children: [
+                  AppTheme.bubble(
+                    context: context,
+                    size: 200,
+                    top: -50,
+                    right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 150,
+                    bottom: -30,
+                    left: -30,
+                    opacity: isDarkMode ? 0.08 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                ],
               ),
             ),
           ),
-
-          // Content
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -181,7 +193,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       'Verifikasi Email',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.onPrimary,
+                        color: colorScheme.onBackground,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -190,10 +202,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: colorScheme.onPrimary.withOpacity(0.1),
+                        color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: colorScheme.onPrimary.withOpacity(0.2),
+                          color: colorScheme.outline.withOpacity(0.2),
                           width: 1,
                         ),
                       ),
@@ -244,18 +256,17 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Kirim ulang
                     SizedBox(
                       height: 50,
                       child: OutlinedButton(
                         onPressed: (_canResend && !_resending) ? _resend : null,
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: colorScheme.onPrimary,
+                          foregroundColor: colorScheme.primary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           side: BorderSide(
-                            color: colorScheme.onPrimary,
+                            color: colorScheme.primary,
                             width: 1.5,
                           ),
                         ),
@@ -265,7 +276,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: colorScheme.onPrimary,
+                                  color: colorScheme.primary,
                                 ),
                               )
                             : Text(
@@ -277,7 +288,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // Cek status (manual only)
                     SizedBox(
                       height: 50,
                       child: ElevatedButton.icon(
@@ -308,7 +318,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       child: Text(
                         'Kembali ke Halaman Login',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onPrimary,
+                          color: colorScheme.primary,
                           decoration: TextDecoration.underline,
                         ),
                       ),

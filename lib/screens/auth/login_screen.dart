@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -171,6 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final loading = context.watch<AuthProvider>().loading;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return PopScope(
       canPop: false,
@@ -182,84 +184,96 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // Background gradient
+            // Background bubbles
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      theme.colorScheme.primary,
-                      theme.colorScheme.background,
-                    ],
-                  ),
+                color: theme.colorScheme.background,
+                child: Stack(
+                  children: [
+                    AppTheme.bubble(
+                      context: context,
+                      size: 200,
+                      top: -50,
+                      right: -50,
+                      opacity: isDarkMode ? 0.1 : 0.03,
+                      usePrimaryColor: true,
+                    ),
+                    AppTheme.bubble(
+                      context: context,
+                      size: 150,
+                      bottom: -30,
+                      left: -30,
+                      opacity: isDarkMode ? 0.08 : 0.03,
+                      usePrimaryColor: true,
+                    ),
+                  ],
                 ),
-                child: SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const SizedBox(height: 6),
+              ),
+            ),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 6),
 
-                        // Logo
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.asset(
-                            'assets/logo-white.png',
-                            width: 96,
-                            height: 96,
-                            fit: BoxFit.contain,
+                    // Logo
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/logo-white.png',
+                        width: 96,
+                        height: 96,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+                    Text(
+                      'Selamat datang',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
-                        ),
-
-                        const SizedBox(height: 8),
-                        Text(
-                          'Selamat datang',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: Theme.of(context).colorScheme.onSurface,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Masuk untuk melanjutkan ke Radio Odan',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withOpacity(.7),
-                              ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Card Form
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Masuk untuk melanjutkan ke Radio Odan',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
-                                .surface
-                                .withOpacity(0.92),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.08),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                                .onSurface
+                                .withOpacity(.7),
                           ),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              children: [
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Card Form
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surface
+                            .withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
                                 TextFormField(
                                   controller: _emailC,
                                   style: Theme.of(context)

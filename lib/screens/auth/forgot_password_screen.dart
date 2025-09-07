@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -57,94 +58,115 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(title: const Text('Lupa Password')),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [theme.colorScheme.primary, theme.colorScheme.background],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Container(
+              color: theme.colorScheme.background,
+              child: Stack(
+                children: [
+                  AppTheme.bubble(
+                    context: context,
+                    size: 200,
+                    top: -50,
+                    right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 150,
+                    bottom: -30,
+                    left: -30,
+                    opacity: isDarkMode ? 0.08 : 0.03,
+                    usePrimaryColor: true,
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 8),
-                        Text(
-                          'Atur Ulang Password',
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Masukkan email yang terdaftar. Kami akan mengirim link reset password.',
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 16),
-
-                        TextFormField(
-                          controller: _emailC,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            'Atur Ulang Password',
+                            style: theme.textTheme.titleLarge,
                           ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty)
-                              return 'Email wajib diisi';
-                            if (!v.contains('@'))
-                              return 'Format email tidak valid';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _submit,
-                            child: _loading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: theme.colorScheme.onPrimary,
-                                    ),
-                                  )
-                                : const Text('Kirim Link Reset'),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Masukkan email yang terdaftar. Kami akan mengirim link reset password.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium,
                           ),
-                        ),
+                          const SizedBox(height: 16),
 
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: _loading
-                              ? null
-                              : () => Navigator.pop(context),
-                          child: const Text('Kembali'),
-                        ),
-                      ],
+                          TextFormField(
+                            controller: _emailC,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                              prefixIcon: Icon(Icons.email_outlined),
+                            ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty)
+                                return 'Email wajib diisi';
+                              if (!v.contains('@'))
+                                return 'Format email tidak valid';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: _loading ? null : _submit,
+                              child: _loading
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: theme.colorScheme.onPrimary,
+                                      ),
+                                    )
+                                  : const Text('Kirim Link Reset'),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: _loading
+                                ? null
+                                : () => Navigator.pop(context),
+                            child: const Text('Kembali'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -4,7 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -274,52 +274,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final colorScheme = theme.colorScheme;
     final loading = context.watch<AuthProvider>().loading;
     final strength = _passwordStrength(_passC.text);
+    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background gradient + circle waves
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [theme.colorScheme.primary, theme.colorScheme.background],
-                ),
-              ),
+              color: theme.colorScheme.background,
               child: Stack(
                 children: [
-                  Positioned(
-                    top: -100,
-                    right: -100,
-                    child: Container(
-                      width: 300,
-                      height: 300,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.white.withOpacity(0.1),
-                      ),
-                    ),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 200,
+                    top: -50,
+                    right: -50,
+                    opacity: isDarkMode ? 0.1 : 0.03,
+                    usePrimaryColor: true,
                   ),
-                  Positioned(
-                    bottom: -150,
-                    left: -50,
-                    child: Container(
-                      width: 400,
-                      height: 400,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.white.withOpacity(0.1),
-                      ),
-                    ),
+                  AppTheme.bubble(
+                    context: context,
+                    size: 150,
+                    bottom: -30,
+                    left: -30,
+                    opacity: isDarkMode ? 0.08 : 0.03,
+                    usePrimaryColor: true,
                   ),
                 ],
               ),
             ),
           ),
-
-          // Content
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -333,7 +317,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Buat Akun Baru',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          color: colorScheme.onPrimary,
+                          color: colorScheme.onBackground,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -342,15 +326,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Daftar untuk melanjutkan ke Radio Odan',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.white.withOpacity(0.9),
+                          color: colorScheme.onBackground.withOpacity(0.7),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Name
                       TextFormField(
                         controller: _nameC,
-                        style: TextStyle(color: colorScheme.onPrimary),
+                        style: TextStyle(color: colorScheme.onBackground),
                         decoration: _inputDecoration(
                           context,
                           label: 'Nama Lengkap',
@@ -361,11 +344,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Email
                       TextFormField(
                         controller: _emailC,
                         keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(color: colorScheme.onPrimary),
+                        style: TextStyle(color: colorScheme.onBackground),
                         decoration: _inputDecoration(
                           context,
                           label: 'Email',
@@ -376,11 +358,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Password
                       TextFormField(
                         controller: _passC,
                         obscureText: _obscure,
-                        style: TextStyle(color: colorScheme.onPrimary),
+                        style: TextStyle(color: colorScheme.onBackground),
                         decoration: _inputDecoration(
                           context,
                           label: 'Password',
@@ -398,12 +379,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         validator: _validatePassword,
-                        onChanged: (_) =>
-                            setState(() {}), // update strength bar
+                        onChanged: (_) => setState(() {}),
                       ),
                       const SizedBox(height: 8),
 
-                      // Strength bar
                       LinearProgressIndicator(
                         value: strength,
                         backgroundColor: theme.colorScheme.surfaceVariant,
@@ -415,11 +394,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Confirm
                       TextFormField(
                         controller: _confirmC,
                         obscureText: _obscure,
-                        style: TextStyle(color: colorScheme.onPrimary),
+                        style: TextStyle(color: colorScheme.onBackground),
                         decoration: _inputDecoration(
                           context,
                           label: 'Konfirmasi Password',
@@ -430,18 +408,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Terms
                       Row(
                         children: [
                           Checkbox(
                             value: _agreeTerms,
                             onChanged: loading
                                 ? null
-                                : (v) =>
-                                      setState(() => _agreeTerms = v ?? false),
+                                : (v) => setState(() => _agreeTerms = v ?? false),
                             fillColor: WidgetStateProperty.resolveWith<Color>(
                               (states) => states.contains(WidgetState.selected)
-                                  ? colorScheme.onPrimary
+                                  ? colorScheme.primary
                                   : colorScheme.surface,
                             ),
                             side: BorderSide(
@@ -456,13 +432,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   TextSpan(
                                     text: 'Saya menyetujui ',
                                     style: TextStyle(
-                                        color: colorScheme.onBackground
-                                            .withOpacity(0.7)),
+                                      color: colorScheme.onBackground
+                                          .withOpacity(0.7),
+                                    ),
                                   ),
                                   TextSpan(
                                     text: 'Syarat & Ketentuan',
                                     style: TextStyle(
-                                      color: colorScheme.onPrimary,
+                                      color: colorScheme.primary,
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
                                     ),
@@ -470,13 +447,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   TextSpan(
                                     text: ' dan ',
                                     style: TextStyle(
-                                        color: colorScheme.onBackground
-                                            .withOpacity(0.7)),
+                                      color: colorScheme.onBackground
+                                          .withOpacity(0.7),
+                                    ),
                                   ),
                                   TextSpan(
                                     text: 'Kebijakan Privasi',
                                     style: TextStyle(
-                                      color: colorScheme.onPrimary,
+                                      color: colorScheme.primary,
                                       fontWeight: FontWeight.bold,
                                       decoration: TextDecoration.underline,
                                     ),
@@ -489,7 +467,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Register button
                       ElevatedButton(
                         onPressed: loading ? null : _register,
                         style: ElevatedButton.styleFrom(
@@ -522,34 +499,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Divider
                       Row(
                         children: [
                           Expanded(
-                              child: Divider(
-                                  color:
-                                      colorScheme.onBackground.withOpacity(0.7))),
+                            child: Divider(
+                              color: colorScheme.onBackground.withOpacity(0.7),
+                            ),
+                          ),
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'atau daftar dengan',
                               style: TextStyle(
-                                color:
-                                    colorScheme.onBackground.withOpacity(0.7),
+                                color: colorScheme.onBackground.withOpacity(0.7),
                                 fontSize: 14,
                               ),
                             ),
                           ),
                           Expanded(
-                              child: Divider(
-                                  color:
-                                      colorScheme.onBackground.withOpacity(0.7))),
+                            child: Divider(
+                              color: colorScheme.onBackground.withOpacity(0.7),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
 
-                      // Google (placeholder)
                       OutlinedButton.icon(
                         onPressed: loading ? null : _registerWithGoogle,
                         icon: Image.asset(
@@ -560,7 +536,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         label: Text(
                           'Google',
                           style: TextStyle(
-                            color: colorScheme.onPrimary,
+                            color: colorScheme.onBackground,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -576,15 +552,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Link ke login
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
                             'Sudah punya akun? ',
                             style: TextStyle(
-                                color:
-                                    colorScheme.onBackground.withOpacity(0.7)),
+                                color: colorScheme.onBackground.withOpacity(0.7)),
                           ),
                           TextButton(
                             onPressed: loading
@@ -601,7 +575,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Text(
                               'Masuk di sini',
                               style: TextStyle(
-                                color: colorScheme.onPrimary,
+                                color: colorScheme.primary,
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
                               ),
@@ -615,15 +589,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-
-          // Loading overlay
           if (loading)
             Container(
               color: colorScheme.onBackground.withOpacity(0.26),
               child: Center(
                 child: CircularProgressIndicator(
                   valueColor:
-                      AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
+                      AlwaysStoppedAnimation<Color>(colorScheme.primary),
                 ),
               ),
             ),
