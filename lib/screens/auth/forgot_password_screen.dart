@@ -53,14 +53,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Lupa Password')),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.lightPrimary, AppColors.lightBackground],
+            colors: [colorScheme.primary, colorScheme.background],
           ),
         ),
         child: Center(
@@ -113,16 +114,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           height: 48,
                           child: ElevatedButton(
                             onPressed: _loading ? null : _submit,
-                            child: _loading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.white,
-                                    ),
-                                  )
-                                : const Text('Kirim Link Reset'),
+                              child: _loading
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                                    )
+                                  : const Text('Kirim Link Reset'),
                           ),
                         ),
 
