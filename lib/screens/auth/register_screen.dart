@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -274,36 +275,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final colorScheme = theme.colorScheme;
     final loading = context.watch<AuthProvider>().loading;
     final strength = _passwordStrength(_passC.text);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: theme.colorScheme.background,
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.08 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(

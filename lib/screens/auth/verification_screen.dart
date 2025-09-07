@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class VerificationScreen extends StatefulWidget {
   final String email;
@@ -143,7 +144,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     if (_initialLoading) {
       return Scaffold(
@@ -157,31 +157,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: colorScheme.background,
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.08 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
