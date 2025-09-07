@@ -1,55 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 
 class AppBackground extends StatelessWidget {
-  const AppBackground({super.key});
+  const AppBackground({
+    super.key,
+    this.showTopRightBubble = true,
+    this.showBottomLeftBubble = true,
+    this.showCenterBubble = true,
+  });
+
+  final bool showTopRightBubble;
+  final bool showBottomLeftBubble;
+  final bool showCenterBubble;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bubbleOpacity = theme.brightness == Brightness.dark ? 0.05 : 0.1;
+    final isDarkMode = theme.brightness == Brightness.dark;
 
-    return SizedBox.expand(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.background,
-            ],
+    return Stack(
+      children: [
+        Container(color: theme.colorScheme.background),
+        if (showTopRightBubble)
+          AppTheme.bubble(
+            context: context,
+            size: 200,
+            top: -50,
+            right: -50,
+            opacity: isDarkMode ? 0.1 : 0.03,
+            usePrimaryColor: true,
           ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -100,
-              right: -100,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.onPrimary.withOpacity(bubbleOpacity),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: -150,
-              left: -50,
-              child: Container(
-                width: 400,
-                height: 400,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: theme.colorScheme.onPrimary.withOpacity(bubbleOpacity),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+        if (showBottomLeftBubble)
+          AppTheme.bubble(
+            context: context,
+            size: 150,
+            bottom: -30,
+            left: -30,
+            opacity: isDarkMode ? 0.1 : 0.03,
+            usePrimaryColor: true,
+          ),
+        if (showCenterBubble)
+          AppTheme.bubble(
+            context: context,
+            size: 50,
+            top: 100,
+            left: 100,
+            opacity: isDarkMode ? 0.08 : 0.02,
+            usePrimaryColor: true,
+          ),
+      ],
     );
   }
 }
-
