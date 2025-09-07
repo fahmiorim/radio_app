@@ -228,7 +228,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               height: 200,
-                              color: AppColors.grey800,
+                              color: Theme.of(context).colorScheme.surface,
                               alignment: Alignment.center,
                               child: Icon(
                                 Icons.broken_image,
