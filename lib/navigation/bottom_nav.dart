@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 import 'package:radio_odan_app/providers/live_chat_provider.dart';
 import 'package:radio_odan_app/screens/home/home_screen.dart';
@@ -56,8 +55,8 @@ class _BottomNavState extends State<BottomNav> {
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                   colors: [
-                    AppColors.black.withOpacity(0.9),
-                    AppColors.transparent,
+                    Theme.of(context).colorScheme.onSurface,
+                    Theme.of(context).colorScheme.background,
                   ],
                 ),
               ),
@@ -73,7 +72,8 @@ class _BottomNavState extends State<BottomNav> {
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor: AppColors.grey600,
+            unselectedItemColor:
+                Theme.of(context).colorScheme.onSurfaceVariant,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.normal,
@@ -89,7 +89,10 @@ class _BottomNavState extends State<BottomNav> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: AppColors.grey.withOpacity(0.1),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
