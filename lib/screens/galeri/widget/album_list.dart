@@ -130,10 +130,12 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
-                        return Container(color: AppColors.grey300);
+                        return Container(
+                          color: Theme.of(context).colorScheme.surfaceVariant,
+                        );
                       },
                       errorBuilder: (_, __, ___) => Container(
-                        color: AppColors.grey200,
+                        color: Theme.of(context).colorScheme.surfaceVariant,
                         alignment: Alignment.center,
                         child: const Icon(Icons.broken_image, size: 32),
                       ),
@@ -167,7 +169,10 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.black.withOpacity(0.55),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.55),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
@@ -225,7 +230,8 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                   Text(
                     '${album.photosCount ?? 0} Foto',
                     style: TextStyle(
-                      color: AppColors.grey400,
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                       height: 1.2,
                     ),
