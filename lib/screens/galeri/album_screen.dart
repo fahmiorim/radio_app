@@ -8,8 +8,8 @@ import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/models/album_model.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'album_detail_screen.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class AllAlbumsScreen extends StatefulWidget {
   const AllAlbumsScreen({super.key});
@@ -132,36 +132,10 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   Widget _buildBody() {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Stack(
       children: [
-        // Background
-        Positioned.fill(
-          child: Container(
-            color: colors.background,
-            child: Stack(
-              children: [
-                AppTheme.bubble(
-                  context: context,
-                  size: 200,
-                  top: -50,
-                  right: -50,
-                  opacity: isDarkMode ? 0.1 : 0.03,
-                  usePrimaryColor: true,
-                ),
-                AppTheme.bubble(
-                  context: context,
-                  size: 150,
-                  bottom: -30,
-                  left: -30,
-                  opacity: isDarkMode ? 0.15 : 0.04,
-                  usePrimaryColor: true,
-                ),
-              ],
-            ),
-          ),
-        ),
+        const AppBackground(),
 
         Consumer<AlbumProvider>(
           builder: (context, albumProvider, _) {

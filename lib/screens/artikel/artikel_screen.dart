@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/skeleton/artikel_all_skeleton.dart';
 import 'artikel_detail_screen.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class ArtikelScreen extends StatefulWidget {
   const ArtikelScreen({super.key});
@@ -111,7 +111,6 @@ class _ArtikelScreenState extends State<ArtikelScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -121,33 +120,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
       ),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: theme.colorScheme.background,
-              child: Stack(
-                children: [
-                  // Top-right bubble
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: 50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  // Bottom-left bubble
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.08 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           Consumer<ArtikelProvider>(builder: (_, p, __) => _buildBody(p)),
         ],
       ),

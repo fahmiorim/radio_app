@@ -11,7 +11,7 @@ import 'package:radio_odan_app/models/video_model.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class AllVideosScreen extends StatefulWidget {
   const AllVideosScreen({Key? key}) : super(key: key);
@@ -145,7 +145,6 @@ class _AllVideosScreenState extends State<AllVideosScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -156,43 +155,10 @@ class _AllVideosScreenState extends State<AllVideosScreen>
       ),
       body: Stack(
         children: [
-          // Background bubbles
-          Positioned.fill(
-            child: Container(
-              color: colors.background,
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.15 : 0.04,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 80,
-                    top: 100,
-                    left: 100,
-                    opacity: isDarkMode ? 0.08 : 0.02,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+            const AppBackground(),
 
-          // Content
-          Positioned.fill(
+            // Content
+            Positioned.fill(
             child: Consumer<VideoProvider>(
               builder: (context, vp, _) {
                 return RefreshIndicator(
@@ -209,9 +175,6 @@ class _AllVideosScreenState extends State<AllVideosScreen>
       bottomNavigationBar: const MiniPlayer(),
     );
   }
-
-  // _bubble method removed - using AppTheme.bubble instead
-
   Widget _buildLoadingSkeleton() {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
