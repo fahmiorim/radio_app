@@ -4,7 +4,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/loading/loading_widget.dart';
@@ -91,7 +91,6 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
         final content = artikel.content.trim();
         final isEmptyContent =
             content.isEmpty || content == '<p></p>' || content == '<div></div>';
-        final colorScheme = Theme.of(context).colorScheme;
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -120,41 +119,23 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                     ),
                     child: Stack(
                       children: [
-                        Positioned(
+                        AppTheme.bubble(
+                          context: context,
+                          size: 200,
                           top: -50,
                           right: -50,
-                          child: Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.primary.withOpacity(0.1),
-                            ),
-                          ),
                         ),
-                        Positioned(
+                        AppTheme.bubble(
+                          context: context,
+                          size: 150,
                           bottom: -30,
                           left: -30,
-                          child: Container(
-                            width: 150,
-                            height: 150,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.secondary.withOpacity(0.1),
-                            ),
-                          ),
                         ),
-                        Positioned(
+                        AppTheme.bubble(
+                          context: context,
+                          size: 50,
                           top: 100,
                           left: 100,
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.tertiary.withOpacity(0.1),
-                            ),
-                          ),
                         ),
                       ],
                     ),
