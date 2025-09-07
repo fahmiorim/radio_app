@@ -59,7 +59,11 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             if (icon != null)
               Row(
                 children: [
-                  Icon(icon, color: AppColors.lightTextSecondary, size: 20),
+                  Icon(
+                    icon,
+                    color: Theme.of(context).colorScheme.onSurface,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     title,
@@ -116,11 +120,11 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
         child: url.isEmpty
             ? Container(
                 color: Theme.of(context).colorScheme.surface,
-                child: const Center(
+                child: Center(
                   child: Icon(
                     Icons.radio,
                     size: 80,
-                    color: AppColors.lightTextSecondary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               )
@@ -136,11 +140,11 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                 ),
                 errorWidget: (_, __, ___) => Container(
                   color: Theme.of(context).colorScheme.surface,
-                  child: const Center(
+                  child: Center(
                     child: Icon(
                       Icons.radio,
                       size: 80,
-                      color: AppColors.lightTextSecondary,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -251,10 +255,11 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.radio,
                         size: 64,
-                        color: AppColors.lightTextSecondary,
+                        color:
+                            Theme.of(context).colorScheme.onBackground,
                       ),
                       const SizedBox(height: 16),
                       Text(
