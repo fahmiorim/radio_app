@@ -8,6 +8,7 @@ import 'package:radio_odan_app/screens/chat/widget/chat_message_item.dart';
 import 'package:radio_odan_app/screens/chat/widget/message_input_field.dart';
 import 'package:radio_odan_app/screens/chat/widget/unread_messages_label.dart';
 import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;
@@ -234,6 +235,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             ),
             body: Stack(
               children: [
+                const AppBackground(),
                 if (!prov.isLive)
                   const NoLivePlaceholder()
                 else
