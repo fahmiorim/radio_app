@@ -91,6 +91,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
         final content = artikel.content.trim();
         final isEmptyContent =
             content.isEmpty || content == '<p></p>' || content == '<div></div>';
+        final colorScheme = Theme.of(context).colorScheme;
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -127,9 +128,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 200,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.05),
+                              color: colorScheme.primary.withOpacity(0.1),
                             ),
                           ),
                         ),
@@ -141,9 +140,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 150,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.05),
+                              color: colorScheme.secondary.withOpacity(0.1),
                             ),
                           ),
                         ),
@@ -155,9 +152,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             height: 50,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withOpacity(0.05),
+                              color: colorScheme.tertiary.withOpacity(0.1),
                             ),
                           ),
                         ),
