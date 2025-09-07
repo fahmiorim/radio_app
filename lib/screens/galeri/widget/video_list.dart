@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:collection/collection.dart';
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/models/video_model.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'package:radio_odan_app/widgets/skeleton/video_list_skeleton.dart';
@@ -118,11 +117,8 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
         final items = videoProvider.recentVideos;
 
         final colorScheme = Theme.of(context).colorScheme;
-        final isDark = colorScheme.brightness == Brightness.dark;
-        final textPrimaryColor =
-            isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary;
-        final textSecondaryColor =
-            isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+        final textPrimaryColor = colorScheme.onSurface;
+        final textSecondaryColor = colorScheme.onSurfaceVariant;
         final overlayColor = colorScheme.surface.withOpacity(0.6);
 
         return Stack(
