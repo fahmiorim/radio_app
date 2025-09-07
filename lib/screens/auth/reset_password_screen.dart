@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email; // bisa diisi otomatis dari argumen
@@ -70,75 +71,88 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Reset Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _tokenC,
-                decoration: const InputDecoration(
-                  labelText: 'Token dari email',
-                  prefixIcon: Icon(Icons.confirmation_number_outlined),
-                ),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Token wajib diisi' : null,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _passC,
-                obscureText: _obscure,
-                decoration: InputDecoration(
-                  labelText: 'Password baru',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscure ? Icons.visibility : Icons.visibility_off,
+      return Scaffold(
+        appBar: AppBar(title: const Text('Reset Password')),
+        body: Stack(
+          children: [
+            const AppBackground(),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: ListView(
+                  children: [
+                    TextFormField(
+                      controller: _tokenC,
+                      decoration: const InputDecoration(
+                        labelText: 'Token dari email',
+                        prefixIcon:
+                            Icon(Icons.confirmation_number_outlined),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Token wajib diisi' : null,
                     ),
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                  ),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Password wajib diisi';
-                  if (v.length < 8) return 'Minimal 8 karakter';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _confirmC,
-                obscureText: _obscure,
-                decoration: const InputDecoration(
-                  labelText: 'Konfirmasi password',
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
-                validator: (v) =>
-                    (v != _passC.text) ? 'Konfirmasi tidak cocok' : null,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _submit,
-                  child: _loading
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: theme.colorScheme.onPrimary,
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _passC,
+                      obscureText: _obscure,
+                      decoration: InputDecoration(
+                        labelText: 'Password baru',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility
+                                : Icons.visibility_off,
                           ),
-                        )
-                      : const Text('Reset Password'),
+                          onPressed: () =>
+                              setState(() => _obscure = !_obscure),
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) {
+                          return 'Password wajib diisi';
+                        }
+                        if (v.length < 8) {
+                          return 'Minimal 8 karakter';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _confirmC,
+                      obscureText: _obscure,
+                      decoration: const InputDecoration(
+                        labelText: 'Konfirmasi password',
+                        prefixIcon: Icon(Icons.lock_outline),
+                      ),
+                      validator: (v) =>
+                          (v != _passC.text) ? 'Konfirmasi tidak cocok' : null,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _submit,
+                        child: _loading
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: theme.colorScheme.onPrimary,
+                                ),
+                              )
+                            : const Text('Reset Password'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
-    );
+      );
+    }
   }
-}
