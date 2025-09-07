@@ -134,6 +134,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   }
 
   Widget _buildAlbumDetail(BuildContext context, AlbumDetailModel albumDetail) {
+    final theme = Theme.of(context);
     final album = albumDetail.album;
     final photos = albumDetail.photos;
     final hasPhotos = photos.isNotEmpty;
@@ -164,9 +165,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                       imageUrl: album.coverUrl,
                       fit: BoxFit.cover,
                       placeholder: (context, url) =>
-                          Container(color: AppColors.lightSurface),
+                          Container(color: theme.colorScheme.surface),
                       errorWidget: (context, url, error) => Container(
-                        color: AppColors.lightSurface,
+                        color: theme.colorScheme.surface,
                         child: Icon(
                           Icons.error,
                           color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
@@ -176,7 +177,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                     ),
                   )
                 else
-                  Container(color: AppColors.lightSurface),
+                  Container(color: theme.colorScheme.surface),
 
                 // Overlay gradient supaya judul kebaca
                 Positioned.fill(
@@ -186,8 +187,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          AppColors.black.withOpacity(0.65),
-                          AppColors.black.withOpacity(0.15),
+                          theme.colorScheme.onSurface.withOpacity(0.65),
+                          theme.colorScheme.onSurface.withOpacity(0.15),
                           AppColors.transparent,
                         ],
                         stops: const [0, .4, 1],
@@ -207,9 +208,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                   Shadow(
                     offset: Offset(1, 1),
                     blurRadius: 3.0,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.black.withOpacity(0.6)
-                        : AppColors.black.withOpacity(0.45),
+                    color: theme.brightness == Brightness.dark
+                        ? theme.colorScheme.onSurface.withOpacity(0.6)
+                        : theme.colorScheme.onSurface.withOpacity(0.45),
                   ),
                 ],
               ),
