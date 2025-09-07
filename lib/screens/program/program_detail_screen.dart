@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:radio_odan_app/providers/program_provider.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
@@ -47,8 +46,9 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
   }
 
   Widget _buildInfoCard(String title, String value, {IconData? icon}) {
+    final theme = Theme.of(context);
     return Card(
-      color: Theme.of(context).colorScheme.surface,
+      color: theme.colorScheme.surface,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -61,13 +61,13 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                 children: [
                   Icon(
                     icon,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: theme.colorScheme.onSurface,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -76,7 +76,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             else
               Text(
                 title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -88,7 +88,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                       "body": Style(
                         margin: Margins.zero,
                         padding: HtmlPaddings.zero,
-                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                        color: theme.textTheme.bodyMedium?.color,
                         fontSize: FontSize(14.0),
                         lineHeight: LineHeight(1.5),
                       ),
@@ -97,7 +97,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                         padding: HtmlPaddings.only(bottom: 8.0),
                       ),
                       "a": Style(
-                        color: AppColors.lightPrimary,
+                        color: theme.colorScheme.primary,
                         textDecoration: TextDecoration.none,
                       ),
                       "strong": Style(fontWeight: FontWeight.bold),
