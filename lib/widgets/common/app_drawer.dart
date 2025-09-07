@@ -7,7 +7,6 @@ import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/providers/theme_provider.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/services/user_service.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -91,7 +90,7 @@ class AppDrawer extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          _buildProfileAvatar(userProvider),
+                          _buildProfileAvatar(context, userProvider),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
@@ -145,7 +144,7 @@ class AppDrawer extends StatelessWidget {
                                   context: context,
                                   icon: Icons.logout_rounded,
                                   title: "Logout",
-                                  iconColor: AppColors.redAccent,
+                                  iconColor: colorScheme.error,
                                   onTap: () async {
                                     await UserService.logout();
                                     if (context.mounted) {
@@ -235,14 +234,15 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileAvatar(UserProvider userProvider) {
+  Widget _buildProfileAvatar(BuildContext context, UserProvider userProvider) {
     const size = 58.0;
     final user = userProvider.user;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (userProvider.isLoading) {
       return CircleAvatar(
         radius: size / 2,
-        backgroundColor: AppColors.white24,
+        backgroundColor: colorScheme.surfaceVariant,
         child: const SizedBox(
           width: 20,
           height: 20,
@@ -259,7 +259,7 @@ class AppDrawer extends StatelessWidget {
         imageUrl: url,
         imageBuilder: (context, imageProvider) => CircleAvatar(
           radius: size / 2,
-          backgroundColor: AppColors.white,
+          backgroundColor: colorScheme.surface,
           child: CircleAvatar(
             radius: (size / 2) - 3,
             backgroundImage: imageProvider,
@@ -267,7 +267,7 @@ class AppDrawer extends StatelessWidget {
         ),
         placeholder: (_, __) => CircleAvatar(
           radius: size / 2,
-          backgroundColor: AppColors.white24,
+          backgroundColor: colorScheme.surfaceVariant,
           child: const SizedBox(
             width: 20,
             height: 20,
@@ -275,15 +275,19 @@ class AppDrawer extends StatelessWidget {
           ),
         ),
         errorWidget: (_, __, ___) =>
-            _buildInitialsAvatar(size, AppColors.blueGrey, user),
+            _buildInitialsAvatar(size, colorScheme, user),
       );
     }
 
     // Fallback ke inisial
-    return _buildInitialsAvatar(size, AppColors.blueGrey, user);
+    return _buildInitialsAvatar(size, colorScheme, user);
   }
 
-  Widget _buildInitialsAvatar(double size, Color color, UserModel? user) {
+  Widget _buildInitialsAvatar(
+    double size,
+    ColorScheme colorScheme,
+    UserModel? user,
+  ) {
     // Catatan: jika `name` di UserModel non-nullable (String), akses pakai user?.name aman dengan null-check di user.
     final initial = (user != null && user.name.trim().isNotEmpty)
         ? user.name[0].toUpperCase()
@@ -291,11 +295,11 @@ class AppDrawer extends StatelessWidget {
 
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: color,
+      backgroundColor: colorScheme.surfaceVariant,
       child: Text(
         initial,
-        style: const TextStyle(
-          color: AppColors.white,
+        style: TextStyle(
+          color: colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
@@ -320,12 +324,12 @@ class AppDrawer extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: isDark
-            ? AppColors.white.withOpacity(0.1)
+            ? colorScheme.onSurface.withOpacity(0.1)
             : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? AppColors.white.withOpacity(0.1)
+              ? colorScheme.onSurface.withOpacity(0.1)
               : colorScheme.outlineVariant,
         ),
       ),
@@ -335,7 +339,7 @@ class AppDrawer extends StatelessWidget {
           width: 40,
           decoration: BoxDecoration(
             color: isDark
-                ? AppColors.white.withOpacity(0.15)
+                ? colorScheme.onSurface.withOpacity(0.15)
                 : colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -355,7 +359,7 @@ class AppDrawer extends StatelessWidget {
         ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        hoverColor: AppColors.white.withOpacity(0.1),
+        hoverColor: colorScheme.onSurface.withOpacity(0.1),
       ),
     );
   }
