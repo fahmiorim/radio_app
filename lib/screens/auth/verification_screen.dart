@@ -141,31 +141,29 @@ class _VerificationScreenState extends State<VerificationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     if (_initialLoading) {
-      return const Scaffold(
-        backgroundColor: AppColors.lightPrimary,
-        body: Center(child: CircularProgressIndicator(color: AppColors.white)),
+      return Scaffold(
+        backgroundColor: colorScheme.primary,
+        body: Center(
+          child: CircularProgressIndicator(color: colorScheme.onPrimary),
+        ),
       );
     }
 
     return Scaffold(
-      backgroundColor: AppColors.lightPrimary,
+      backgroundColor: colorScheme.primary,
       body: Stack(
         children: [
           // Background gradient
           Positioned.fill(
-            child: Builder(
-              builder: (context) => Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Theme.of(context).colorScheme.background,
-                      Theme.of(context).colorScheme.surface,
-                    ],
-                  ),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [colorScheme.primary, colorScheme.background],
                 ),
               ),
             ),
@@ -183,7 +181,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       'Verifikasi Email',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.lightTextPrimary,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -192,25 +190,25 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.white.withOpacity(0.1),
+                        color: colorScheme.onPrimary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppColors.white.withOpacity(0.2),
+                          color: colorScheme.onPrimary.withOpacity(0.2),
                           width: 1,
                         ),
                       ),
                       child: Column(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.mark_email_read_outlined,
                             size: 64,
-                            color: AppColors.lightTextPrimary,
+                            color: colorScheme.onBackground,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Periksa Email Anda',
                             style: theme.textTheme.titleLarge?.copyWith(
-                              color: AppColors.lightTextPrimary,
+                              color: colorScheme.onBackground,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -219,7 +217,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Kami telah mengirimkan link verifikasi ke:',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.lightTextSecondary,
+                              color: colorScheme.onBackground.withOpacity(0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -227,7 +225,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             widget.email,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: AppColors.lightTextPrimary,
+                              color: colorScheme.onBackground,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -236,7 +234,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Klik link verifikasi di email Anda, lalu kembali ke aplikasi dan tekan "Cek status".',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.lightTextSecondary,
+                              color: colorScheme.onBackground.withOpacity(0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -252,20 +250,22 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       child: OutlinedButton(
                         onPressed: (_canResend && !_resending) ? _resend : null,
                         style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.onPrimary,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          side: const BorderSide(
-                            color: AppColors.lightTextPrimary,
+                          side: BorderSide(
+                            color: colorScheme.onPrimary,
                             width: 1.5,
                           ),
                         ),
                         child: _resending
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
+                                  color: colorScheme.onPrimary,
                                 ),
                               )
                             : Text(
@@ -283,12 +283,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _checking ? null : _checkStatus,
                         icon: _checking
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: AppColors.white,
+                                  color: colorScheme.onPrimary,
                                 ),
                               )
                             : const Icon(Icons.verified),
@@ -305,11 +305,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
                     TextButton(
                       onPressed: _goLogin,
-                      child: const Text(
+                      child: Text(
                         'Kembali ke Halaman Login',
                         style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.lightTextPrimary,
+                          color: colorScheme.onPrimary,
                           decoration: TextDecoration.underline,
                         ),
                       ),
