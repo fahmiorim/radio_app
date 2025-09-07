@@ -7,6 +7,7 @@ import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/services/user_service.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/config/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -127,41 +128,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Stack(
           children: [
             // Background bubbles
-            Positioned(
+            AppTheme.bubble(
+              context: context,
+              size: 200,
               top: -50,
               right: -50,
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colorScheme.primary.withOpacity(0.1),
-                ),
-              ),
             ),
-            Positioned(
+            AppTheme.bubble(
+              context: context,
+              size: 150,
               bottom: -30,
               left: -30,
-              child: Container(
-                width: 150,
-                height: 150,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colorScheme.tertiary.withOpacity(0.1),
-                ),
-              ),
+              usePrimaryColor: false,
             ),
-            Positioned(
+            AppTheme.bubble(
+              context: context,
+              size: 80,
               top: 100,
               left: 100,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: colorScheme.secondary.withOpacity(0.1),
-                ),
-              ),
+              usePrimaryColor: false,
             ),
             // Main content
             CustomScrollView(
