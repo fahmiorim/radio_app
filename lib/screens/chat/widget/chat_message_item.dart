@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../models/chat_model.dart';
-import '../../../config/color_scheme_extension.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class ChatMessageItem extends StatelessWidget {
   final ChatMessage message;
@@ -67,8 +65,8 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isCurrentUser
-                        ? colors.sentMessageBubble
-                        : colors.receivedMessageBubble,
+                        ? colors.primary
+                        : colors.surface,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(12.0),
                       topRight: const Radius.circular(12.0),
@@ -81,7 +79,7 @@ class ChatMessageItem extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.black.withOpacity(0.05),
+                        color: colors.onSurface.withOpacity(0.05),
                         blurRadius: 2,
                         offset: const Offset(0, 1),
                       ),
@@ -90,9 +88,8 @@ class ChatMessageItem extends StatelessWidget {
                   child: Text(
                     message.message,
                     style: textTheme.bodyMedium?.copyWith(
-                      color: isCurrentUser
-                          ? colors.sentMessageText
-                          : colors.receivedMessageText,
+                      color:
+                          isCurrentUser ? colors.onPrimary : colors.onSurface,
                     ),
                   ),
                 ),
@@ -132,10 +129,11 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     // pakai CircleAvatar + Image.network (errorBuilder) biar fallback aman
     final hasUrl = url != null && url!.isNotEmpty;
+    final colors = Theme.of(context).colorScheme;
 
     return CircleAvatar(
       radius: 16,
-      backgroundColor: AppColors.grey300,
+      backgroundColor: colors.surfaceVariant,
       child: ClipOval(
         child: hasUrl
             ? Image.network(
