@@ -7,7 +7,6 @@ import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/screens/event/event_screen.dart';
 import 'package:radio_odan_app/screens/event/event_detail_screen.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class EventList extends StatefulWidget {
   const EventList({super.key});
@@ -218,16 +217,18 @@ class _EventListState extends State<EventList>
     );
   }
 
-  Widget _thumbPlaceholder() => Container(
-    color: AppColors.grey900,
-    alignment: Alignment.center,
-    child: Icon(
-      Icons.broken_image,
-      size: 44,
-      color:
-          Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
-    ),
-  );
+  Widget _thumbPlaceholder() {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.surface,
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.broken_image,
+        size: 44,
+        color: theme.colorScheme.onSurface.withOpacity(0.38),
+      ),
+    );
+  }
 
   Widget _thumbLoading() => const Center(
     child: SizedBox(
