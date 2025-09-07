@@ -320,11 +320,14 @@ class AppTheme {
     double opacity = 0.1,
   }) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final color = usePrimaryColor
-        ? (isDark ? AppColors.black : AppColors.lightPrimary)
-            .withOpacity(opacity)
-        : (isDark ? AppColors.grey800 : AppColors.grey200).withOpacity(opacity);
+        ? colorScheme.primary.withOpacity(opacity)
+        : (isDark
+                ? colorScheme.surfaceVariant
+                : colorScheme.secondary)
+            .withOpacity(opacity);
 
     return Positioned(
       top: top,
