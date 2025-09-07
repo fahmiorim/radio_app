@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import 'package:provider/provider.dart';
+
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/services/user_service.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -123,178 +123,157 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      body: Container(
-        color: colorScheme.surface,
-        child: Stack(
-          children: [
-            // Background bubbles
-            AppTheme.bubble(
-              context: context,
-              size: 200,
-              top: -50,
-              right: -50,
-            ),
-            AppTheme.bubble(
-              context: context,
-              size: 150,
-              bottom: -30,
-              left: -30,
-              usePrimaryColor: false,
-            ),
-            AppTheme.bubble(
-              context: context,
-              size: 80,
-              top: 100,
-              left: 100,
-              usePrimaryColor: false,
-            ),
-            // Main content
-            CustomScrollView(
-              slivers: [
-                SliverAppBar(
-                  title: Text(
-                    'Edit Profile',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.bold,
-                    ),
+      body: Stack(
+        children: [
+          const AppBackground(),
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                title: Text(
+                  'Edit Profile',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.bold,
                   ),
-                  backgroundColor: colorScheme.surface,
-                  elevation: 0,
-                  iconTheme: IconThemeData(color: colorScheme.onSurface),
-                  floating: true,
-                  snap: true,
-                  pinned: true,
                 ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 20),
-                        // Profile Picture
-                        Center(
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: colorScheme.primary,
-                                    width: 3,
-                                  ),
-                                ),
-                                child: ClipOval(
-                                  child: Image(
-                                    image: _getProfileImage(),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
+                backgroundColor: colorScheme.surface,
+                elevation: 0,
+                iconTheme: IconThemeData(color: colorScheme.onSurface),
+                floating: true,
+                snap: true,
+                pinned: true,
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 20),
+                      // Profile Picture
+                      Center(
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: colorScheme.primary,
+                                  width: 3,
                                 ),
                               ),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: GestureDetector(
-                                  onTap: _getImage,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: colorScheme.primary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.camera_alt,
-                                      color: colorScheme.onPrimary,
-                                      size: 20,
-                                    ),
-                                  ),
+                              child: ClipOval(
+                                child: Image(
+                                  image: _getProfileImage(),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
-                        _buildTextField(
-                          context: context,
-                          controller: _nameController,
-                          label: 'Nama Lengkap',
-                          icon: Icons.person_outline,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          context: context,
-                          controller: _emailController,
-                          label: 'Email',
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          context: context,
-                          controller: _phoneController,
-                          label: 'Nomor Telepon',
-                          icon: Icons.phone_android_outlined,
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          context: context,
-                          controller: _addressController,
-                          label: 'Alamat',
-                          icon: Icons.location_on_outlined,
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 30),
-
-                        SizedBox(
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _updateProfile,
-                            style: ElevatedButton.styleFrom(
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
                               ),
                             ),
-                            child: _isLoading
-                                ? SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.onPrimary,
-                                      ),
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.save_alt_rounded,
-                                        size: 20,
-                                        color: Theme.of(context).colorScheme.onPrimary,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      const Text('Simpan Perubahan'),
-                                    ],
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _getImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    shape: BoxShape.circle,
                                   ),
-                          ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: colorScheme.onPrimary,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      _buildTextField(
+                        context: context,
+                        controller: _nameController,
+                        label: 'Nama Lengkap',
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        context: context,
+                        controller: _emailController,
+                        label: 'Email',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        context: context,
+                        controller: _phoneController,
+                        label: 'Nomor Telepon',
+                        icon: Icons.phone_android_outlined,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                        context: context,
+                        controller: _addressController,
+                        label: 'Alamat',
+                        icon: Icons.location_on_outlined,
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 30),
+
+                      SizedBox(
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _updateProfile,
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor:
+                                        AlwaysStoppedAnimation<Color>(
+                                      colorScheme.onPrimary,
+                                    ),
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.save_alt_rounded,
+                                      size: 20,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text('Simpan Perubahan'),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
