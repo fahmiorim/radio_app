@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email; // bisa diisi otomatis dari argumen
@@ -47,24 +46,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
     if (!mounted) return;
     setState(() => _loading = false);
+    final theme = Theme.of(context);
 
     if (err == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password berhasil direset. Silakan login.'),
-          backgroundColor: AppColors.green,
+        SnackBar(
+          content: const Text('Password berhasil direset. Silakan login.'),
+          backgroundColor: theme.colorScheme.onPrimary,
         ),
       );
       Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (r) => false);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(err), backgroundColor: AppColors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: theme.colorScheme.error,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Reset Password')),
       body: Padding(
@@ -119,12 +124,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _submit,
                   child: _loading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.white,
+                            color: theme.colorScheme.onPrimary,
                           ),
                         )
                       : const Text('Reset Password'),
