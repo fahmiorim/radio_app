@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../config/app_colors.dart';
 
 class VideoListSkeleton extends StatelessWidget {
   const VideoListSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView.separated(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -14,8 +14,8 @@ class VideoListSkeleton extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(width: 16),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: AppColors.grey850,
-          highlightColor: AppColors.grey700,
+          baseColor: theme.colorScheme.surfaceVariant,
+          highlightColor: theme.colorScheme.surface,
           child: SizedBox(
             width: 270,
             height: 190, // Fixed height to match the parent constraint
@@ -27,7 +27,7 @@ class VideoListSkeleton extends StatelessWidget {
                   height: 160, // Reduced height to accommodate the text
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: AppColors.grey850,
+                    color: theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -36,7 +36,7 @@ class VideoListSkeleton extends StatelessWidget {
                   height: 16,
                   width: 200,
                   decoration: BoxDecoration(
-                    color: AppColors.grey850,
+                    color: theme.colorScheme.surfaceVariant,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
