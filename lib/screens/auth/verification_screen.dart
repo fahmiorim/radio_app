@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class VerificationScreen extends StatefulWidget {
@@ -124,10 +123,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
 
   void _toast(String msg, {required bool ok}) {
     if (!mounted) return;
+    final colorScheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: ok ? AppColors.green : AppColors.red,
+        backgroundColor: ok ? colorScheme.primary : colorScheme.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -307,8 +307,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       onPressed: _goLogin,
                       child: Text(
                         'Kembali ke Halaman Login',
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onPrimary,
                           decoration: TextDecoration.underline,
                         ),
