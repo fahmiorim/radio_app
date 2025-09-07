@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -41,27 +40,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (err == null) {
       // sukses
+      final theme = Theme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               Icon(
                 Icons.check_circle,
-                color: Theme.of(context).colorScheme.surface,
+                color: theme.colorScheme.surface,
               ),
               const SizedBox(width: 10),
               Text(
                 'Login berhasil',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.surface,
+                ),
               ),
             ],
           ),
-          backgroundColor: AppColors.success,
+          backgroundColor: theme.colorScheme.primary,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -75,20 +72,18 @@ class _LoginScreenState extends State<LoginScreen> {
       ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
     } else {
       // gagal
+      final theme = Theme.of(context);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(
         SnackBar(
           content: Text(
             err,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(
-                  color: Theme.of(context).colorScheme.surface,
-                ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.surface,
+            ),
           ),
-          backgroundColor: AppColors.error,
+          backgroundColor: theme.colorScheme.error,
         ),
       );
     }
@@ -119,18 +114,16 @@ class _LoginScreenState extends State<LoginScreen> {
         (_) => false,
       );
     } catch (e) {
+      final theme = Theme.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Login Google gagal: $e',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(
-                  color: Theme.of(context).colorScheme.surface,
-                ),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.surface,
+            ),
           ),
-          backgroundColor: AppColors.error,
+          backgroundColor: theme.colorScheme.error,
         ),
       );
     }
@@ -176,6 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final loading = context.watch<AuthProvider>().loading;
 
     return PopScope(
@@ -191,11 +185,14 @@ class _LoginScreenState extends State<LoginScreen> {
             // Background gradient
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [AppColors.lightPrimary, AppColors.lightBackground],
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.background,
+                    ],
                   ),
                 ),
                 child: SafeArea(
@@ -489,8 +486,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                     ),
                                     style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                        color: AppColors.grey,
+                                      side: BorderSide(
+                                        color: theme.colorScheme.onSurfaceVariant,
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(8),
