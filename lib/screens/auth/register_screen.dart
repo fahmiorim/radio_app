@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -297,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 300,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: theme.colorScheme.onPrimary.withOpacity(0.1),
+                        color: AppColors.white.withOpacity(0.1),
                       ),
                     ),
                   ),
@@ -309,7 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 400,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: theme.colorScheme.onBackground.withOpacity(0.1),
+                        color: AppColors.white.withOpacity(0.1),
                       ),
                     ),
                   ),
@@ -341,7 +342,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Daftar untuk melanjutkan ke Radio Odan',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onPrimary.withOpacity(0.9),
+                          color: AppColors.white.withOpacity(0.9),
                         ),
                       ),
                       const SizedBox(height: 24),
