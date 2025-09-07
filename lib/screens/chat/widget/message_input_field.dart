@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class MessageInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -31,9 +30,9 @@ class MessageInputField extends StatelessWidget {
                 minLines: 1,
                 decoration: InputDecoration(
                   hintText: 'Ketik pesan...',
-                  hintStyle: const TextStyle(color: AppColors.chatHintText),
+                  hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   filled: true,
-                  fillColor: AppColors.chatInputBackground,
+                  fillColor: theme.colorScheme.surfaceVariant,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
