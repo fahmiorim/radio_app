@@ -6,7 +6,6 @@ import 'package:radio_odan_app/models/penyiar_model.dart';
 import 'package:radio_odan_app/providers/penyiar_provider.dart';
 import 'package:radio_odan_app/widgets/common/section_title.dart';
 import 'package:radio_odan_app/widgets/skeleton/penyiar_skeleton.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class PenyiarList extends StatefulWidget {
   const PenyiarList({super.key});
@@ -164,7 +163,10 @@ class _PenyiarCard extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-            color: AppColors.black.withOpacity(0.5),
+            color: Theme.of(context)
+                .colorScheme
+                .onSurface
+                .withOpacity(0.5),
             child: Text(
               penyiar.name,
               maxLines: 1,
