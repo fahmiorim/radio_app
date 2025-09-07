@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class UnreadMessagesLabel extends StatelessWidget {
   final int count;
@@ -9,9 +8,10 @@ class UnreadMessagesLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
 
-    final label = count == 1
-        ? '1 pesan belum dibaca'
-        : '$count pesan belum dibaca';
+    final label =
+        count == 1 ? '1 pesan belum dibaca' : '$count pesan belum dibaca';
+
+    final theme = Theme.of(context);
 
     return AnimatedOpacity(
       opacity: 1,
@@ -19,16 +19,19 @@ class UnreadMessagesLabel extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 8),
-        color: AppColors.black.withOpacity(0.54),
+        color: Color.alphaBlend(
+          theme.colorScheme.onBackground.withOpacity(0.54),
+          theme.colorScheme.background,
+        ),
         child: Center(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.lightPrimary,
+              color: theme.colorScheme.primary,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.black.withOpacity(0.2),
+                  color: theme.colorScheme.onBackground.withOpacity(0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -36,8 +39,8 @@ class UnreadMessagesLabel extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: const TextStyle(
-                color: AppColors.white,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
