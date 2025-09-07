@@ -46,6 +46,18 @@ class AppBackground extends StatelessWidget {
                 ),
               ),
             ),
+            Positioned(
+              bottom: -40,
+              right: -40,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: theme.colorScheme.onPrimary.withOpacity(bubbleOpacity),
+                ),
+              ),
+            ),
           ],
         ),
       ),

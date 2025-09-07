@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:radio_odan_app/audio/audio_player_manager.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -66,12 +67,16 @@ class _FullPlayerState extends State<FullPlayer> {
 
       if (currentStation == null) {
         return Scaffold(
-          backgroundColor: theme.colorScheme.background,
-          body: Center(
-            child: Text(
-              'No radio station selected',
-              style: theme.textTheme.bodyMedium,
-            ),
+          body: Stack(
+            children: [
+              const AppBackground(),
+              Center(
+                child: Text(
+                  'No radio station selected',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
           ),
         );
       }
@@ -89,7 +94,6 @@ class _FullPlayerState extends State<FullPlayer> {
         : (currentStation.host ?? 'Unknown');
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
       appBar: AppBar(
         title: Text(
           'Now Playing',
@@ -113,9 +117,12 @@ class _FullPlayerState extends State<FullPlayer> {
           },
         ),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
+      body: Stack(
+        children: [
+          const AppBackground(),
+          SafeArea(
+            child: Column(
+              children: [
             // === Cover image ===
             Expanded(
               flex: 5,
@@ -336,6 +343,8 @@ class _FullPlayerState extends State<FullPlayer> {
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 }
