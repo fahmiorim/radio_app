@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Config
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
 
 // Providers
@@ -10,11 +9,11 @@ import 'package:radio_odan_app/providers/program_provider.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/providers/penyiar_provider.dart';
-import 'package:radio_odan_app/providers/theme_provider.dart'; // Add theme provider
 
 // Widgets
 import 'package:radio_odan_app/widgets/common/app_header.dart';
 import 'package:radio_odan_app/widgets/common/app_drawer.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 // Home Widgets
 import 'package:radio_odan_app/screens/home/widget/penyiar_list.dart';
@@ -125,8 +124,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDarkMode = themeProvider.themeMode == ThemeMode.dark;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -138,43 +135,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           return Stack(
             key: const Key('home_stack'),
             children: [
-              // Background with theme-aware colors
-              Positioned.fill(
-                child: Container(
-                  color: theme.colorScheme.background,
-                  child: Stack(
-                    children: [
-                      // Top-right bubble (large)
-                      AppTheme.bubble(
-                        context: context,
-                        size: 200,
-                        top: -50,
-                        right: -50,
-                        opacity: isDarkMode ? 0.1 : 0.03,
-                        usePrimaryColor: true,
-                      ),
-                      // Bottom-left bubble (medium)
-                      AppTheme.bubble(
-                        context: context,
-                        size: 150,
-                        bottom: -30,
-                        left: -30,
-                        opacity: isDarkMode ? 0.1 : 0.03,
-                        usePrimaryColor: true,
-                      ),
-                      // Center-left bubble (small)
-                      AppTheme.bubble(
-                        context: context,
-                        size: 50,
-                        top: 100,
-                        left: 100,
-                        opacity: isDarkMode ? 0.08 : 0.02,
-                        usePrimaryColor: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const AppBackground(),
 
               SafeArea(
                 child: RefreshIndicator(

@@ -4,11 +4,11 @@ import 'package:html/dom.dart' as dom;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/loading/loading_widget.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class ArtikelDetailScreen extends StatefulWidget {
   final String artikelSlug;
@@ -104,43 +104,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             child: Stack(
               children: [
-                // Background with gradient overlay
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Theme.of(context).primaryColor,
-                          Theme.of(context).scaffoldBackgroundColor,
-                        ],
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        AppTheme.bubble(
-                          context: context,
-                          size: 200,
-                          top: -50,
-                          right: -50,
-                        ),
-                        AppTheme.bubble(
-                          context: context,
-                          size: 150,
-                          bottom: -30,
-                          left: -30,
-                        ),
-                        AppTheme.bubble(
-                          context: context,
-                          size: 50,
-                          top: 100,
-                          left: 100,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                const AppBackground(),
 
                 // Content
                 SingleChildScrollView(

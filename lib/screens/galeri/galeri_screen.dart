@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/providers/video_provider.dart';
 import 'widget/video_list.dart';
 import 'widget/album_list.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class GaleriScreen extends StatefulWidget {
   const GaleriScreen({super.key});
@@ -50,7 +50,6 @@ class _GaleriScreenState extends State<GaleriScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
       key: _scaffoldKey,
@@ -61,43 +60,7 @@ class _GaleriScreenState extends State<GaleriScreen> {
       ),
       body: Stack(
         children: [
-          // Background with gradient and bubbles
-          Positioned.fill(
-            child: Container(
-              color: colors.background,
-              child: Stack(
-                children: [
-                  // Large bubble top right
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  // Medium bubble bottom left
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.08 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  // Small bubble center
-                  AppTheme.bubble(
-                    context: context,
-                    size: 50,
-                    top: 100,
-                    left: 100,
-                    opacity: isDarkMode ? 0.06 : 0.02,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           // Main Content with RefreshIndicator
           SafeArea(
             child: RefreshIndicator(

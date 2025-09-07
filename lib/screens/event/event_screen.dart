@@ -5,11 +5,11 @@ import 'package:collection/collection.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/event_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/event_skeleton.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class AllEventsScreen extends StatefulWidget {
   const AllEventsScreen({super.key});
@@ -102,7 +102,6 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
       key: const Key('all_events_screen'),
@@ -113,31 +112,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
       backgroundColor: colors.background,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: colors.surface,
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: 50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 250,
-                    bottom: -50,
-                    left: -50,
-                    opacity: isDarkMode ? 0.15 : 0.04,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           _buildBody(),
           const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
         ],

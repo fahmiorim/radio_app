@@ -4,7 +4,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 

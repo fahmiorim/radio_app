@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 

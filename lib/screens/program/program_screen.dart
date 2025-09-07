@@ -7,8 +7,8 @@ import 'package:radio_odan_app/providers/program_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/all_programs_skeleton.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/config/app_colors.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 // ⬇️ Import detail screen
 import 'package:radio_odan_app/screens/program/program_detail_screen.dart';
@@ -92,7 +92,6 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     
     return Scaffold(
       appBar: CustomAppBar.transparent(
@@ -109,40 +108,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
       ),
       body: Stack(
         children: [
-          // Bubble/Wave Background
-          Positioned.fill(
-            child: Container(
-              color: theme.colorScheme.background,
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.08 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 50,
-                    top: 100,
-                    left: 100,
-                    opacity: isDarkMode ? 0.06 : 0.02,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           // Main content
           _buildBody(),
           // Mini Player
@@ -151,8 +117,6 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
       ),
     );
   }
-
-  // _bubble method removed - using AppTheme.bubble instead
 
   Widget _buildBody() {
     return Consumer<ProgramProvider>(

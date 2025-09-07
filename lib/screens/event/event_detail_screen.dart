@@ -4,9 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class EventDetailScreen extends StatelessWidget {
   final Event event;
@@ -164,7 +164,6 @@ class EventDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -186,32 +185,7 @@ class EventDetailScreen extends StatelessWidget {
         builder: (context, constraints) {
           return Stack(
             children: [
-              // Background gradient + bubbles
-              Positioned.fill(
-                child: Container(
-                  color: colors.background,
-                  child: Stack(
-                    children: [
-                      AppTheme.bubble(
-                        context: context,
-                        size: 200,
-                        top: -50,
-                        right: -50,
-                        opacity: isDarkMode ? 0.1 : 0.03,
-                        usePrimaryColor: true,
-                      ),
-                      AppTheme.bubble(
-                        context: context,
-                        size: 150,
-                        bottom: -30,
-                        left: -30,
-                        opacity: isDarkMode ? 0.15 : 0.04,
-                        usePrimaryColor: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              const AppBackground(),
 
               // Main content
               Column(
