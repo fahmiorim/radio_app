@@ -8,6 +8,7 @@ import 'package:radio_odan_app/screens/chat/widget/chat_message_item.dart';
 import 'package:radio_odan_app/screens/chat/widget/message_input_field.dart';
 import 'package:radio_odan_app/screens/chat/widget/unread_messages_label.dart';
 import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;
@@ -234,84 +235,91 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             ),
             body: Stack(
               children: [
-                if (!prov.isLive)
-                  const NoLivePlaceholder()
-                else
-                  ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(
-                      bottom: 80,
-                      left: 8,
-                      right: 8,
-                      top: 8,
-                    ),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      if (_isUserScrolledUp && index == _firstUnreadIndex) {
-                        return Column(
-                          children: [
-                            UnreadMessagesLabel(count: unreadCount),
-                            ChatMessageItem(
-                              message: message,
-                              isCurrentUser: _isCurrentUser(message.username),
-                              time: prov.formatTime(message.timestamp),
-                            ),
-                          ],
-                        );
-                      }
-                      return ChatMessageItem(
-                        message: message,
-                        isCurrentUser: _isCurrentUser(message.username),
-                        time: prov.formatTime(message.timestamp),
-                      );
-                    },
-                  ),
-                if (_isUserScrolledUp && unreadCount > 0)
-                  Positioned(
-                    bottom: 80,
-                    right: 16,
-                    child: GestureDetector(
-                      onTap: _scrollToUnreadMessages,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                const AppBackground(),
+                Stack(
+                  children: [
+                    if (!prov.isLive)
+                      const NoLivePlaceholder()
+                    else
+                      ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.only(
+                          bottom: 80,
+                          left: 8,
+                          right: 8,
+                          top: 8,
                         ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .shadowColor
-                                  .withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          if (_isUserScrolledUp && index == _firstUnreadIndex) {
+                            return Column(
+                              children: [
+                                UnreadMessagesLabel(count: unreadCount),
+                                ChatMessageItem(
+                                  message: message,
+                                  isCurrentUser:
+                                      _isCurrentUser(message.username),
+                                  time: prov.formatTime(message.timestamp),
+                                ),
+                              ],
+                            );
+                          }
+                          return ChatMessageItem(
+                            message: message,
+                            isCurrentUser:
+                                _isCurrentUser(message.username),
+                            time: prov.formatTime(message.timestamp),
+                          );
+                        },
+                      ),
+                    if (_isUserScrolledUp && unreadCount > 0)
+                      Positioned(
+                        bottom: 80,
+                        right: 16,
+                        child: GestureDetector(
+                          onTap: _scrollToUnreadMessages,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          '$unreadCount pesan baru',
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context)
+                                      .shadowColor
+                                      .withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              '$unreadCount pesan baru',
+                              style: TextStyle(
+                                color:
+                                    Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                if (prov.isLive)
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: MessageInputField(
-                      controller: _messageController,
-                      onSend: () => _sendMessage(prov),
-                    ),
-                  ),
+                    if (prov.isLive)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: MessageInputField(
+                          controller: _messageController,
+                          onSend: () => _sendMessage(prov),
+                        ),
+                      ),
+                  ],
+                ),
               ],
             ),
           );
