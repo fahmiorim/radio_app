@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class MessageInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -13,25 +12,27 @@ class MessageInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return SafeArea(
       top: false,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        color: AppColors.chatBackground,
+        color: colors.background,
         child: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: controller,
-                style: const TextStyle(color: AppColors.white),
-                cursorColor: AppColors.white,
+                style: TextStyle(color: colors.onBackground),
+                cursorColor: colors.primary,
                 maxLines: null,
                 minLines: 1,
                 decoration: InputDecoration(
                   hintText: 'Ketik pesan...',
-                  hintStyle: const TextStyle(color: AppColors.chatHintText),
+                  hintStyle: TextStyle(color: colors.onSurfaceVariant),
                   filled: true,
-                  fillColor: AppColors.chatInputBackground,
+                  fillColor: colors.surfaceVariant,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
@@ -47,10 +48,10 @@ class MessageInputField extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.send, color: AppColors.white, size: 20),
+              icon: Icon(Icons.send, color: colors.onPrimary, size: 20),
               padding: const EdgeInsets.all(12),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.lightPrimary,
+                backgroundColor: colors.primary,
                 shape: const CircleBorder(),
               ),
               onPressed: onSend,

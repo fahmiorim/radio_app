@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/chat_model.dart';
 import '../../../config/color_scheme_extension.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class ChatMessageItem extends StatelessWidget {
   final ChatMessage message;
@@ -81,7 +80,7 @@ class ChatMessageItem extends StatelessWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.black.withOpacity(0.05),
+                        color: colors.shadow.withOpacity(0.05),
                         blurRadius: 2,
                         offset: const Offset(0, 1),
                       ),
@@ -133,9 +132,11 @@ class _Avatar extends StatelessWidget {
     // pakai CircleAvatar + Image.network (errorBuilder) biar fallback aman
     final hasUrl = url != null && url!.isNotEmpty;
 
+    final colors = Theme.of(context).colorScheme;
+
     return CircleAvatar(
       radius: 16,
-      backgroundColor: AppColors.grey300,
+      backgroundColor: colors.surfaceVariant,
       child: ClipOval(
         child: hasUrl
             ? Image.network(
