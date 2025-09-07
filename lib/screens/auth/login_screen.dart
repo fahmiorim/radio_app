@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -172,7 +173,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final loading = context.watch<AuthProvider>().loading;
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     return PopScope(
       canPop: false,
@@ -184,32 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            // Background bubbles
-            Positioned.fill(
-              child: Container(
-                color: theme.colorScheme.background,
-                child: Stack(
-                  children: [
-                    AppTheme.bubble(
-                      context: context,
-                      size: 200,
-                      top: -50,
-                      right: -50,
-                      opacity: isDarkMode ? 0.1 : 0.03,
-                      usePrimaryColor: true,
-                    ),
-                    AppTheme.bubble(
-                      context: context,
-                      size: 150,
-                      bottom: -30,
-                      left: -30,
-                      opacity: isDarkMode ? 0.08 : 0.03,
-                      usePrimaryColor: true,
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const AppBackground(),
             SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
