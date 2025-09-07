@@ -296,9 +296,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Container(
                       width: 300,
                       height: 300,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color.fromRGBO(255, 255, 255, 0.1),
+                        color: AppColors.white.withOpacity(0.1),
                       ),
                     ),
                   ),
@@ -308,9 +308,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Container(
                       width: 400,
                       height: 400,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color.fromRGBO(255, 255, 255, 0.1),
+                        color: AppColors.white.withOpacity(0.1),
                       ),
                     ),
                   ),
@@ -342,7 +342,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         'Daftar untuk melanjutkan ke Radio Odan',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color.fromRGBO(255, 255, 255, 0.9),
+                          color: AppColors.white.withOpacity(0.9),
                         ),
                       ),
                       const SizedBox(height: 24),
