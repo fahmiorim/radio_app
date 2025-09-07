@@ -9,7 +9,6 @@ import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_detail_screen.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class ArtikelList extends StatefulWidget {
   const ArtikelList({super.key});
@@ -206,15 +205,16 @@ class ArtikelListState extends State<ArtikelList>
   }
 
   Widget _buildPlaceholderImage() {
+    final theme = Theme.of(context);
     return Container(
       height: 225,
       width: 160,
-      color: AppColors.grey900,
+      color: theme.colorScheme.surface,
       alignment: Alignment.center,
       child: Icon(
         Icons.image,
         size: 44,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+        color: theme.colorScheme.onSurface.withOpacity(0.38),
       ),
     );
   }

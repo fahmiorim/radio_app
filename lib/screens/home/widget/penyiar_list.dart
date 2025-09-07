@@ -125,6 +125,7 @@ class _PenyiarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       width: 110,
       margin: const EdgeInsets.only(right: 12),
@@ -135,9 +136,13 @@ class _PenyiarCard extends StatelessWidget {
           Container(
             width: 110,
             height: 160,
-            color: AppColors.grey900,
+            color: theme.colorScheme.surface,
             child: penyiar.avatarUrl.isEmpty
-                ? Icon(Icons.person, size: 50, color: AppColors.grey)
+                ? Icon(
+                    Icons.person,
+                    size: 50,
+                    color: theme.colorScheme.onSurface.withOpacity(0.38),
+                  )
                 : CachedNetworkImage(
                     imageUrl: penyiar.avatarUrl,
                     fit: BoxFit.cover,
@@ -148,8 +153,11 @@ class _PenyiarCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
-                    errorWidget: (_, __, ___) =>
-                        Icon(Icons.person, size: 50, color: AppColors.grey),
+                    errorWidget: (_, __, ___) => Icon(
+                      Icons.person,
+                      size: 50,
+                      color: theme.colorScheme.onSurface.withOpacity(0.38),
+                    ),
                   ),
           ),
           // Nama overlay
