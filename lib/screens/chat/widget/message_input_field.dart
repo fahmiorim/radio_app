@@ -13,18 +13,20 @@ class MessageInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SafeArea(
       top: false,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        color: AppColors.chatBackground,
+        color: theme.colorScheme.surface,
         child: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: controller,
-                style: const TextStyle(color: AppColors.white),
-                cursorColor: AppColors.white,
+                style: TextStyle(color: theme.colorScheme.onSurface),
+                cursorColor: theme.colorScheme.onSurface,
                 maxLines: null,
                 minLines: 1,
                 decoration: InputDecoration(
@@ -47,10 +49,10 @@ class MessageInputField extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.send, color: AppColors.white, size: 20),
+              icon: Icon(Icons.send, color: theme.colorScheme.onSurface, size: 20),
               padding: const EdgeInsets.all(12),
               style: IconButton.styleFrom(
-                backgroundColor: AppColors.lightPrimary,
+                backgroundColor: theme.colorScheme.primary,
                 shape: const CircleBorder(),
               ),
               onPressed: onSend,
