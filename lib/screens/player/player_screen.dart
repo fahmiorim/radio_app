@@ -99,7 +99,7 @@ class _FullPlayerState extends State<FullPlayer> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         leading: IconButton(

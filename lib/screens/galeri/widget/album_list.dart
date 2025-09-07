@@ -5,6 +5,7 @@ import 'package:collection/collection.dart';
 import 'package:radio_odan_app/models/album_model.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/skeleton/album_list_skeleton.dart';
 import 'package:radio_odan_app/widgets/common/section_title.dart';
 import 'package:radio_odan_app/screens/galeri/album_detail_screen.dart';
@@ -152,8 +153,8 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                                   .colorScheme
                                   .onSurface
                                   .withOpacity(0.7),
-                              Colors.transparent,
-                              Colors.transparent,
+                              AppColors.transparent,
+                              AppColors.transparent,
                             ],
                             stops: const [0.0, 0.4, 1.0],
                           ),
@@ -202,7 +203,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                     Positioned.fill(
                       child: Hero(
                         tag: 'album-${album.slug}',
-                        child: Container(color: Colors.transparent),
+                        child: Container(color: AppColors.transparent),
                       ),
                     ),
                   ],

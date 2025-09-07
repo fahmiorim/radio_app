@@ -441,7 +441,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             fillColor: WidgetStateProperty.resolveWith<Color>(
                               (states) => states.contains(WidgetState.selected)
                                   ? colorScheme.onPrimary
-                                  : Colors.transparent,
+                                  : colorScheme.surface,
                             ),
                             side: BorderSide(
                               color: colorScheme.onBackground.withOpacity(0.7),

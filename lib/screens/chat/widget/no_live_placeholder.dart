@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:radio_odan_app/config/app_colors.dart';
 
 class NoLivePlaceholder extends StatelessWidget {
   final VoidCallback? onNotify;
@@ -128,7 +129,7 @@ class NoLivePlaceholder extends StatelessWidget {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.transparent,
+                        color: AppColors.transparent,
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(
                           color: colors.outline,
