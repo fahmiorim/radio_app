@@ -135,7 +135,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colorScheme.primary.withOpacity(0.05),
+                  color: colorScheme.primary.withOpacity(0.1),
                 ),
               ),
             ),
@@ -147,7 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 150,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colorScheme.tertiary.withOpacity(0.05),
+                  color: colorScheme.tertiary.withOpacity(0.1),
                 ),
               ),
             ),
@@ -159,7 +159,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colorScheme.secondary.withOpacity(0.05),
+                  color: colorScheme.secondary.withOpacity(0.1),
                 ),
               ),
             ),
