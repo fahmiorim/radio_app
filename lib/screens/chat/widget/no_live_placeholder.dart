@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class NoLivePlaceholder extends StatelessWidget {
   final VoidCallback? onNotify;
@@ -10,21 +8,22 @@ class NoLivePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Define gradient colors here since they can't be const
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     final gradientColors = [
-      AppColors.liveIndicator,
-      Color.lerp(AppColors.liveIndicator, AppColors.white, 0.2) ??
-          AppColors.liveIndicator,
+      colors.error,
+      Color.lerp(colors.error, colors.errorContainer, 0.2) ?? colors.error,
     ];
+
     return Container(
-      color: AppColors.chatBackground,
+      color: colors.surface,
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🔴 Ikon Radio dengan efek pulse
               TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.8, end: 1.2),
                 duration: const Duration(seconds: 1),
@@ -39,27 +38,25 @@ class NoLivePlaceholder extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.lightCardSurface.withOpacity(0.7),
+                    color: colors.surface.withOpacity(0.7),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppColors.liveIndicator.withOpacity(0.3),
+                      color: colors.error.withOpacity(0.3),
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.radio_outlined,
                     size: 64,
-                    color: AppColors.liveIndicator.withOpacity(0.8),
+                    color: colors.error.withOpacity(0.8),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Judul
-              const Text(
+              Text(
                 'Tidak Ada Siaran Saat Ini',
                 style: TextStyle(
-                  color: AppColors.white,
+                  color: colors.onSurface,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -70,18 +67,15 @@ class NoLivePlaceholder extends StatelessWidget {
               Text(
                 'Siaran belum dimulai atau sedang dalam jeda.\nNantikan siaran berikutnya!',
                 style: TextStyle(
-                  color: AppColors.lightTextSecondary,
+                  color: colors.onSurface,
                   fontSize: 14,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-
-              // Tombol-tombol
               Column(
                 children: [
-                  // 🔔 Aktifkan Notifikasi
                   GestureDetector(
                     onTap: onNotify,
                     child: Container(
@@ -99,25 +93,25 @@ class NoLivePlaceholder extends StatelessWidget {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.liveIndicator.withOpacity(0.3),
+                            color: colors.error.withOpacity(0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.notifications_active_outlined,
-                            color: AppColors.white,
+                            color: colors.onError,
                             size: 18,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             'Aktifkan Notifikasi',
                             style: TextStyle(
-                              color: AppColors.white,
+                              color: colors.onError,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -126,8 +120,6 @@ class NoLivePlaceholder extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // ⬅️ Kembali ke Beranda
                   GestureDetector(
                     onTap: onBack ?? () => Navigator.pop(context, 'goHome'),
                     child: Container(
@@ -136,28 +128,26 @@ class NoLivePlaceholder extends StatelessWidget {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.transparent,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(25),
                         border: Border.all(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.darkBorder
-                              : AppColors.lightBorder,
+                          color: colors.outline,
                           width: 1.5,
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.arrow_back_rounded,
-                            color: AppColors.white,
+                            color: colors.onSurface,
                             size: 16,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             'Kembali ke Beranda',
                             style: TextStyle(
-                              color: AppColors.white,
+                              color: colors.onSurface,
                               fontWeight: FontWeight.w500,
                               fontSize: 14,
                             ),
