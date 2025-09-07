@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/audio/audio_player_manager.dart';
@@ -23,9 +22,14 @@ class _MiniPlayerState extends State<MiniPlayer> {
       width: 42,
       height: 42,
       fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) =>
-          Icon(Icons.music_note, size: 24,
-              color: AppColors.white.withOpacity(0.7)),
+      errorBuilder: (context, error, stackTrace) => Icon(
+        Icons.music_note,
+        size: 24,
+        color: Theme.of(context)
+            .colorScheme
+            .onSurface
+            .withOpacity(0.7),
+      ),
     );
   }
 
@@ -67,7 +71,10 @@ class _MiniPlayerState extends State<MiniPlayer> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: AppColors.black.withOpacity(0.2),
+                color: Theme.of(context)
+                    .colorScheme
+                    .shadow
+                    .withOpacity(0.2),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -125,7 +132,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.red,
+                            color: Theme.of(context).colorScheme.error,
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -134,7 +141,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
                                 .textTheme
                                 .labelSmall
                                 ?.copyWith(
-                                    color: AppColors.white,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onError,
                                     fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -164,7 +173,9 @@ class _MiniPlayerState extends State<MiniPlayer> {
                               radioProvider.isPlaying
                                   ? Icons.pause
                                   : Icons.play_arrow,
-                              color: AppColors.white,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface,
                             ),
                             onPressed: () async {
                               await radioProvider.togglePlayPause();
@@ -193,8 +204,13 @@ class _MiniPlayerState extends State<MiniPlayer> {
                   height: 2, // ketebalan bar
                   child: LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: AppColors.white.withValues(alpha: 0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.red),
+                    backgroundColor: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.2),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 );
               },
