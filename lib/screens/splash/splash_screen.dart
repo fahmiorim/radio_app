@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,13 +21,20 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final logoPath =
+        theme.brightness == Brightness.dark ? 'assets/logo-white.png' : 'assets/logo.png';
+
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppColors.lightPrimary, AppColors.lightBackground],
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.background,
+            ],
           ),
         ),
         child: Stack(
@@ -42,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.white.withOpacity(0.1),
+                  color: theme.colorScheme.onPrimary.withOpacity(0.1),
                 ),
               ),
             ),
@@ -54,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 400,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.white.withOpacity(0.1),
+                  color: theme.colorScheme.onPrimary.withOpacity(0.1),
                 ),
               ),
             ),
@@ -63,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
-                  'assets/logo-white.png',
+                  logoPath,
                   width: 150,
                   height: 150,
                   fit: BoxFit.contain,
