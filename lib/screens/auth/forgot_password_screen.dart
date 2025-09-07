@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
+import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -58,36 +58,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(title: const Text('Lupa Password')),
       body: Stack(
         children: [
-          Positioned.fill(
-            child: Container(
-              color: theme.colorScheme.background,
-              child: Stack(
-                children: [
-                  AppTheme.bubble(
-                    context: context,
-                    size: 200,
-                    top: -50,
-                    right: -50,
-                    opacity: isDarkMode ? 0.1 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                  AppTheme.bubble(
-                    context: context,
-                    size: 150,
-                    bottom: -30,
-                    left: -30,
-                    opacity: isDarkMode ? 0.08 : 0.03,
-                    usePrimaryColor: true,
-                  ),
-                ],
-              ),
-            ),
-          ),
+          const AppBackground(),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),

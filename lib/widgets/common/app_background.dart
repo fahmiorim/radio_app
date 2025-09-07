@@ -6,7 +6,7 @@ class AppBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bubbleOpacity = theme.brightness == Brightness.dark ? 0.05 : 0.1;
+    final bubbleOpacity = theme.brightness == Brightness.dark ? 0.08 : 0.1;
 
     return SizedBox.expand(
       child: Container(
