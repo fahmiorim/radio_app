@@ -8,7 +8,6 @@ import 'package:radio_odan_app/config/app_routes.dart';
 import 'package:radio_odan_app/widgets/skeleton/album_list_skeleton.dart';
 import 'package:radio_odan_app/widgets/common/section_title.dart';
 import 'package:radio_odan_app/screens/galeri/album_detail_screen.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 
 class AlbumList extends StatefulWidget {
   const AlbumList({super.key});
@@ -149,9 +148,12 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              AppColors.black.withOpacity(0.7),
-                              AppColors.transparent,
-                              AppColors.transparent,
+                              Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withOpacity(0.7),
+                              Colors.transparent,
+                              Colors.transparent,
                             ],
                             stops: const [0.0, 0.4, 1.0],
                           ),
@@ -200,7 +202,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                     Positioned.fill(
                       child: Hero(
                         tag: 'album-${album.slug}',
-                        child: Container(color: AppColors.transparent),
+                        child: Container(color: Colors.transparent),
                       ),
                     ),
                   ],
