@@ -42,7 +42,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.lightBackground.withValues(alpha: 0.1),
+                  color: AppColors.white.withOpacity(0.1),
                 ),
               ),
             ),
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 400,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.lightBackground.withValues(alpha: 0.1),
+                  color: AppColors.white.withOpacity(0.1),
                 ),
               ),
             ),
