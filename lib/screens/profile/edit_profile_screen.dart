@@ -294,7 +294,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       Icon(
                                         Icons.save_alt_rounded,
                                         size: 20,
-                                        color: AppColors.button.primaryText,
+                                        color: Theme.of(context).colorScheme.onPrimary,
                                       ),
                                       const SizedBox(width: 8),
                                       const Text('Simpan Perubahan'),
