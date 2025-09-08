@@ -8,6 +8,15 @@ import 'package:radio_odan_app/config/app_api_config.dart';
 import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 
+extension FirstWhereOrNullExtension<E> on Iterable<E> {
+  E? firstWhereOrNull(bool Function(E) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+}
+
 class LiveChatProvider with ChangeNotifier {
   final int roomId;
   LiveChatProvider({required this.roomId});
@@ -45,8 +54,9 @@ class LiveChatProvider with ChangeNotifier {
   int? _currentRoomId;
   int? get currentRoomId => _currentRoomId;
 
-  // Track current user ID to prevent self-message duplicates
+  // Track current user ID and avatar to prevent self-message duplicates
   int? _currentUserId;
+  String? _currentUserAvatar;
 
   int? _listenerId;
 
@@ -182,7 +192,9 @@ class LiveChatProvider with ChangeNotifier {
       },
       onMessage: (channel, messageData) {
         try {
-          final msg = LiveChatMessage.fromJson(messageData);
+          // Check if messageData contains a nested 'message' object
+          final messageJson = messageData['message'] ?? messageData;
+          final msg = LiveChatMessage.fromJson(messageJson);
           final messageId = msg.id.toString();
 
           // Skip if this is a message from the current user
@@ -199,13 +211,21 @@ class LiveChatProvider with ChangeNotifier {
           final isDuplicate = _messages.any((m) => m.id == messageId);
           if (isDuplicate) return;
 
+          // Check if this is a message from the current user
+          final isFromCurrentUser = _currentUserId != null && 
+                                 msg.userId.toString() == _currentUserId.toString();
+          
           _messages.add(
             ChatMessage(
               id: messageId,
               username: msg.name,
               message: msg.message,
               timestamp: msg.timestamp,
-              userAvatar: msg.avatar,
+              // For current user's messages, always use the stored avatar
+              // For others, use the one from the server
+              userAvatar: isFromCurrentUser 
+                  ? _currentUserAvatar ?? msg.avatar 
+                  : msg.avatar,
             ),
           );
 
@@ -390,6 +410,9 @@ class LiveChatProvider with ChangeNotifier {
     String? avatar,
   }) {
     _currentUserId = userId;
+    if (avatar != null && avatar.isNotEmpty) {
+      _currentUserAvatar = avatar;
+    }
 
     final idStr = userId.toString();
     final index = _onlineUsers.indexWhere((u) => u.id == idStr);
@@ -430,6 +453,9 @@ class LiveChatProvider with ChangeNotifier {
     // Add to pending set
     _pendingMessageIds.add(tempId);
 
+    // Use the stored avatar if available, otherwise use the one passed in
+    final avatarToUse = _currentUserAvatar ?? userAvatar;
+    
     // optimistic update
     _messages.add(
       ChatMessage(
@@ -437,7 +463,7 @@ class LiveChatProvider with ChangeNotifier {
         username: username,
         message: t,
         timestamp: now,
-        userAvatar: userAvatar,
+        userAvatar: avatarToUse,
       ),
     );
     notifyListeners();
@@ -456,14 +482,15 @@ class LiveChatProvider with ChangeNotifier {
         return;
       }
 
-      // Add the confirmed message from server
+      // Add the confirmed message from server, always use the stored avatar for current user's messages
       _messages.add(
         ChatMessage(
           id: finalId,
           username: sent.name,
           message: sent.message,
           timestamp: sent.timestamp,
-          userAvatar: sent.avatar,
+          // Always use the stored avatar for current user's messages
+          userAvatar: _currentUserAvatar ?? sent.avatar,
         ),
       );
 

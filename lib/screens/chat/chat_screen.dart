@@ -42,10 +42,10 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     final user = context.read<UserProvider>().user;
     if (user != null) {
       context.read<LiveChatProvider>().setCurrentUserId(
-            user.id,
-            name: user.name,
-            avatar: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
-          );
+        user.id,
+        name: user.name,
+        avatar: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
+      );
     }
   }
 
@@ -102,10 +102,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   Future<void> _sendMessage(LiveChatProvider prov) async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-    final userName = context.read<UserProvider>().user?.name ?? 'Anda';
+    final user = context.read<UserProvider>().user;
+    final userName = user?.name ?? 'Anda';
+    final userAvatar = user?.avatarUrl;
 
     try {
-      await prov.send(text, username: userName);
+      await prov.send(text, username: userName, userAvatar: userAvatar);
       _messageController.clear();
       _scrollToBottom();
     } catch (e) {
@@ -151,8 +153,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       final avatarUrl = user.userAvatar?.trim();
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.surfaceVariant,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceVariant,
                           child: ClipOval(
                             child: (avatarUrl != null && avatarUrl.isNotEmpty)
                                 ? Image.network(
