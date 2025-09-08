@@ -14,6 +14,7 @@ class LiveChatSocketService {
 
   final PusherChannelsFlutter _pusher = PusherChannelsFlutter.getInstance();
   bool _connected = false;
+  final Map<int, void Function(PusherEvent)> _likeCallbacks = {};
 
   bool get isConnected => _connected;
 
@@ -25,6 +26,7 @@ class LiveChatSocketService {
 
   final Map<String, bool> _subscribedChannels = {};
   final Map<String, bool> _presenceChannels = {};
+  final Map<int, PusherChannel> _likeChannels = {};
 
   // Get auth token from secure storage
   Future<String?> _getAuthToken() async {
@@ -162,7 +164,27 @@ class LiveChatSocketService {
               return;
             }
 
-            // 5) Fallback for unhandled events
+            // 5) Handle like updates
+            if (event.eventName == 'LikeUpdated' ||
+                event.eventName.endsWith('LikeUpdated')) {
+              final data = _eventMap(event.data);
+              final channelName = event.channelName;
+              if (channelName.startsWith('like-room-')) {
+                final roomId = int.tryParse(
+                  channelName.replaceAll('like-room-', ''),
+                );
+                if (roomId != null) {
+                  final likeCount = _toInt(data['likeCount']);
+                  debugPrint(
+                    '❤️ Global handler: Like count updated to $likeCount for room $roomId',
+                  );
+                  // This will be handled by the specific subscription in subscribeLike
+                }
+              }
+              return;
+            }
+
+            // 6) Fallback for unhandled events
             debugPrint(
               'Unhandled event: ${event.eventName} on ${event.channelName}',
             );
@@ -456,20 +478,111 @@ class LiveChatSocketService {
     }
   }
 
+  // Track active like subscriptions
+  final Map<String, StreamSubscription<dynamic>> _likeSubscriptions = {};
+
   Future<void> subscribeLike({
     required int roomId,
     required void Function(int likeCount) onUpdated,
   }) async {
     final channelName = 'like-room-$roomId';
+    debugPrint('🔔 Subscribing to like updates on channel: $channelName');
+
+    // Pastikan konek
+    await ensureConnected();
+
+    // Kalau sudah subscribe sebelumnya, unsubscribe dulu biar gak dobel handler
+    try {
+      await _pusher.unsubscribe(channelName: channelName);
+    } catch (_) {}
+
+    // Subscribe dengan onEvent seperti subscribeToChat
     await _pusher.subscribe(
       channelName: channelName,
       onEvent: (event) {
-        if (event.eventName != 'LikeUpdated') return;
-        final payload = _eventMap(event.data);
-        final count = _toInt(payload['likeCount']);
-        onUpdated(count);
+        try {
+          final name = event.eventName ?? '';
+          // Terima berbagai kemungkinan nama event
+          final isLikeEvent =
+              name == 'LikeUpdated' ||
+              name.endsWith('.LikeUpdated') ||
+              name == 'like-updated';
+
+          if (!isLikeEvent) {
+            // biarkan event lain diproses oleh handler global
+            return;
+          }
+
+          // Parse payload
+          final data = _eventMap(event.data);
+          // Ambil count dari beberapa kemungkinan key
+          final count = _toInt(
+            data['likeCount'] ??
+                data['like_count'] ??
+                (data['data'] is Map ? data['data']['likeCount'] : null) ??
+                (data['data'] is Map ? data['data']['like_count'] : null) ??
+                0,
+          );
+
+          debugPrint('❤️ Like event [$name] on $channelName -> $count');
+          onUpdated(count);
+        } catch (e) {
+          debugPrint('❌ Error in like onEvent: $e');
+        }
       },
     );
+
+    // Tandai subscribed (opsional)
+    _subscribedChannels[channelName] = true;
+    debugPrint(
+      '✅ Successfully subscribed to like updates on channel: $channelName',
+    );
+  }
+
+  Future<void> unsubscribeLike(int roomId) async {
+    final channelName = 'like-room-$roomId';
+    try {
+      await _pusher.unsubscribe(channelName: channelName);
+      _subscribedChannels.remove(channelName);
+      debugPrint('✅ Unsubscribed from like updates on channel: $channelName');
+    } catch (e) {
+      debugPrint('⚠️ Error unsubscribing from $channelName: $e');
+    }
+  }
+
+  void _handleLikeEvent(dynamic eventData, void Function(int) onUpdated) {
+    try {
+      dynamic data;
+      if (eventData is Map) {
+        data = eventData;
+      } else if (eventData is String) {
+        try {
+          data = jsonDecode(eventData);
+        } catch (e) {
+          debugPrint('⚠️ Could not parse event data as JSON: $eventData');
+          return;
+        }
+      }
+
+      if (data != null) {
+        debugPrint('✅ Parsed data: $data');
+
+        // Try to extract likeCount from different possible locations
+        final count = _toInt(
+          data['likeCount'] ??
+              (data['data'] is Map ? data['data']['likeCount'] : null) ??
+              0,
+        );
+
+        debugPrint('❤️ Like count updated: $count');
+        onUpdated(count);
+      } else {
+        debugPrint('⚠️ Received null or invalid like data');
+      }
+    } catch (e) {
+      debugPrint('❌ Error processing like update: $e');
+      debugPrint('Stack trace: ${e.toString()}');
+    }
   }
 
   Future<void> unsubscribePresence(int roomId) async {
@@ -481,12 +594,6 @@ class LiveChatSocketService {
   Future<void> unsubscribePublic(int roomId) async {
     final channelName = 'chat.room.$roomId';
     await _pusher.unsubscribe(channelName: channelName);
-    _subscribedChannels.remove(channelName);
-  }
-
-  Future<void> unsubscribeLike(int roomId) async {
-    final channelName = 'like-room-$roomId';
-    await _pusher.unsubscribe(channelName: channelName);
   }
 
   Future<void> unsubscribeStatus() async {
@@ -496,7 +603,7 @@ class LiveChatSocketService {
     _subscribedChannels.remove(channelName);
   }
 
-  // ==== Utils & event handlers ====
+  // ...
 
   Map<String, dynamic> _eventMap(dynamic raw) {
     try {

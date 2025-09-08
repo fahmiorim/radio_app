@@ -18,7 +18,7 @@ class FullPlayer extends StatefulWidget {
 
 class _FullPlayerState extends State<FullPlayer> {
   final _audioManager = AudioPlayerManager.instance;
-  bool isFavorited = false;
+
   int _likeCount = 0;
   bool _liked = false;
   bool _isLive = false;
@@ -67,35 +67,103 @@ class _FullPlayerState extends State<FullPlayer> {
 
   Future<void> _initLike() async {
     try {
+      debugPrint('🔄 Fetching initial like status...');
+      
+      // First, ensure WebSocket is connected
+      try {
+        await LiveChatSocketService.I.ensureConnected();
+        debugPrint('✅ WebSocket connection established');
+      } catch (e) {
+        debugPrint('⚠️ Could not establish WebSocket connection: $e');
+      }
+      
+      // Then fetch the current status
       final status = await LiveChatService.I.fetchGlobalStatus();
-      _isLive = status.isLive;
-      _likeCount = status.likes;
-      _liked = status.liked;
-      _liveRoomId = status.roomId;
-      if (_isLive && _liveRoomId != null) {
-        await LiveChatSocketService.I.subscribeLike(
-          roomId: _liveRoomId!,
-          onUpdated: (count) => setState(() => _likeCount = count),
+      debugPrint('📊 Initial status: isLive=${status.isLive}, likes=${status.likes}, liked=${status.liked}, roomId=${status.roomId}');
+      
+      if (mounted) {
+        setState(() {
+          _isLive = status.isLive;
+          _likeCount = status.likes;
+          _liked = status.liked;
+          _liveRoomId = status.roomId;
+        });
+
+        if (_isLive && _liveRoomId != null) {
+          debugPrint('🔌 Subscribing to like updates for room $_liveRoomId');
+          
+          // Add a small delay to ensure WebSocket is ready
+          await Future.delayed(const Duration(milliseconds: 500));
+          
+          try {
+            await LiveChatSocketService.I.subscribeLike(
+              roomId: _liveRoomId!,
+              onUpdated: (count) {
+                debugPrint('❤️ Received like update: $count');
+                if (mounted) {
+                  setState(() {
+                    _likeCount = count;
+                    // Don't update _liked here as we only get count updates
+                  });
+                }
+              },
+            );
+            debugPrint('✅ Successfully subscribed to like updates');
+          } catch (e) {
+            debugPrint('❌ Error subscribing to like updates: $e');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Tidak dapat terhubung ke pembaruan like.'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          }
+        } else {
+          debugPrint('ℹ️ Not live or no room ID, skipping WebSocket subscription');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error initializing like status: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal memuat status like.'),
+            duration: Duration(seconds: 2),
+          ),
         );
       }
-      if (mounted) setState(() {});
-    } catch (_) {
-      // ignore errors silently
     }
   }
 
   Future<void> _toggleLike() async {
-    if (_liveRoomId == null) return;
+    if (_liveRoomId == null) {
+      debugPrint('❌ Cannot toggle like: liveRoomId is null');
+      return;
+    }
+    
     try {
+      debugPrint('🔄 Toggling like for room: $_liveRoomId');
       final res = await LiveChatService.I.toggleLike(_liveRoomId!);
+      
       if (mounted) {
         setState(() {
           _liked = res['liked'] == true;
-          _likeCount = res['likes'] ?? _likeCount;
+          _likeCount = (res['likes'] as int?) ?? _likeCount;
+          debugPrint('✅ Like toggled: liked=$_liked, count=$_likeCount');
         });
       }
-    } catch (_) {
-      // ignore errors silently
+    } catch (e) {
+      debugPrint('❌ Error toggling like: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal memperbarui like. Coba lagi nanti.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 
@@ -254,7 +322,7 @@ class _FullPlayerState extends State<FullPlayer> {
                       final pos = snapshot.data ?? Duration.zero;
                       final duration = _audioManager.player.duration;
 
-                      // Jika durasi null (umum untuk radio live), jadikan indeterminate
+                      // Radio live → durasi null/0, pakai indeterminate
                       final isIndeterminate =
                           duration == null || duration.inMilliseconds <= 0;
                       double? progress;
@@ -286,7 +354,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   ),
                 ),
 
-                // === Player Control ===
+                // === Player Controls (Heart = Like) ===
                 Expanded(
                   flex: 2,
                   child: Center(
@@ -303,54 +371,39 @@ class _FullPlayerState extends State<FullPlayer> {
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // Favorite
-                            IconButton(
-                              icon: Icon(
-                                isFavorited
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: isFavorited
-                                    ? theme.colorScheme.secondary
-                                    : theme.colorScheme.onSurfaceVariant,
-                              ),
-                              iconSize: 28,
-                              onPressed: () {
-                                setState(() => isFavorited = !isFavorited);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      isFavorited
-                                          ? 'Added to favorites'
-                                          : 'Removed from favorites',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: isFavorited
-                                                ? theme.colorScheme.onSecondary
-                                                : theme.colorScheme.onSurface,
-                                          ),
-                                    ),
-                                    backgroundColor: isFavorited
-                                        ? theme.colorScheme.secondary
-                                        : theme.colorScheme.onSurfaceVariant,
+                            // HEART = LIKE
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    _liked
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
                                   ),
-                                );
-                              },
+                                  color: _isLive
+                                      ? (_liked
+                                            ? const Color(0xFFDB2777)
+                                            : theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant)
+                                      : theme.disabledColor,
+                                  iconSize: 28,
+                                  onPressed: _isLive ? _toggleLike : null,
+                                  tooltip: _liked ? 'Batalkan Suka' : 'Suka',
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '$_likeCount',
+                                  style: TextStyle(
+                                    color: _isLive
+                                        ? Colors.white70
+                                        : theme.disabledColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(width: 25),
 
-                            // Like
-                            IconButton(
-                              icon: Icon(
-                                Icons.thumb_up,
-                                color: _isLive
-                                    ? (_liked
-                                        ? theme.colorScheme.primary
-                                        : theme.colorScheme.onSurfaceVariant)
-                                    : theme.disabledColor,
-                              ),
-                              onPressed: _isLive ? _toggleLike : null,
-                            ),
-                            Text('$_likeCount'),
                             const SizedBox(width: 25),
 
                             // Play / Pause
@@ -377,10 +430,14 @@ class _FullPlayerState extends State<FullPlayer> {
                                             : Icons.play_arrow,
                                       ),
                                       onPressed: () async {
-                                        await radioProvider.togglePlayPause();
+                                        await Provider.of<RadioStationProvider>(
+                                          context,
+                                          listen: false,
+                                        ).togglePlayPause();
                                       },
                                     ),
                             ),
+
                             const SizedBox(width: 25),
 
                             // Share
@@ -391,12 +448,10 @@ class _FullPlayerState extends State<FullPlayer> {
                               ),
                               iconSize: 28,
                               onPressed: () async {
-                                final sTitle = currentStation.title;
-                                final sHost = currentStation.host;
-                                final sUrl = currentStation.streamUrl;
+                                final s = currentStation;
                                 await Share.share(
-                                  '🎵 Listening to "$sTitle" on $sHost\n\n$sUrl',
-                                  subject: 'Listen to $sTitle',
+                                  '🎵 Listening to "${s.title}" on ${s.host}\n\n${s.streamUrl}',
+                                  subject: 'Listen to ${s.title}',
                                 );
                               },
                             ),
