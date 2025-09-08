@@ -81,17 +81,15 @@ class _FullPlayerState extends State<FullPlayer> {
       );
     }
 
-    final cover = nowPlaying?.artUrl?.isNotEmpty == true
-        ? nowPlaying!.artUrl
-        : (currentStation.coverUrl ?? '');
+    String clean(String? s) {
+      final t = s?.trim();
+      if (t == null || t.isEmpty || t.toLowerCase() == 'null') return '';
+      return t;
+    }
 
-    final title = nowPlaying?.title?.isNotEmpty == true
-        ? nowPlaying!.title
-        : (currentStation.title ?? 'Unknown Title');
-
-    final artist = nowPlaying?.artist?.isNotEmpty == true
-        ? nowPlaying!.artist
-        : (currentStation.host ?? 'Unknown');
+    final cover = clean(nowPlaying?.artUrl);
+    final title = clean(nowPlaying?.title);
+    final artist = clean(nowPlaying?.artist);
 
     return Scaffold(
       appBar: AppBar(
@@ -167,8 +165,9 @@ class _FullPlayerState extends State<FullPlayer> {
                       const SizedBox(height: 4),
                       Text(
                         artist,
-                        style:
-                            theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontSize: 14,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -211,11 +210,10 @@ class _FullPlayerState extends State<FullPlayer> {
                           duration == null || duration.inMilliseconds <= 0;
                       double? progress;
                       if (!isIndeterminate) {
-                        final denom = duration!.inMilliseconds == 0
+                        final denom = duration.inMilliseconds == 0
                             ? 1
                             : duration.inMilliseconds;
-                        progress =
-                            (pos.inMilliseconds / denom).clamp(0.0, 1.0);
+                        progress = (pos.inMilliseconds / denom).clamp(0.0, 1.0);
                         if (progress.isNaN) progress = 0.0;
                       }
 
@@ -251,7 +249,7 @@ class _FullPlayerState extends State<FullPlayer> {
                         final processing = state?.processingState;
                         final isLoading =
                             processing == ProcessingState.loading ||
-                                processing == ProcessingState.buffering;
+                            processing == ProcessingState.buffering;
 
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -277,10 +275,10 @@ class _FullPlayerState extends State<FullPlayer> {
                                           : 'Removed from favorites',
                                       style: theme.textTheme.bodyMedium
                                           ?.copyWith(
-                                        color: isFavorited
-                                            ? theme.colorScheme.onSecondary
-                                            : theme.colorScheme.onSurface,
-                                      ),
+                                            color: isFavorited
+                                                ? theme.colorScheme.onSecondary
+                                                : theme.colorScheme.onSurface,
+                                          ),
                                     ),
                                     backgroundColor: isFavorited
                                         ? theme.colorScheme.secondary
@@ -329,12 +327,9 @@ class _FullPlayerState extends State<FullPlayer> {
                               ),
                               iconSize: 28,
                               onPressed: () async {
-                                final sTitle =
-                                    currentStation.title ?? 'ODAN FM';
-                                final sHost =
-                                    currentStation.host ?? 'ODAN FM';
-                                final sUrl =
-                                    currentStation.streamUrl ?? '';
+                                final sTitle = currentStation.title;
+                                final sHost = currentStation.host;
+                                final sUrl = currentStation.streamUrl;
                                 await Share.share(
                                   '🎵 Listening to "$sTitle" on $sHost\n\n$sUrl',
                                   subject: 'Listen to $sTitle',

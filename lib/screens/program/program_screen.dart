@@ -91,8 +91,6 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       appBar: CustomAppBar.transparent(
         context: context,
@@ -130,18 +128,14 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
         if (provider.listError != null && provider.allPrograms.isEmpty) {
           final theme = Theme.of(context);
           final colors = theme.colorScheme;
-          
+
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48,
-                    color: colors.error,
-                  ),
+                  Icon(Icons.error_outline, size: 48, color: colors.error),
                   const SizedBox(height: 16),
                   Text(
                     'Gagal memuat daftar program',
@@ -184,7 +178,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
         if (provider.allPrograms.isEmpty) {
           final theme = Theme.of(context);
           final colors = theme.colorScheme;
-          
+
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -301,8 +295,11 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                 ),
                 const SizedBox(width: 16),
                 Expanded(child: _ProgramTexts(program: program)),
-                Icon(Icons.chevron_right,
-                    color: Theme.of(context).colorScheme.onSurface, size: 24),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  size: 24,
+                ),
               ],
             ),
           ),
@@ -353,22 +350,20 @@ class _ProgramTexts extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.schedule,
-                  size: 14,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withOpacity(0.7)),
+              Icon(
+                Icons.schedule,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              ),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   program.jadwal!,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

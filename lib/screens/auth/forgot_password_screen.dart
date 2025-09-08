@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
 
-import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -37,7 +36,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-              'Link reset password telah dikirim. Cek email Anda.'),
+            'Link reset password telah dikirim. Cek email Anda.',
+          ),
           backgroundColor: theme.colorScheme.primary,
         ),
       );
@@ -49,10 +49,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(err),
-          backgroundColor: theme.colorScheme.error,
-        ),
+        SnackBar(content: Text(err), backgroundColor: theme.colorScheme.error),
       );
     }
   }
