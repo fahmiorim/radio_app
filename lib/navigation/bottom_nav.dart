@@ -90,8 +90,7 @@ class _BottomNavState extends State<BottomNav> {
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor:
-                Theme.of(context).colorScheme.onSurfaceVariant,
+            unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
             selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
             unselectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.normal,
@@ -107,10 +106,9 @@ class _BottomNavState extends State<BottomNav> {
             color: Theme.of(context).colorScheme.surface,
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withOpacity(0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withOpacity(0.1),
                 blurRadius: 10,
                 offset: const Offset(0, -2),
               ),
@@ -122,6 +120,7 @@ class _BottomNavState extends State<BottomNav> {
               if (index == 3) {
                 if (_isLoadingRoom) {
                   // Tampilkan loading indicator jika masih memuat
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Memuat ruang chat...')),
                   );
@@ -132,20 +131,16 @@ class _BottomNavState extends State<BottomNav> {
                   // Tampilkan pesan error jika tidak ada room yang aktif
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Tidak ada siaran aktif saat ini')),
+                    const SnackBar(
+                      content: Text('Tidak ada siaran aktif saat ini'),
+                    ),
                   );
-                  return;
+                } else {
+                  final result = await Navigator.of(
+                    context,
+                  ).push(ChatScreenWrapper.route(_roomId!));
                 }
-
-                final result = await Navigator.of(context).push(
-                  ChatScreenWrapper.route(_roomId!),
-                );
-
-                if (result == 'goHome') {
-                  setState(() {
-                    _currentIndex = 0;
-                  });
-                }
+                return;
               } else {
                 setState(() {
                   _currentIndex = index;
