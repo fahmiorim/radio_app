@@ -257,7 +257,10 @@ class LiveChatProvider with ChangeNotifier {
           final onlineUsers = await _http.getOnlineUsers(roomId);
           _onlineUsers.clear();
           _onlineUsers.addAll(
-            onlineUsers.map((user) {
+            onlineUsers
+                .where((u) =>
+                    u['id'] != null && u['id'].toString().isNotEmpty)
+                .map((user) {
               final rawAvatar = user['avatar']?.toString().trim();
               String? avatarUrl;
               if (rawAvatar != null && rawAvatar.isNotEmpty) {
