@@ -251,9 +251,17 @@ class LiveChatService {
       );
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
+      final src = _asMap(body['data'] ?? body);
+      final ok = body['success'] == true ||
+          body['status'] == true ||
+          src.containsKey('liked') ||
+          src.containsKey('likes');
 
-      if (code == 200 && body['success'] == true) {
-        return {'liked': body['liked'] == true, 'likes': _toInt(body['likes'])};
+      if (code == 200 && ok) {
+        return {
+          'liked': src['liked'] == true,
+          'likes': _toInt(src['likes']),
+        };
       }
       if (code == 401 || code == 403) {
         throw Exception('Unauthorized');
