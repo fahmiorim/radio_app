@@ -58,8 +58,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: title,
       backgroundColor: AppColors.transparent,
       elevation: 0,
-      titleColor: titleColor ?? colors.onSurface,
-      iconColor: iconColor ?? colors.onSurface,
+      titleColor: titleColor ?? colors.primary,
+      iconColor: iconColor ?? colors.primary,
       actions: actions,
       leading: leading,
       flexibleSpace: showGradient
@@ -164,10 +164,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  // Tombol back selalu kontras: pakai primary/onPrimary dari ColorScheme
+  // Tombol back dengan ikon berwarna primary dan latar transparan
   Widget _buildModernBackButton(BuildContext context, ColorScheme colors) {
-    final bg = colors.primary;
-    final fg = colors.onPrimary;
+    final fg = colors.primary;
+    const bg = AppColors.transparent;
 
     return IconButton(
       onPressed: () => Navigator.maybePop(context),
