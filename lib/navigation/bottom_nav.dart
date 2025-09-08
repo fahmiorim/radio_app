@@ -130,11 +130,10 @@ class _BottomNavState extends State<BottomNav> {
 
                 if (_roomId == null) {
                   // Tampilkan pesan error jika tidak ada room yang aktif
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Tidak ada siaran aktif saat ini')),
-                    );
-                  }
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Tidak ada siaran aktif saat ini')),
+                  );
                   return;
                 }
 
