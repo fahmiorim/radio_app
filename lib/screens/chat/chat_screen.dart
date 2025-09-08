@@ -217,9 +217,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             return Scaffold(
               appBar: CustomAppBar(
                 title: 'Live Chat',
-                backgroundColor: colors.surface,
-                titleColor: colors.primary,
-                iconColor: colors.primary,
+                backgroundColor: colors.primary,
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
@@ -244,11 +242,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
           return Scaffold(
             appBar: CustomAppBar(
               title: prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat',
-              backgroundColor: colors.surface,
-              titleColor: colors.primary,
-              iconColor: colors.primary,
+              backgroundColor: colors.primary,
               leading: IconButton(
-                icon: Icon(Icons.arrow_back, color: colors.primary),
+                icon: const Icon(Icons.arrow_back),
                 onPressed: () async {
                   await prov.leaveRoom();
                   await prov.shutdown();
