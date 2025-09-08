@@ -39,10 +39,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
     try {
       // Always fetch fresh data when the screen loads
       await prov.fetchDetail(programId);
-    } catch (_) {
-      // Error will be handled by the UI through the provider's error state
-      debugPrint('Error loading program details');
-    }
+    } catch (_) {}
   }
 
   Widget _buildInfoCard(String title, String value, {IconData? icon}) {
@@ -59,11 +56,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             if (icon != null)
               Row(
                 children: [
-                  Icon(
-                    icon,
-                    color: theme.colorScheme.onSurface,
-                    size: 20,
-                  ),
+                  Icon(icon, color: theme.colorScheme.onSurface, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     title,
@@ -200,8 +193,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                         const SizedBox(height: 16),
                         Text(
                           'Gagal memuat detail program',
-                          style:
-                              Theme.of(context).textTheme.titleMedium,
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -226,8 +218,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                       Icon(
                         Icons.radio,
                         size: 64,
-                        color:
-                            Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onBackground,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -254,10 +245,9 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                               ),
                               child: Text(
                                 program.namaProgram,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .displaySmall
-                                    ?.copyWith(height: 1.2),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.displaySmall?.copyWith(height: 1.2),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -302,5 +292,4 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
       },
     );
   }
-
 }

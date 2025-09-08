@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import 'package:radio_odan_app/models/chat_model.dart';
@@ -64,29 +66,20 @@ class LiveChatProvider with ChangeNotifier {
   // ==== INIT ====
   Future<void> init() async {
     if (_isInitialized) return;
-    print('🔌 Initializing LiveChatProvider...');
 
     try {
       // Initialize socket connection
-      print('🔄 Initializing socket connection...');
       await _sock.connect();
 
       // Load initial status
-      print('🔄 Loading initial status...');
       await refreshStatus();
 
       // Wire up realtime callbacks
-      print('🔌 Wiring up realtime callbacks...');
       _wireRealtimeCallbacks();
 
       // Subscribe to chat room if live
       if (_isLive) {
-        print(
-          '🎙️ Live broadcast detected, subscribing to room ${_currentRoomId}...',
-        );
         await _subscribePublicOnce();
-      } else {
-        print('⏸️  No active broadcast detected');
       }
 
       await _subscribePresenceOnce();
@@ -104,7 +97,6 @@ class LiveChatProvider with ChangeNotifier {
 
       _isInitialized = true;
     } catch (e) {
-      print('❌ Error initializing LiveChatProvider: $e');
       rethrow;
     }
   }
@@ -113,25 +105,14 @@ class LiveChatProvider with ChangeNotifier {
   void _wireRealtimeCallbacks() {
     _sock.setCallbacks(
       onStatusUpdate: (data) {
-        print('\n🔔 === STATUS UPDATE RECEIVED ===');
-        print('📡 Raw data: $data');
-
         // event: LiveRoomStatusUpdated
         final isLive = data['is_live'] == true || data['status'] == 'started';
-        print('📢 Live status: $isLive');
-        print('🔍 Previous live status: $_isLive');
 
         if (isLive != _isLive) {
-          print('🔄 Live status changed from $_isLive to $isLive');
           _isLive = isLive;
-        } else {
-          print('ℹ️  Live status unchanged ($isLive)');
         }
 
         if (!_isLive) {
-          print(
-            '❌ Stream is not live, clearing messages and notifying listeners',
-          );
           _messages.clear();
           _onlineUsers.clear();
           _currentRoomId = null;
@@ -153,21 +134,22 @@ class LiveChatProvider with ChangeNotifier {
       },
       onUserJoined: (channel, user) {
         try {
-          final map = user as Map<String, dynamic>;
-          final id = (map['userId'] ?? '').toString();
+          final id = (user['userId'] ?? '').toString();
           if (id.isEmpty || id == '0') return;
 
           // Skip if user already exists in the list
           if (_onlineUsers.indexWhere((x) => x.id == id) != -1) return;
 
           // Extract username with fallback to 'Pengguna' if not found or invalid
-          String username = (map['userInfo']?['name'] ?? 
-                           map['userInfo']?['username'] ?? 
-                           'Pengguna ${id.substring(0, 4)}').toString().trim();
-          
+          String username =
+              (user['userInfo']?['name'] ??
+                      user['userInfo']?['username'] ??
+                      'Pengguna ${id.substring(0, 4)}')
+                  .toString()
+                  .trim();
+
           // Skip if username is empty or contains only whitespace
           if (username.isEmpty) {
-            print('⚠️ Skipped adding user with empty username');
             return;
           }
 
@@ -176,7 +158,7 @@ class LiveChatProvider with ChangeNotifier {
               id: id,
               username: username,
               userAvatar:
-                  (map['userInfo']?['avatar'] ?? map['userInfo']?['photo'])
+                  (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])
                       ?.toString(),
               joinTime: DateTime.now(),
             ),
@@ -201,9 +183,7 @@ class LiveChatProvider with ChangeNotifier {
           );
 
           notifyListeners();
-        } catch (e) {
-          print('❌ Error in onUserJoined: $e');
-        }
+        } catch (_) {}
       },
       onUserLeft: (channel, user) {
         try {
@@ -229,32 +209,69 @@ class LiveChatProvider with ChangeNotifier {
             );
             notifyListeners();
           }
-        } catch (e) {
-          print('❌ Error in onUserLeft: $e');
-        }
+        } catch (_) {}
       },
       onMessage: (channel, messageData) {
         try {
-          // Check if messageData contains a nested 'message' object
-          final messageJson = messageData['message'] ?? messageData;
-          final msg = LiveChatMessage.fromJson(messageJson);
-          final messageId = msg.id.toString();
-
-          // Skip if this is a message from the current user
-          if (_currentUserId != null && msg.userId == _currentUserId) {
+          // 0) Normalisasi payload -> Map<String, dynamic>
+          dynamic payload = messageData;
+          if (payload is String) {
+            try {
+              payload = jsonDecode(payload);
+            } catch (_) {
+              /* biarkan apa adanya */
+            }
+          }
+          Map<String, dynamic>? root;
+          if (payload is Map<String, dynamic>) {
+            root = payload;
+          } else if (payload is Map) {
+            root = Map<String, dynamic>.from(payload);
+          } else {
             return;
           }
 
-          // Skip if this is a pending message we're already handling
-          if (_pendingMessageIds.any((id) => messageId.contains(id))) {
-            return;
+          // 1) Unwrap SEKALI jika root HANYA punya key 'message'
+          dynamic inner = (root.length == 1 && root.containsKey('message'))
+              ? root['message']
+              : root;
+
+          // 2) Jika inner string: coba decode JSON; kalau gagal, anggap teks chat
+          if (inner is String) {
+            try {
+              final decoded = jsonDecode(inner);
+              inner = decoded is Map<String, dynamic>
+                  ? decoded
+                  : Map<String, dynamic>.from(decoded as Map);
+            } catch (_) {
+              inner = {'message': inner};
+            }
           }
 
-          // Check for duplicates by ID
-          final isDuplicate = _messages.any((m) => m.id == messageId);
-          if (isDuplicate) return;
+          if (inner is! Map) {
+            return;
+          }
+          final Map<String, dynamic> messageMap = inner is Map<String, dynamic>
+              ? inner
+              : Map<String, dynamic>.from(inner);
 
-          // Check if this is a message from the current user
+          // 3) Parse ke model kamu
+          final msg = LiveChatMessage.fromJson(messageMap);
+
+          // fallback ID kalau server tak kirim id
+          final messageId = (msg.id.toString().isNotEmpty)
+              ? msg.id.toString()
+              : 'srv_${msg.userId}_${msg.timestamp.millisecondsSinceEpoch}';
+
+          // 4) Cegah echo/duplikat
+          if (_currentUserId != null &&
+              msg.userId.toString() == _currentUserId.toString()) {
+            // Biasanya sudah tampil via optimistic UI -> skip agar tak dobel
+            return;
+          }
+          if (_pendingMessageIds.any((id) => messageId.contains(id))) return;
+          if (_messages.any((m) => m.id == messageId)) return;
+
           final isFromCurrentUser =
               _currentUserId != null &&
               msg.userId.toString() == _currentUserId.toString();
@@ -262,58 +279,44 @@ class LiveChatProvider with ChangeNotifier {
           _messages.add(
             ChatMessage(
               id: messageId,
-              username: msg.name,
+              username: msg.name.isNotEmpty ? msg.name : 'Pengguna',
               message: msg.message,
               timestamp: msg.timestamp,
-              // For current user's messages, always use the stored avatar
-              // For others, use the one from the server
               userAvatar: isFromCurrentUser
-                  ? _currentUserAvatar ?? msg.avatar
+                  ? (_currentUserAvatar ?? msg.avatar)
                   : msg.avatar,
             ),
           );
 
-          // Sort messages by timestamp to maintain order
+          // Urutkan naik: lama -> baru
           _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
           notifyListeners();
-        } catch (e) {
-          rethrow;
-        }
+        } catch (_) {}
       },
+
       onSystem: (_) {},
     );
   }
 
   // ==== STATUS (HTTP) ====
   Future<void> refreshStatus() async {
-    print('\n🔄 === REFRESHING STATUS ===');
-    print('🔍 Current roomId: $roomId');
-    print('🔍 Current live status: $_isLive');
-
     try {
       _isLoading = true;
       notifyListeners();
 
-      print('🌐 Fetching status from API...');
       final status = await _http.fetchStatus(roomId);
-      print(
-        '✅ Status received - isLive: ${status.isLive}, roomId: ${status.roomId}',
-      );
 
       final statusChanged = _isLive != status.isLive;
       _isLive = status.isLive;
       _currentRoomId = status.roomId;
 
-      if (statusChanged) {
-        print('🔄 Live status changed to: $_isLive');
-      }
+      if (statusChanged) {}
 
       // Get online users list if live
       if (_isLive) {
-        print('👥 Fetching online users...');
         try {
           final onlineUsers = await _http.getOnlineUsers(roomId);
-          print('✅ Found ${onlineUsers.length} online users');
+
           _onlineUsers.clear();
           _onlineUsers.addAll(
             onlineUsers
@@ -343,32 +346,30 @@ class LiveChatProvider with ChangeNotifier {
 
                   return OnlineUser(
                     id: user['id']?.toString() ?? '',
-                    username: (user['name'] ?? user['username'] ?? 'Pengguna ${user['id']?.toString().substring(0, 4) ?? ''}').toString().trim(),
+                    username:
+                        (user['name'] ??
+                                user['username'] ??
+                                'Pengguna ${user['id']?.toString().substring(0, 4) ?? ''}')
+                            .toString()
+                            .trim(),
                     userAvatar: avatarUrl,
                     joinTime: DateTime.now(),
                   );
                 }),
           );
-        } catch (e) {
-          debugPrint('Error fetching online users: $e');
-        }
+        } catch (_) {}
 
         await _subscribePublicOnce();
         await loadMore();
       } else {
-        print('⏸️  No active broadcast, clearing messages and online users');
         _messages.clear();
         _onlineUsers.clear();
       }
     } catch (e) {
-      print('❌ Error refreshing status: $e');
       _isLive = false;
       _messages.clear();
       rethrow;
     } finally {
-      print(
-        '✅ Status refresh completed. isLive: $_isLive, roomId: $_currentRoomId',
-      );
       _isLoading = false;
       notifyListeners();
     }
@@ -458,7 +459,6 @@ class LiveChatProvider with ChangeNotifier {
       }
     } catch (e) {
       // Don't rethrow here to prevent breaking the UI
-      debugPrint('Error loading more messages: $e');
     } finally {
       _isLoadingMore = false;
       notifyListeners();

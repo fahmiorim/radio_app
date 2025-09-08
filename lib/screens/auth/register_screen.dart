@@ -71,12 +71,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) {
-      print('Form validation failed');
       return;
     }
 
     if (!_agreeTerms) {
-      print('Terms not agreed');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -93,12 +91,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (!mounted) return;
-    
+
     final auth = context.read<AuthProvider>();
-    print('Starting registration process...');
-    print('Name: ${_nameC.text.trim()}');
-    print('Email: ${_emailC.text.trim()}');
-    
+
     try {
       final errorMessage = await auth.register(
         _nameC.text.trim(),
@@ -106,31 +101,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _passC.text,
       );
 
-      print('Registration result - errorMessage: $errorMessage');
-      print('Mounted: $mounted');
+      if (!mounted) return;
 
-      if (!mounted) {
-        print('Not mounted, returning early');
-        return;
+      if (errorMessage == null) {
+        if (!mounted) return;
       }
 
       // If errorMessage is null, registration was successful
       if (errorMessage == null) {
-        print('Registration successful, preparing to navigate to verification screen');
         final email = _emailC.text.trim();
-        print('Will navigate to verification screen with email: $email');
-        
         try {
-          print('Attempting to push verification screen');
           await Navigator.pushReplacementNamed(
             context,
             AppRoutes.verification,
             arguments: email,
           );
-          print('Successfully navigated to verification screen');
         } catch (e) {
-          print('Error during navigation: $e');
-          print('Stack trace: ${e is Error ? e.stackTrace : ''}');
           // Show error to user
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -144,7 +130,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       } else {
         // Show error message
-        print('Registration failed: $errorMessage');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -159,7 +144,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
     } catch (e) {
-      print('Error during registration: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -179,29 +163,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (googleUser == null) return;
 
-      final GoogleSignInAuthentication googleAuth = 
+      final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      
+
       final credential = firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final userCred = await firebase_auth.FirebaseAuth.instance.signInWithCredential(credential);
+      final userCred = await firebase_auth.FirebaseAuth.instance
+          .signInWithCredential(credential);
       final user = userCred.user;
-      
+
       if (user != null) {
         final auth = context.read<AuthProvider>();
         final error = await auth.loginWithFirebase(user);
-        
+
         if (!mounted) return;
-        
+
         if (error == null) {
           // Successfully registered and logged in with Google
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            AppRoutes.bottomNav,
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil(AppRoutes.bottomNav, (route) => false);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -233,10 +217,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      hintStyle:
-          TextStyle(color: colorScheme.onBackground.withOpacity(0.54)),
-      labelStyle:
-          TextStyle(color: colorScheme.onBackground.withOpacity(0.7)),
+      hintStyle: TextStyle(color: colorScheme.onBackground.withOpacity(0.54)),
+      labelStyle: TextStyle(color: colorScheme.onBackground.withOpacity(0.7)),
       prefixIcon: Icon(icon, color: colorScheme.onBackground.withOpacity(0.7)),
       suffixIcon: trailing,
       filled: true,
@@ -389,7 +371,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             value: _agreeTerms,
                             onChanged: loading
                                 ? null
-                                : (v) => setState(() => _agreeTerms = v ?? false),
+                                : (v) =>
+                                      setState(() => _agreeTerms = v ?? false),
                             fillColor: WidgetStateProperty.resolveWith<Color>(
                               (states) => states.contains(WidgetState.selected)
                                   ? colorScheme.primary
@@ -482,12 +465,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               'atau daftar dengan',
                               style: TextStyle(
-                                color: colorScheme.onBackground.withOpacity(0.7),
+                                color: colorScheme.onBackground.withOpacity(
+                                  0.7,
+                                ),
                                 fontSize: 14,
                               ),
                             ),
@@ -517,9 +501,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
-                              color: colorScheme.onBackground.withOpacity(0.7)),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
+                            color: colorScheme.onBackground.withOpacity(0.7),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -533,7 +517,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Text(
                             'Sudah punya akun? ',
                             style: TextStyle(
-                                color: colorScheme.onBackground.withOpacity(0.7)),
+                              color: colorScheme.onBackground.withOpacity(0.7),
+                            ),
                           ),
                           TextButton(
                             onPressed: loading
@@ -569,8 +554,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
               color: colorScheme.onBackground.withOpacity(0.26),
               child: Center(
                 child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colorScheme.primary,
+                  ),
                 ),
               ),
             ),

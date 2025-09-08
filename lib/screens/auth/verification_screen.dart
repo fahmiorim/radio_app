@@ -109,7 +109,6 @@ class _VerificationScreenState extends State<VerificationScreen> {
         );
       }
     } catch (e) {
-      debugPrint('Error checking verification status: $e');
       if (mounted) {
         _toast('Gagal memeriksa status verifikasi.', ok: false);
       }

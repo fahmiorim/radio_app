@@ -77,31 +77,22 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<String?> register(String name, String email, String password) async {
-    print('AuthProvider.register() called with email: $email');
     _loading = true;
     notifyListeners();
 
     try {
-      print('Calling AuthService.register()...');
       final res = await AuthService.I.register(name, email, password);
 
-      print(
-        'AuthService.register() response - status: ${res.status}, message: ${res.message}',
-      );
-
       if (res.status) {
-        print('Registration successful');
         _user = res.user;
         _token = res.token;
 
         if ((_token ?? '').isNotEmpty) {
           ApiClient.I.setBearer(_token!);
-          print('Bearer token set successfully');
 
           // Save token to secure storage
           final storage = const FlutterSecureStorage();
           await storage.write(key: 'user_token', value: _token);
-          print('Token saved to secure storage');
         }
 
         return null; // Success, no error
@@ -112,7 +103,6 @@ class AuthProvider with ChangeNotifier {
             : 'Gagal melakukan registrasi';
       }
     } catch (e) {
-      print('Error during registration: $e');
       return 'Terjadi kesalahan: $e';
     } finally {
       _loading = false;

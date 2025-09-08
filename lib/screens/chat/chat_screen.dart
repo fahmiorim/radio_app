@@ -44,19 +44,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       final user = context.read<UserProvider>().user;
       final prov = context.read<LiveChatProvider>();
 
-      print('🎯 Initializing LiveChatScreen for room ${widget.roomId}');
-      print('🎯 Current live status: ${prov.isLive}');
-
       if (user != null) {
         prov.setCurrentUserId(
           user.id,
           name: user.name,
           avatar: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
         );
-        print('👤 User set: ${user.name} (${user.id})');
-      } else {
-        print('⚠️ No user logged in');
-      }
+      } else {}
 
       // Add listener for live status changes
       prov.addListener(_onLiveStatusChanged);
@@ -367,7 +361,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   void _onLiveStatusChanged() {
     final prov = context.read<LiveChatProvider>();
-    print('🔄 Live status changed to: ${prov.isLive}');
 
     if (prov.isLive) {
       // If we just went live, scroll to bottom to show latest messages
@@ -394,9 +387,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     try {
       final prov = context.read<LiveChatProvider>();
       prov.removeListener(_onLiveStatusChanged);
-    } catch (e) {
-      print('⚠️ Error removing listener: $e');
-    }
+    } catch (_) {}
 
     super.dispose();
   }

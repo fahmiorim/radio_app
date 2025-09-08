@@ -126,9 +126,7 @@ class AlbumService {
                 }
                 albums.add(AlbumModel.fromJson(albumData));
               }
-            } catch (e) {
-              print('Error processing album item: $e');
-              // Skip this item and continue with the next one
+            } catch (_) {
               continue;
             }
           }

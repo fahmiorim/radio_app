@@ -38,43 +38,39 @@ class _FullPlayerState extends State<FullPlayer> {
     Icons.star,
     Icons.emoji_emotions,
   ];
-  
+
   // Room yang saat ini disubscribe untuk like
   int? _subscribedRoomId;
 
   // Animasi floating emoji
   Widget _buildFloatingEmoji() {
     if (!_showLikeAnimation) return const SizedBox.shrink();
-    
+
     final icon = _reactions[_random.nextInt(_reactions.length)];
     final size = 20.0 + _random.nextDouble() * 30.0;
     final duration = Duration(milliseconds: 1000 + _random.nextInt(1000));
     final offsetX = -20.0 + _random.nextDouble() * 40.0;
-    
+
     return Positioned(
       bottom: 20,
       right: 0,
       left: 0,
       child: Center(
-        child: Icon(
-          icon,
-          color: Colors.red,
-          size: size,
-        )
-        .animate(
-          onComplete: (controller) {
-            if (mounted) {
-              setState(() => _showLikeAnimation = false);
-            }
-          },
-        )
-        .slide(
-          begin: const Offset(0, 0),
-          end: Offset(offsetX / 50, -2.0),
-          duration: duration,
-          curve: Curves.easeOut,
-        )
-        .fadeOut(duration: duration),
+        child: Icon(icon, color: Colors.red, size: size)
+            .animate(
+              onComplete: (controller) {
+                if (mounted) {
+                  setState(() => _showLikeAnimation = false);
+                }
+              },
+            )
+            .slide(
+              begin: const Offset(0, 0),
+              end: Offset(offsetX / 50, -2.0),
+              duration: duration,
+              curve: Curves.easeOut,
+            )
+            .fadeOut(duration: duration),
       ),
     );
   }
@@ -129,8 +125,6 @@ class _FullPlayerState extends State<FullPlayer> {
   // ====== Like initialization ======
   Future<void> _initLike() async {
     try {
-      debugPrint('🔄 Fetching initial like status...');
-      
       // Set initial state to show loading
       setState(() {
         _likeCount = 0; // Initialize with 0 first
@@ -138,23 +132,16 @@ class _FullPlayerState extends State<FullPlayer> {
       });
 
       // Fetch initial like status
-      debugPrint('🔄 Fetching global status...');
       final status = await LiveChatService.I.fetchGlobalStatus();
-      debugPrint(
-        '📊 Initial status => live=${status.isLive}, likes=${status.likes}, liked=${status.liked}',
-      );
 
       if (!mounted) return;
 
       // Update the UI with the latest status
-      debugPrint('📥 Initial like status - liked: ${status.liked}, count: ${status.likes}');
       setState(() {
         _isLive = status.isLive;
         _likeCount = status.likes < 0 ? 0 : status.likes;
         _liked = status.liked; // No need for null check as it's non-nullable
         _liveRoomId = status.roomId;
-        debugPrint('✨ Set initial like state - liked: $_liked, count: $_likeCount');
-        debugPrint('✨ isLive: $_isLive, roomId: $_liveRoomId');
       });
 
       // Subscribe to like updates if we have a room ID
@@ -162,7 +149,6 @@ class _FullPlayerState extends State<FullPlayer> {
         await _subscribeToLikeUpdates(status.roomId!);
       }
     } catch (e) {
-      debugPrint('❌ Error initializing like status: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -176,7 +162,7 @@ class _FullPlayerState extends State<FullPlayer> {
   // ====== Refresh like status ======
   Future<void> _refreshLikeStatus() async {
     if (_liveRoomId == null) return;
-    
+
     try {
       final status = await LiveChatService.I.fetchGlobalStatus();
       if (mounted) {
@@ -186,7 +172,6 @@ class _FullPlayerState extends State<FullPlayer> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Error refreshing like status: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -206,10 +191,10 @@ class _FullPlayerState extends State<FullPlayer> {
   // Subscribe to like updates for a room
   Future<void> _subscribeToLikeUpdates(int roomId) async {
     if (_subscribedRoomId == roomId) return;
-    
+
     // Unsubscribe from previous room if any
     await _unsubscribeFromLikeUpdates();
-    
+
     try {
       await LiveChatSocketService.I.subscribeLike(
         roomId: roomId,
@@ -222,10 +207,7 @@ class _FullPlayerState extends State<FullPlayer> {
         },
       );
       _subscribedRoomId = roomId;
-      debugPrint('✅ Subscribed to like updates for room $roomId');
-    } catch (e) {
-      debugPrint('❌ Failed to subscribe to like updates: $e');
-    }
+    } catch (e) {}
   }
 
   // Unsubscribe from like updates
@@ -233,9 +215,7 @@ class _FullPlayerState extends State<FullPlayer> {
     if (_subscribedRoomId != null) {
       try {
         await LiveChatSocketService.I.unsubscribeLike(_subscribedRoomId!);
-        debugPrint('✅ Unsubscribed from like updates for room $_subscribedRoomId');
       } catch (e) {
-        debugPrint('❌ Failed to unsubscribe from like updates: $e');
       } finally {
         _subscribedRoomId = null;
       }
@@ -256,7 +236,7 @@ class _FullPlayerState extends State<FullPlayer> {
   Future<void> _toggleLike() async {
     if (_liveRoomId == null || _busyToggle) return;
     _busyToggle = true;
-    
+
     final prevLiked = _liked;
     final prevCount = _likeCount;
 
@@ -265,23 +245,18 @@ class _FullPlayerState extends State<FullPlayer> {
       if (mounted) {
         setState(() {
           _liked = !prevLiked;
-          final next = _liked ? prevCount + 1 : (prevCount > 0 ? prevCount - 1 : 0);
+          final next = _liked
+              ? prevCount + 1
+              : (prevCount > 0 ? prevCount - 1 : 0);
           _likeCount = next < 0 ? 0 : next;
         });
       }
 
-      // Toggle like via REST API
-      debugPrint('🔄 Toggling like for room $_liveRoomId. Current liked: $_liked');
       final result = await LiveChatService.I.toggleLike(_liveRoomId!);
-      debugPrint('✅ Like toggle result: $result');
-      
-      // Update with actual server state if available
       if (result.isNotEmpty && mounted) {
-        debugPrint('📊 Like update data: $result');
         setState(() {
           _liked = result['liked'] == true;
           _likeCount = (result['likes'] as int?) ?? _likeCount;
-          debugPrint('✨ Updated like status - liked: $_liked, count: $_likeCount');
         });
       } else {
         // Fallback to refresh if no result
@@ -519,11 +494,11 @@ class _FullPlayerState extends State<FullPlayer> {
                                 GestureDetector(
                                   onTap: _isLive && !_busyToggle
                                       ? () async {
-                                          debugPrint('❤️ Like button tapped. Current liked: $_liked');
                                           await _toggleLike();
                                           if (_liked) {
-                                            debugPrint('🎉 Showing like animation');
-                                            setState(() => _showLikeAnimation = true);
+                                            setState(
+                                              () => _showLikeAnimation = true,
+                                            );
                                           }
                                         }
                                       : null,
@@ -535,16 +510,21 @@ class _FullPlayerState extends State<FullPlayer> {
                                     decoration: BoxDecoration(
                                       color: _isLive
                                           ? (_liked
-                                              ? Colors.red.withOpacity(0.1)
-                                              : theme.colorScheme.surfaceVariant)
-                                          : theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                                                ? Colors.red.withOpacity(0.1)
+                                                : theme
+                                                      .colorScheme
+                                                      .surfaceVariant)
+                                          : theme.colorScheme.surfaceVariant
+                                                .withOpacity(0.5),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
                                         color: _isLive
                                             ? (_liked
-                                                ? Colors.red
-                                                : theme.colorScheme.outline.withOpacity(0.5))
-                                            : theme.colorScheme.outline.withOpacity(0.3),
+                                                  ? Colors.red
+                                                  : theme.colorScheme.outline
+                                                        .withOpacity(0.5))
+                                            : theme.colorScheme.outline
+                                                  .withOpacity(0.3),
                                         width: 1,
                                       ),
                                     ),
@@ -557,8 +537,10 @@ class _FullPlayerState extends State<FullPlayer> {
                                               : Icons.favorite_border,
                                           color: _isLive
                                               ? (_liked
-                                                  ? Colors.red
-                                                  : theme.colorScheme.onSurfaceVariant)
+                                                    ? Colors.red
+                                                    : theme
+                                                          .colorScheme
+                                                          .onSurfaceVariant)
                                               : theme.disabledColor,
                                           size: 20,
                                         ),
@@ -569,8 +551,10 @@ class _FullPlayerState extends State<FullPlayer> {
                                             style: TextStyle(
                                               color: _isLive
                                                   ? (_liked
-                                                      ? Colors.red
-                                                      : theme.colorScheme.onSurfaceVariant)
+                                                        ? Colors.red
+                                                        : theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant)
                                                   : theme.disabledColor,
                                               fontWeight: FontWeight.w600,
                                               fontSize: 14,

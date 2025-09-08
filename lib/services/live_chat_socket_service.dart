@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -53,18 +53,12 @@ class LiveChatSocketService {
 
   Future<void> _initializePusher() async {
     try {
-      debugPrint(
-        'Initializing Pusher with key: ${PusherConfig.appKey} and cluster: ${PusherConfig.cluster}',
-      );
-      debugPrint('Auth endpoint RESOLVED: ${PusherConfig.authEndpoint}');
-
       await _pusher.init(
         apiKey: PusherConfig.appKey,
         cluster: PusherConfig.cluster,
 
         // connection state
         onConnectionStateChange: (currentState, _) {
-          debugPrint('Pusher connection state changed: $currentState');
           _connected = currentState == 'CONNECTED';
 
           _onSystem?.call({
@@ -77,21 +71,13 @@ class LiveChatSocketService {
         // authorizer (private/presence)
         onAuthorizer: (String channelName, String socketId, dynamic _) async {
           try {
-            debugPrint(
-              'Authorizing channel: $channelName with socket: $socketId',
-            );
             final authData = await _authenticateChannel(socketId, channelName);
-            debugPrint('Channel $channelName authorized successfully');
             return authData;
-          } catch (e) {
-            debugPrint('Channel authorization failed for $channelName: $e');
-            rethrow;
-          }
+          } catch (_) {}
         },
 
         // global error
         onError: (String message, int? code, dynamic e) {
-          debugPrint('Pusher error: $message (code: $code)');
           _onSystem?.call({
             'type': 'error',
             'message': message,
@@ -106,17 +92,11 @@ class LiveChatSocketService {
             // ⬇️ Abaikan event internal Pusher agar log tidak berisik
             if (event.eventName.startsWith('pusher:') ||
                 event.eventName.startsWith('pusher_internal:')) {
-              if (event.eventName.contains('subscription_succeeded')) {
-                debugPrint('ℹ️ Subscription succeeded on ${event.channelName}');
-              }
+              if (event.eventName.contains('subscription_succeeded')) {}
               return;
             }
 
-            debugPrint(
-              'Event received - Channel: ${event.channelName}, Event: ${event.eventName}',
-            );
             final payload = _eventMap(event.data);
-            debugPrint('Event payload: $payload');
 
             // 1) Status live
             if (event.channelName == 'live-room-status' &&
@@ -203,10 +183,8 @@ class LiveChatSocketService {
               );
 
               if (roomId != null) {
-                debugPrint('❤️ LikeUpdated @room $roomId -> $likeCount');
                 _handleLikeUpdate(roomId, likeCount);
               } else {
-                debugPrint('⚠️ LikeUpdated tanpa roomId. Raw: ${event.data}');
                 // fallback: coba ambil dari nama channel jika memungkinkan
                 if (channelName.startsWith('like-room-')) {
                   final fallbackRoomId = int.tryParse(
@@ -220,10 +198,6 @@ class LiveChatSocketService {
               return;
             }
 
-            // 6) Fallback
-            debugPrint(
-              'Unhandled event: ${event.eventName} on ${event.channelName}',
-            );
             _onSystem?.call({
               'type': 'unhandled_event',
               'channel': event.channelName,
@@ -231,21 +205,11 @@ class LiveChatSocketService {
               'data': payload,
               'timestamp': DateTime.now().toIso8601String(),
             });
-          } catch (e) {
-            debugPrint('Error handling Pusher event: $e');
-            _onSystem?.call({
-              'type': 'event_error',
-              'error': e.toString(),
-              'timestamp': DateTime.now().toIso8601String(),
-            });
-          }
+          } catch (_) {}
         },
 
         // decrypt error (jika pakai encrypted/private-encrypted)
         onDecryptionFailure: (String event, String reason) {
-          final errorMsg =
-              'Decryption failed for event: $event, reason: $reason';
-          debugPrint(errorMsg);
           _onSystem?.call({
             'type': 'decryption_error',
             'event': event,
@@ -256,7 +220,6 @@ class LiveChatSocketService {
 
         // presence add/remove
         onMemberAdded: (String channel, PusherMember member) {
-          debugPrint('Member added to $channel: ${member.userId}');
           _onUserJoined?.call(channel, {
             'userId': member.userId,
             'userInfo': member.userInfo,
@@ -265,7 +228,6 @@ class LiveChatSocketService {
           });
         },
         onMemberRemoved: (String channel, PusherMember member) {
-          debugPrint('Member removed from $channel: ${member.userId}');
           _onUserLeft?.call(channel, {
             'userId': member.userId,
             'userInfo': member.userInfo,
@@ -274,17 +236,7 @@ class LiveChatSocketService {
           });
         },
       );
-
-      debugPrint('Pusher initialization completed successfully');
-    } catch (e) {
-      debugPrint('Failed to initialize Pusher: $e');
-      _onSystem?.call({
-        'type': 'initialization_error',
-        'error': e.toString(),
-        'timestamp': DateTime.now().toIso8601String(),
-      });
-      rethrow;
-    }
+    } catch (_) {}
   }
 
   Future<Map<String, dynamic>> _authenticateChannel(
@@ -292,26 +244,16 @@ class LiveChatSocketService {
     String channelName,
   ) async {
     try {
-      debugPrint('🔐 Authenticating channel: $channelName');
-
       if (!channelName.startsWith('presence-') &&
           !channelName.startsWith('private-')) {
-        debugPrint(
-          'No authentication required for public channel: $channelName',
-        );
         return {};
       }
 
-      // Get the auth token from secure storage
       final token = await _getAuthToken();
       if (token == null || token.isEmpty) {
         throw Exception('Missing auth token');
       }
 
-      debugPrint('🔑 Using token: ***${token.substring(token.length - 5)}');
-      debugPrint('➡️  Auth URL: ${PusherConfig.authEndpoint}');
-
-      // IMPORTANT: sama seperti Postman → form-encoded (FormData)
       final response = await ApiClient.I.dioRoot.post<Map<String, dynamic>>(
         PusherConfig.authEndpoint,
         data: FormData.fromMap({
@@ -327,38 +269,25 @@ class LiveChatSocketService {
         ),
       );
 
-      debugPrint('🔑 Auth response status: ${response.statusCode}');
-      debugPrint('🔑 Auth response data: ${response.data}');
-
       if (response.statusCode == 200 && response.data != null) {
-        debugPrint('✅ Channel $channelName authenticated successfully');
         return response.data!;
       }
 
-      final errorMsg =
-          '❌ Channel authentication failed: ${response.statusMessage}';
-      debugPrint(errorMsg);
-      throw Exception(errorMsg);
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error authenticating channel $channelName');
-      debugPrint('Error: $e');
-      debugPrint('Stack trace: $stackTrace');
-      rethrow;
+      throw Exception('Channel authentication failed');
+    } catch (_) {
+      throw Exception('Error authenticating channel $channelName');
     }
   }
 
-  // Get auth token from secure storage
   Future<String?> _getAuthToken() async {
     try {
       const storage = FlutterSecureStorage();
       final token = await storage.read(key: 'user_token');
       if (token == null || token.isEmpty) {
-        debugPrint('⚠️ No auth token in secure storage');
         return null;
       }
       return token;
-    } catch (e) {
-      debugPrint('❌ Error retrieving auth token: $e');
+    } catch (_) {
       return null;
     }
   }
@@ -454,13 +383,7 @@ class LiveChatSocketService {
               return;
             }
 
-            debugPrint('=== EVENT DITERIMA ===');
-            debugPrint('Channel: $channelName');
-            debugPrint('Event Name: ${event.eventName}');
-            debugPrint('Raw Data: ${event.data}');
-
             final data = _eventMap(event.data);
-            debugPrint('Parsed Data: $data');
 
             if (event.eventName.endsWith('.message.sent') ||
                 event.eventName == 'message.sent') {
@@ -477,22 +400,13 @@ class LiveChatSocketService {
                 'timestamp': DateTime.now().toIso8601String(),
               });
             }
-          } catch (e, stackTrace) {
-            debugPrint('Error menangani event: $e');
-            debugPrint('Stack trace: $stackTrace');
-          } finally {
-            debugPrint('=== AKHIR EVENT ===\n');
-          }
+          } catch (_) {}
         },
       );
 
       _subscribedChannels[channelName] = true;
-      debugPrint('✅ Berhasil subscribe ke channel: $channelName');
-    } catch (e, stackTrace) {
+    } catch (_) {
       _subscribedChannels.remove(channelName);
-      debugPrint('❌ Gagal subscribe ke channel $channelName');
-      debugPrint('Error: $e');
-      debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -513,7 +427,6 @@ class LiveChatSocketService {
     required void Function(int likeCount) onUpdated,
   }) async {
     final channelName = 'like-room-$roomId';
-    debugPrint('🔔 Subscribing to like updates on channel: $channelName');
 
     _likeUpdateCallbacks[roomId] = onUpdated;
 
@@ -522,12 +435,10 @@ class LiveChatSocketService {
     if (_subscribedChannels[channelName] == true) return;
 
     try {
-      // ⬇️ Tanpa onEvent di sini; LikeUpdated ditangani handler global
       await _pusher.subscribe(channelName: channelName);
       _subscribedChannels[channelName] = true;
-      debugPrint('✅ Subscribed like channel: $channelName');
-    } catch (e) {
-      debugPrint('❌ Error subscribing like: $e');
+    } catch (_) {
+      _subscribedChannels.remove(channelName);
       rethrow;
     }
   }
@@ -538,9 +449,7 @@ class LiveChatSocketService {
       _likeUpdateCallbacks.remove(roomId);
       await _pusher.unsubscribe(channelName: channelName);
       _subscribedChannels.remove(channelName);
-      debugPrint('✅ Unsubscribed from like updates on channel: $channelName');
-    } catch (e) {
-      debugPrint('⚠️ Error unsubscribing from $channelName: $e');
+    } catch (_) {
       _likeUpdateCallbacks.remove(roomId);
     }
   }
@@ -582,11 +491,7 @@ class LiveChatSocketService {
       _likeUpdateCallbacks[match]?.call(count);
     } else {
       final channelName = 'like-room-$roomId';
-      if (_subscribedChannels.containsKey(channelName)) {
-        debugPrint(
-          '⚠️ Subscribed to $channelName but no like callback registered.',
-        );
-      }
+      if (_subscribedChannels.containsKey(channelName)) {}
     }
   }
 
@@ -602,9 +507,7 @@ class LiveChatSocketService {
           return {'data': decoded};
         }
       }
-    } catch (e) {
-      debugPrint('⚠️ eventMap decode error: $e');
-    }
+    } catch (_) {}
     return {};
   }
 
@@ -620,9 +523,7 @@ class LiveChatSocketService {
           return {'value': raw};
         }
       }
-    } catch (e) {
-      debugPrint('⚠️ asMap decode error: $e');
-    }
+    } catch (_) {}
     return {};
   }
 
@@ -695,9 +596,7 @@ class LiveChatSocketService {
       } else {
         _onUserLeft?.call(channelName, processedUser);
       }
-    } catch (e) {
-      debugPrint('⚠️ presence event error: $e');
-    }
+    } catch (_) {}
   }
 
   void _handleMessageDeleted(String channelName, Map<String, dynamic> payload) {
@@ -706,8 +605,6 @@ class LiveChatSocketService {
       if (messageId != null) {
         _onMessage?.call('message.deleted', {'id': messageId});
       }
-    } catch (e) {
-      debugPrint('⚠️ delete message event error: $e');
-    }
+    } catch (_) {}
   }
 }

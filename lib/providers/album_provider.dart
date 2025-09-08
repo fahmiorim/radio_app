@@ -180,7 +180,7 @@ class AlbumProvider with ChangeNotifier {
     try {
       // Always fetch fresh data from the API
       _albumDetail = await _svc.fetchAlbumDetail(slug);
-      
+
       // Update the cached album if it exists in the lists
       final cachedAlbumIndex = _allAlbums.indexWhere((a) => a.slug == slug);
       if (cachedAlbumIndex != -1) {
@@ -191,7 +191,6 @@ class AlbumProvider with ChangeNotifier {
       }
     } catch (e) {
       _detailError = 'Gagal memuat detail album. Silakan coba lagi.';
-      debugPrint('Error fetching album detail: $e');
     } finally {
       _isLoadingDetail = false;
       notifyListeners();

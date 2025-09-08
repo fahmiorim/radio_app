@@ -208,7 +208,6 @@ class ProgramProvider with ChangeNotifier {
       _selected = response;
       notifyListeners();
     } catch (e) {
-      debugPrint('Error fetching program detail: $e');
       _errorDetail = 'Gagal memuat detail program.';
       notifyListeners();
     } finally {

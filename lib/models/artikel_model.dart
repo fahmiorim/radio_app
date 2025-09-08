@@ -25,7 +25,7 @@ class Artikel {
   });
 
   factory Artikel.fromJson(Map<String, dynamic> json) {
-    int _toInt(dynamic v) =>
+    int toInt(dynamic v) =>
         v is int ? v : int.tryParse((v ?? '').toString()) ?? 0;
 
     DateTime? _toDate(dynamic v) {
@@ -38,7 +38,7 @@ class Artikel {
     }
 
     return Artikel(
-      id: _toInt(json['id']),
+      id: toInt(json['id']),
       title: (json['title'] ?? json['judul'] ?? '').toString(),
       slug: (json['slug'] ?? '').toString(),
       content: (json['content'] ?? '').toString(),

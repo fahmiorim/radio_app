@@ -75,7 +75,6 @@ class AuthService {
     String password,
   ) async {
     try {
-      print('Sending registration request...');
       final res = await ApiClient.I.dio.post(
         '/register',
         data: {
@@ -94,11 +93,8 @@ class AuthService {
         ),
       );
 
-      print('Registration response status: ${res.statusCode}');
       final data = res.data as Map<String, dynamic>? ?? {};
-      print('Registration response data: $data');
 
-      // Check for successful response (200 or 201)
       if ((res.statusCode == 200 || res.statusCode == 201) &&
           (data['status'] == true || data['token'] != null)) {
         final token = (data['token'] ?? '').toString();
@@ -123,10 +119,8 @@ class AuthService {
         );
       }
 
-      // If we have a success status code but no token, it's still an error
       if ((res.statusCode == 200 || res.statusCode == 201)) {
         if (data['token'] != null) {
-          // This should have been caught by the success case above
           return AuthResult(
             status: true,
             message: data['message']?.toString() ?? 'Pendaftaran berhasil',
@@ -142,7 +136,6 @@ class AuthService {
         );
       }
 
-      // For all other error cases
       return AuthResult(
         status: false,
         message:
