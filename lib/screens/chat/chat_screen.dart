@@ -9,6 +9,7 @@ import 'package:radio_odan_app/screens/chat/widget/message_input_field.dart';
 import 'package:radio_odan_app/screens/chat/widget/unread_messages_label.dart';
 import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 
 class LiveChatScreen extends StatefulWidget {
   final int roomId;
@@ -211,9 +212,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       },
       child: Consumer<LiveChatProvider>(
         builder: (context, prov, _) {
+          final colors = Theme.of(context).colorScheme;
           if (prov.isLoading) {
             return Scaffold(
-              appBar: AppBar(title: const Text('Live Chat')),
+              appBar: CustomAppBar(
+                title: 'Live Chat',
+                backgroundColor: colors.surface,
+                titleColor: colors.primary,
+                iconColor: colors.primary,
+              ),
               body: const Center(child: CircularProgressIndicator()),
             );
           }
@@ -235,10 +242,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               : messages.length - _firstUnreadIndex;
 
           return Scaffold(
-            appBar: AppBar(
-              title: Text(prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat'),
+            appBar: CustomAppBar(
+              title: prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat',
+              backgroundColor: colors.surface,
+              titleColor: colors.primary,
+              iconColor: colors.primary,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
+                icon: Icon(Icons.arrow_back, color: colors.primary),
                 onPressed: () async {
                   await prov.leaveRoom();
                   await prov.shutdown();
