@@ -79,8 +79,10 @@ class AppTheme {
           color: colorScheme.onPrimary,
         ),
         iconTheme: IconThemeData(color: colorScheme.onPrimary, size: 24),
-        systemOverlayStyle:
-            SystemUiOverlayStyle.light, // status bar icons putih
+        systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
+          statusBarColor: colorScheme.primary, // Match app bar color
+          statusBarIconBrightness: Brightness.light, // Light icons for dark app bar
+        ),
       ),
     );
 

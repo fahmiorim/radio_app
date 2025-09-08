@@ -27,7 +27,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.bottom,
     this.elevation = 0,
-    this.backgroundColor,
+    Color? backgroundColor,
     this.titleColor,
     this.iconColor,
     this.centerTitle = true,
@@ -38,7 +38,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.shape,
     this.primary = true,
     this.flexibleSpace,
-  }) : super(key: key);
+  }) : backgroundColor = backgroundColor ?? AppColors.lightPrimary,
+       super(key: key);
 
   // Transparan + blur + gradasi halus dari surface → transparan
   factory CustomAppBar.transparent({
@@ -120,19 +121,23 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final effectiveIconColor = iconColor ?? colors.onSurface;
+    // Use onPrimary for icons and text when background is primary color
+    final isPrimaryBackground = backgroundColor == colors.primary || 
+                              (backgroundColor == null && theme.appBarTheme.backgroundColor == colors.primary);
+    final effectiveIconColor = isPrimaryBackground ? colors.onPrimary : (iconColor ?? colors.onSurface);
+    final effectiveTitleColor = isPrimaryBackground ? colors.onPrimary : (titleColor ?? colors.onSurface);
 
     return AppBar(
       title: Text(
         title,
         style: textTheme.titleLarge?.copyWith(
-          color: titleColor ?? colors.onSurface,
+          color: effectiveTitleColor,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.3,
           height: 1.2,
         ),
       ),
-      backgroundColor: backgroundColor ?? colors.surface,
+      backgroundColor: backgroundColor ?? colors.primary,
       elevation: elevation,
       centerTitle: centerTitle,
       titleSpacing: titleSpacing,
@@ -141,8 +146,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       shape: shape,
       primary: primary,
       flexibleSpace: flexibleSpace,
-      iconTheme: IconThemeData(color: effectiveIconColor),
-      actionsIconTheme: IconThemeData(color: effectiveIconColor),
+      iconTheme: IconThemeData(color: effectiveIconColor, size: 24),
+      actionsIconTheme: IconThemeData(color: effectiveIconColor, size: 24),
       leading:
           leading ??
           (showBackButton ? _buildModernBackButton(context, colors) : null),
