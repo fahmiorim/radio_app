@@ -61,9 +61,9 @@ class LiveChatService {
         'title': liveRoom['judul'],
         'description': liveRoom['description'],
         'started_at': liveRoom['started_at'],
-        'likes': 0,
-        'liked': false,
-        'listener_count': 0,
+        'likes': _toInt(liveRoom['likes'] ?? data['likes'] ?? 0),
+        'liked': liveRoom['liked'] ?? data['liked'] ?? false,
+        'listener_count': _toInt(data['listener_count'] ?? 0),
         // tambahkan room_id agar provider bisa tahu channel chat
         'room_id': liveRoom['id'],
       });
