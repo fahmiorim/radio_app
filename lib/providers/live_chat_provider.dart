@@ -383,9 +383,37 @@ class LiveChatProvider with ChangeNotifier {
   // ==== SEND (HTTP; optimistic UI) ====
   final Set<String> _pendingMessageIds = {};
 
-  // Set current user ID after login
-  void setCurrentUserId(int userId) {
+  // Set current user info after login
+  void setCurrentUserId(
+    int userId, {
+    String? name,
+    String? avatar,
+  }) {
     _currentUserId = userId;
+
+    final idStr = userId.toString();
+    final index = _onlineUsers.indexWhere((u) => u.id == idStr);
+
+    if (index != -1) {
+      final existing = _onlineUsers[index];
+      _onlineUsers[index] = OnlineUser(
+        id: idStr,
+        username: name ?? existing.username,
+        userAvatar: avatar ?? existing.userAvatar,
+        joinTime: existing.joinTime,
+      );
+    } else {
+      _onlineUsers.add(
+        OnlineUser(
+          id: idStr,
+          username: name ?? 'User',
+          userAvatar: avatar,
+          joinTime: DateTime.now(),
+        ),
+      );
+    }
+
+    notifyListeners();
   }
 
   Future<void> send(

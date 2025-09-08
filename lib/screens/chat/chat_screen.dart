@@ -38,9 +38,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    final userId = context.read<UserProvider>().user?.id;
-    if (userId != null) {
-      context.read<LiveChatProvider>().setCurrentUserId(userId);
+    final user = context.read<UserProvider>().user;
+    if (user != null) {
+      context.read<LiveChatProvider>().setCurrentUserId(
+            user.id,
+            name: user.name,
+            avatar: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
+          );
     }
   }
 
