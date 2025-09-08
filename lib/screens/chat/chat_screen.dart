@@ -148,15 +148,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     itemCount: prov.onlineUsers.length,
                     itemBuilder: (context, index) {
                       final user = prov.onlineUsers[index];
+                      final avatarUrl = user.userAvatar?.trim();
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor:
                               Theme.of(context).colorScheme.surfaceVariant,
                           child: ClipOval(
-                            child: (user.userAvatar != null &&
-                                    user.userAvatar!.trim().isNotEmpty)
+                            child: (avatarUrl != null && avatarUrl.isNotEmpty)
                                 ? Image.network(
-                                    user.userAvatar!,
+                                    avatarUrl,
                                     width: 40,
                                     height: 40,
                                     fit: BoxFit.cover,
