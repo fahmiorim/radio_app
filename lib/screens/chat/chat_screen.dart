@@ -145,14 +145,29 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       final user = prov.onlineUsers[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          child: Text(
-                            user.username.substring(0, 1).toUpperCase(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
+                          backgroundColor:
+                              Theme.of(context).colorScheme.surfaceVariant,
+                          child: ClipOval(
+                            child: (user.userAvatar != null &&
+                                    user.userAvatar!.trim().isNotEmpty)
+                                ? Image.network(
+                                    user.userAvatar!,
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Image.asset(
+                                      'assets/avatar.png',
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Image.asset(
+                                    'assets/avatar.png',
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
                         ),
                         title: Text(
