@@ -145,13 +145,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       final user = prov.onlineUsers[index];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
                           child: Text(
                             user.username.substring(0, 1).toUpperCase(),
                             style: TextStyle(
-                              color:
-                                  Theme.of(context).colorScheme.onPrimary,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
@@ -164,10 +164,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                         subtitle: Text(
                           'Bergabung ${prov.formatTime(user.joinTime)}',
                           style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.6),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.6),
                           ),
                         ),
                       );
@@ -288,9 +287,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Theme.of(context)
-                                  .shadowColor
-                                  .withOpacity(0.2),
+                              color: Theme.of(
+                                context,
+                              ).shadowColor.withOpacity(0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -299,8 +298,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                         child: Text(
                           '$unreadCount pesan baru',
                           style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onPrimary,
+                            color: Theme.of(context).colorScheme.onPrimary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),

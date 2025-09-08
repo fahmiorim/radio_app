@@ -157,6 +157,45 @@ class LiveChatService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getOnlineUsers(int roomId) async {
+    try {
+      _ensure();
+      final headers = await _authHeaders();
+      final res = await _dio.get<dynamic>(
+        '/live-chat/$roomId/status',
+        options: Options(
+          headers: headers,
+          validateStatus: (s) => s != null && s < 500,
+          followRedirects: false,
+        ),
+      );
+
+      final code = res.statusCode ?? 0;
+      final body = _asMap(res.data);
+
+      if (code == 200 && body['success'] == true) {
+        final data = _asMap(body['data']);
+        final users = (data['users'] as List? ?? []).cast<Map<String, dynamic>>();
+        return users;
+      }
+      
+      if (code == 401 || code == 403) {
+        throw Exception('Unauthorized');
+      }
+      
+      final msg = body['message']?.toString() ?? 'Failed to fetch online users (HTTP $code)';
+      throw Exception(msg);
+    } on DioException catch (e) {
+      final code = e.response?.statusCode;
+      final data = e.response?.data;
+      throw Exception(
+        'Network error fetching online users (HTTP $code): ${data ?? e.message}',
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<LiveChatMessage> sendMessage(int roomId, String text) async {
     try {
       _ensure();

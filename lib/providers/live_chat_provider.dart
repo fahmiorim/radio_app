@@ -221,21 +221,43 @@ class LiveChatProvider with ChangeNotifier {
 
   // ==== STATUS (HTTP) ====
   Future<void> refreshStatus() async {
-    _isLoading = true;
-    notifyListeners();
     try {
-      final s = await _http.fetchGlobalStatus(); // <-- pakai endpoint global
-      _isLive = s.isLive;
-      _currentRoomId = s.roomId ?? roomId;
+      _isLoading = true;
+      notifyListeners();
 
+      final status = await _http.fetchStatus(roomId);
+      _isLive = status.isLive;
+      _currentRoomId = status.roomId;
+
+      // Ambil daftar pengguna online saat pertama kali memuat status
       if (_isLive) {
-        _page = 1;
-        _hasMore = true;
-        _messages.clear();
+        try {
+          final onlineUsers = await _http.getOnlineUsers(roomId);
+          _onlineUsers.clear();
+          _onlineUsers.addAll(
+            onlineUsers.map((user) {
+              final avatar = user['avatar']?.toString();
+              return OnlineUser(
+                id: user['id']?.toString() ?? '',
+                username: user['name']?.toString() ?? 'User',
+                userAvatar: avatar?.isNotEmpty == true
+                    ? (avatar!.startsWith('http')
+                          ? avatar
+                          : 'https://your-api-domain.com/storage/$avatar')
+                    : 'https://ui-avatars.com/api/?name=${(user['name'] ?? 'U').toString().substring(0, 1).toUpperCase()}&background=random',
+                joinTime: DateTime.now(),
+              );
+            }),
+          );
+        } catch (e) {
+          debugPrint('Error fetching online users: $e');
+        }
+
         await _subscribePublicOnce();
         await loadMore();
       } else {
         _messages.clear();
+        _onlineUsers.clear();
       }
     } catch (e) {
       _isLive = false;
