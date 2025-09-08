@@ -46,14 +46,17 @@ class _MiniPlayerState extends State<MiniPlayer> {
         radioProvider.currentStation ?? RadioStationProvider.defaultStation;
     final nowPlaying = radioProvider.nowPlaying;
 
-    final cover = (nowPlaying?.artUrl.isNotEmpty ?? false)
-        ? nowPlaying!.artUrl
+    final artUrl = nowPlaying?.artUrl;
+    final cover = (artUrl != null && artUrl.isNotEmpty)
+        ? artUrl
         : currentStation.coverUrl;
-    final title = (nowPlaying?.title.isNotEmpty ?? false)
-        ? nowPlaying!.title
+    final nowTitle = nowPlaying?.title;
+    final title = (nowTitle != null && nowTitle.isNotEmpty)
+        ? nowTitle
         : currentStation.title;
-    final artist = (nowPlaying?.artist.isNotEmpty ?? false)
-        ? nowPlaying!.artist
+    final nowArtist = nowPlaying?.artist;
+    final artist = (nowArtist != null && nowArtist.isNotEmpty)
+        ? nowArtist
         : currentStation.host;
 
     return GestureDetector(

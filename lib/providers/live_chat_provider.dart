@@ -326,8 +326,8 @@ class LiveChatProvider with ChangeNotifier {
 
     // Debounce rapid successive calls
     final now = DateTime.now();
-    if (_lastFetchTime != null &&
-        now.difference(_lastFetchTime!) < _fetchCooldown) {
+    final lastFetch = _lastFetchTime;
+    if (lastFetch != null && now.difference(lastFetch) < _fetchCooldown) {
       return;
     }
 
@@ -496,9 +496,10 @@ class LiveChatProvider with ChangeNotifier {
 
   // ==== LIFECYCLE ====
   Future<void> leaveRoom() async {
-    if (_listenerId == null) return;
+    final id = _listenerId;
+    if (id == null) return;
     try {
-      await _http.leaveListener(_listenerId!);
+      await _http.leaveListener(id);
     } catch (_) {}
     _listenerId = null;
   }
