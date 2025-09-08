@@ -6,6 +6,8 @@ import 'package:radio_odan_app/audio/audio_player_manager.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
+import 'package:radio_odan_app/services/live_chat_service.dart';
+import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -17,6 +19,10 @@ class FullPlayer extends StatefulWidget {
 class _FullPlayerState extends State<FullPlayer> {
   final _audioManager = AudioPlayerManager.instance;
   bool isFavorited = false;
+  int _likeCount = 0;
+  bool _liked = false;
+  bool _isLive = false;
+  int? _liveRoomId;
 
   Widget _buildDefaultCover() {
     return Image.asset(
@@ -35,6 +41,7 @@ class _FullPlayerState extends State<FullPlayer> {
   void initState() {
     super.initState();
     _initializePlayer();
+    _initLike();
   }
 
   Future<void> _initializePlayer() async {
@@ -56,6 +63,48 @@ class _FullPlayerState extends State<FullPlayer> {
         );
       }
     }
+  }
+
+  Future<void> _initLike() async {
+    try {
+      final status = await LiveChatService.I.fetchGlobalStatus();
+      _isLive = status.isLive;
+      _likeCount = status.likes;
+      _liked = status.liked;
+      _liveRoomId = status.roomId;
+      if (_isLive && _liveRoomId != null) {
+        await LiveChatSocketService.I.subscribeLike(
+          roomId: _liveRoomId!,
+          onUpdated: (count) => setState(() => _likeCount = count),
+        );
+      }
+      if (mounted) setState(() {});
+    } catch (_) {
+      // ignore errors silently
+    }
+  }
+
+  Future<void> _toggleLike() async {
+    if (_liveRoomId == null) return;
+    try {
+      final res = await LiveChatService.I.toggleLike(_liveRoomId!);
+      if (mounted) {
+        setState(() {
+          _liked = res['liked'] == true;
+          _likeCount = res['likes'] ?? _likeCount;
+        });
+      }
+    } catch (_) {
+      // ignore errors silently
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_liveRoomId != null) {
+      LiveChatSocketService.I.unsubscribeLike(_liveRoomId!);
+    }
+    super.dispose();
   }
 
   @override
@@ -287,6 +336,21 @@ class _FullPlayerState extends State<FullPlayer> {
                                 );
                               },
                             ),
+                            const SizedBox(width: 25),
+
+                            // Like
+                            IconButton(
+                              icon: Icon(
+                                Icons.thumb_up,
+                                color: _isLive
+                                    ? (_liked
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.onSurfaceVariant)
+                                    : theme.disabledColor,
+                              ),
+                              onPressed: _isLive ? _toggleLike : null,
+                            ),
+                            Text('$_likeCount'),
                             const SizedBox(width: 25),
 
                             // Play / Pause
