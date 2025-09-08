@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:radio_odan_app/models/chat_model.dart';
 import 'package:radio_odan_app/models/live_message_model.dart';
+import 'package:radio_odan_app/config/app_api_config.dart';
 
 import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/services/live_chat_socket_service.dart';
@@ -236,15 +237,28 @@ class LiveChatProvider with ChangeNotifier {
           _onlineUsers.clear();
           _onlineUsers.addAll(
             onlineUsers.map((user) {
-              final avatar = user['avatar']?.toString();
+              final rawAvatar = user['avatar']?.toString().trim();
+              String? avatarUrl;
+              if (rawAvatar != null && rawAvatar.isNotEmpty) {
+                if (rawAvatar.startsWith('http')) {
+                  avatarUrl = rawAvatar;
+                } else {
+                  var base = AppApiConfig.assetBaseUrl;
+                  if (base.endsWith('/')) {
+                    base = base.substring(0, base.length - 1);
+                  }
+                  var path = rawAvatar.startsWith('/')
+                      ? rawAvatar.substring(1)
+                      : rawAvatar;
+                  avatarUrl = '$base/$path';
+                }
+              }
+
               return OnlineUser(
                 id: user['id']?.toString() ?? '',
-                username: user['name']?.toString() ?? 'User',
-                userAvatar: avatar?.isNotEmpty == true
-                    ? (avatar!.startsWith('http')
-                          ? avatar
-                          : 'https://your-api-domain.com/storage/$avatar')
-                    : 'https://ui-avatars.com/api/?name=${(user['name'] ?? 'U').toString().substring(0, 1).toUpperCase()}&background=random',
+                username:
+                    (user['name'] ?? user['username'] ?? 'User').toString(),
+                userAvatar: avatarUrl,
                 joinTime: DateTime.now(),
               );
             }),
