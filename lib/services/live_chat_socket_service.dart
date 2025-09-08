@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:radio_odan_app/config/api_client.dart';
 import 'package:radio_odan_app/config/pusher_config.dart';
@@ -22,6 +25,25 @@ class LiveChatSocketService {
 
   final Map<String, bool> _subscribedChannels = {};
   final Map<String, bool> _presenceChannels = {};
+
+  // Get auth token from secure storage
+  Future<String?> _getAuthToken() async {
+    try {
+      const storage = FlutterSecureStorage();
+      final token = await storage.read(key: 'user_token');
+
+      if (token == null || token.isEmpty) {
+        debugPrint('⚠️ No authentication token found in secure storage');
+        return null;
+      }
+
+      debugPrint('🔑 Retrieved auth token from secure storage');
+      return token;
+    } catch (e) {
+      debugPrint('❌ Error retrieving auth token: $e');
+      return null;
+    }
+  }
 
   // Callbacks
   Function(String, Map<String, dynamic>)? _onUserJoined;
@@ -48,73 +70,158 @@ class LiveChatSocketService {
 
   Future<void> _initializePusher() async {
     try {
+      debugPrint(
+        'Initializing Pusher with key: ${PusherConfig.appKey} and cluster: ${PusherConfig.cluster}',
+      );
+      debugPrint('Auth endpoint RESOLVED: ${PusherConfig.authEndpoint}');
+
       await _pusher.init(
         apiKey: PusherConfig.appKey,
         cluster: PusherConfig.cluster,
         onConnectionStateChange: (currentState, _) {
+          debugPrint('Pusher connection state changed: $currentState');
           _connected = currentState == 'CONNECTED';
+
+          // Notify about connection state changes
+          _onSystem?.call({
+            'type': 'connection_state',
+            'state': currentState,
+            'timestamp': DateTime.now().toIso8601String(),
+          });
         },
         onAuthorizer: (String channelName, String socketId, dynamic _) async {
           try {
-            return await _authenticateChannel(socketId, channelName);
+            debugPrint(
+              'Authorizing channel: $channelName with socket: $socketId',
+            );
+            final authData = await _authenticateChannel(socketId, channelName);
+            debugPrint('Channel $channelName authorized successfully');
+            return authData;
           } catch (e) {
+            debugPrint('Channel authorization failed for $channelName: $e');
             rethrow;
           }
         },
-        onError: (String message, int? code, dynamic e) {},
+        onError: (String message, int? code, dynamic e) {
+          debugPrint('Pusher error: $message (code: $code)');
+          _onSystem?.call({
+            'type': 'error',
+            'message': message,
+            'code': code,
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        },
         // GLOBAL dispatcher untuk SEMUA event
         onEvent: (event) {
           try {
-            final payload = _eventMap(event.data);
+            debugPrint(
+              'Event received - Channel: ${event.channelName}, Event: ${event.eventName}',
+            );
 
-            // 1) Status live
+            final payload = _eventMap(event.data);
+            debugPrint('Event payload: $payload');
+
+            // 1) Status live - handle both formats
             if (event.channelName == 'live-room-status' &&
-                event.eventName == 'LiveRoomStatusUpdated') {
+                (event.eventName.endsWith('.LiveRoomStatusUpdated') ||
+                    event.eventName == 'LiveRoomStatusUpdated' ||
+                    event.eventName.endsWith('.status.updated') ||
+                    event.eventName == 'status.updated')) {
               _onStatusUpdate?.call(payload);
               return;
             }
 
-            // 2) Pesan chat
-            if (event.eventName == 'message.sent' ||
+            // 2) Pesan chat - handle Laravel Echo format (with and without dot prefix)
+            if (event.eventName.endsWith('.message.sent') ||
+                event.eventName == 'message.sent' ||
+                event.eventName.endsWith('message.sent') ||
                 event.eventName.startsWith('client-')) {
-              _handleMessageSent(event.channelName, payload);
+              // Handle both formats: data.message or direct data
+              final messageData = payload['message'] ?? payload;
+              _onMessage?.call(event.channelName, _asMap(messageData));
               return;
             }
 
-            // 3) Presence custom
-            if (event.eventName == 'user.joined' ||
+            // 3) Presence events - handle both formats (with and without dot prefix)
+            if (event.eventName.endsWith('.user.joined') ||
+                event.eventName == 'user.joined') {
+              _handlePresenceEvent('user.joined', event.channelName, payload);
+              return;
+            }
+
+            if (event.eventName.endsWith('.user.left') ||
                 event.eventName == 'user.left') {
-              _handlePresenceEvent(event.eventName, event.channelName, payload);
+              _handlePresenceEvent('user.left', event.channelName, payload);
               return;
             }
 
-            // 4) Hapus pesan
-            if (event.eventName == 'message.deleted') {
+            // 4) Hapus pesan - handle both formats
+            if (event.eventName.endsWith('.message.deleted') ||
+                event.eventName == 'message.deleted') {
               _handleMessageDeleted(event.channelName, payload);
               return;
             }
 
-            // 5) Fallback
-            _onSystem?.call(payload);
+            // 5) Fallback for unhandled events
+            debugPrint(
+              'Unhandled event: ${event.eventName} on ${event.channelName}',
+            );
+            _onSystem?.call({
+              'type': 'unhandled_event',
+              'channel': event.channelName,
+              'event': event.eventName,
+              'data': payload,
+              'timestamp': DateTime.now().toIso8601String(),
+            });
           } catch (e) {
+            debugPrint('Error handling Pusher event: $e');
+            _onSystem?.call({
+              'type': 'event_error',
+              'error': e.toString(),
+              'timestamp': DateTime.now().toIso8601String(),
+            });
             rethrow;
           }
         },
-        onDecryptionFailure: (String event, String reason) {},
+        onDecryptionFailure: (String event, String reason) {
+          final errorMsg =
+              'Decryption failed for event: $event, reason: $reason';
+          debugPrint(errorMsg);
+          _onSystem?.call({
+            'type': 'decryption_error',
+            'event': event,
+            'reason': reason,
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        },
         onMemberAdded: (String channel, PusherMember member) {
+          debugPrint('Member added to $channel: ${member.userId}');
           _onUserJoined?.call(channel, {
             'userId': member.userId,
             'userInfo': member.userInfo,
+            'type': 'user_joined',
+            'timestamp': DateTime.now().toIso8601String(),
           });
         },
         onMemberRemoved: (String channel, PusherMember member) {
+          debugPrint('Member removed from $channel: ${member.userId}');
           _onUserLeft?.call(channel, {
             'userId': member.userId,
             'userInfo': member.userInfo,
+            'type': 'user_left',
+            'timestamp': DateTime.now().toIso8601String(),
           });
         },
       );
+
+      debugPrint('Pusher initialization completed successfully');
     } catch (e) {
+      debugPrint('Failed to initialize Pusher: $e');
+      _onSystem?.call({
+        'type': 'initialization_error',
+        'error': e.toString(),
+        'timestamp': DateTime.now().toIso8601String(),
+      });
       rethrow;
     }
   }
@@ -124,19 +231,58 @@ class LiveChatSocketService {
     String channelName,
   ) async {
     try {
-      if (channelName.startsWith('presence-') ||
-          channelName.startsWith('private-')) {
-        final response = await ApiClient.I.dioRoot.post<Map<String, dynamic>>(
-          PusherConfig.authEndpoint,
-          data: {'socket_id': socketId, 'channel_name': channelName},
+      debugPrint('🔐 Authenticating channel: $channelName');
+
+      if (!channelName.startsWith('presence-') &&
+          !channelName.startsWith('private-')) {
+        debugPrint(
+          'No authentication required for public channel: $channelName',
         );
-        if (response.statusCode == 200) {
-          return response.data ?? {};
-        }
-        throw Exception('Auth failed: ${response.statusMessage}');
+        return {};
       }
-      return {};
-    } catch (e) {
+
+      // Get the auth token from your auth service or storage
+      final token = await _getAuthToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Missing auth token');
+      }
+
+      debugPrint('🔑 Using token: ***${token.substring(token.length - 5)}');
+      debugPrint('➡️  Auth URL: ${PusherConfig.authEndpoint}');
+
+      // IMPORTANT: samakan dengan Postman -> form-encoded (FormData)
+      final response = await ApiClient.I.dioRoot.post<Map<String, dynamic>>(
+        PusherConfig.authEndpoint,
+        data: FormData.fromMap({
+          'socket_id': socketId,
+          'channel_name': channelName,
+        }),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+            // Biarkan Dio yang set Content-Type untuk FormData
+          },
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      debugPrint('🔑 Auth response status: ${response.statusCode}');
+      debugPrint('🔑 Auth response data: ${response.data}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        debugPrint('✅ Channel $channelName authenticated successfully');
+        return response.data!;
+      }
+
+      final errorMsg =
+          '❌ Channel authentication failed: ${response.statusMessage}';
+      debugPrint(errorMsg);
+      throw Exception(errorMsg);
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error authenticating channel $channelName');
+      debugPrint('Error: $e');
+      debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -224,12 +370,75 @@ class LiveChatSocketService {
   Future<void> subscribeToChat(int roomId) async {
     final channelName = 'chat.room.$roomId';
     try {
+      debugPrint('Mencoba subscribe ke channel: $channelName');
+
       if (_subscribedChannels[channelName] == true) {
+        debugPrint('Sudah subscribe ke channel: $channelName');
         return;
       }
-      await _pusher.subscribe(channelName: channelName);
+
+      debugPrint('Melakukan subscribe ke channel: $channelName');
+
+      await _pusher.subscribe(
+        channelName: channelName,
+        onEvent: (event) {
+          try {
+            debugPrint('=== EVENT DITERIMA ===');
+            debugPrint('Channel: $channelName');
+            debugPrint('Event Name: ${event.eventName}');
+            debugPrint('Raw Data: ${event.data}');
+
+            final data = _eventMap(event.data);
+            debugPrint('Parsed Data: $data');
+
+            // Handle event dengan format Laravel Echo (dengan titik di awal)
+            if (event.eventName.endsWith('.message.sent') ||
+                event.eventName == 'message.sent') {
+              debugPrint('Menangani pesan masuk...');
+              // Ekstrak data pesan, dukung baik format data.message maupun data langsung
+              final messageData = data['message'] ?? data;
+              debugPrint('Data pesan yang akan diproses: $messageData');
+
+              if (_onMessage != null) {
+                _onMessage!(channelName, _asMap(messageData));
+                debugPrint('Pesan berhasil diproses');
+              } else {
+                debugPrint('PERINGATAN: _onMessage callback belum di-set');
+              }
+            }
+            // Handle event penghapusan pesan
+            else if (event.eventName.endsWith('.message.deleted') ||
+                event.eventName == 'message.deleted') {
+              debugPrint('Menangani penghapusan pesan...');
+              _handleMessageDeleted(channelName, data);
+            }
+            // Handle event lainnya
+            else {
+              debugPrint('Event tidak dikenali, meneruskan ke handler sistem');
+              _onSystem?.call({
+                'type': 'system',
+                'event': event.eventName,
+                'data': data,
+                'timestamp': DateTime.now().toIso8601String(),
+              });
+            }
+          } catch (e, stackTrace) {
+            debugPrint('Error menangani event:');
+            debugPrint('Error: $e');
+            debugPrint('Stack trace: $stackTrace');
+          } finally {
+            debugPrint('=== AKHIR EVENT ===\n');
+          }
+        },
+      );
+
       _subscribedChannels[channelName] = true;
-    } catch (e) {
+      debugPrint('✅ Berhasil subscribe ke channel: $channelName');
+    } catch (e, stackTrace) {
+      _subscribedChannels.remove(channelName);
+      debugPrint('❌ Gagal subscribe ke channel $channelName');
+      debugPrint('Error: $e');
+      debugPrint('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -367,35 +576,6 @@ class LiveChatSocketService {
       return v.toString();
     } catch (e) {
       return v?.toString();
-    }
-  }
-
-  void _handleMessageSent(String channelName, Map<String, dynamic> payload) {
-    try {
-      final Map<String, dynamic> msgMap = payload.containsKey('message')
-          ? _asMap(payload['message'])
-          : Map<String, dynamic>.from(payload);
-
-      final processedMsg = <String, dynamic>{
-        'id':
-            msgMap['id']?.toString() ??
-            DateTime.now().millisecondsSinceEpoch.toString(),
-        'message': msgMap['message']?.toString() ?? '',
-        'user_id': _toInt(msgMap['user_id'] ?? msgMap['userId']).toString(),
-        'name':
-            msgMap['name']?.toString() ??
-            msgMap['username']?.toString() ??
-            'Unknown',
-        'avatar': msgMap['avatar']?.toString(),
-        'timestamp':
-            msgMap['timestamp'] ??
-            msgMap['created_at'] ??
-            DateTime.now().toIso8601String(),
-      };
-
-      _onMessage?.call(channelName, processedMsg);
-    } catch (e) {
-      rethrow;
     }
   }
 

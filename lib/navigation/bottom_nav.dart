@@ -6,6 +6,7 @@ import 'package:radio_odan_app/screens/home/home_screen.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
 import 'package:radio_odan_app/screens/galeri/galeri_screen.dart';
 import 'package:radio_odan_app/screens/chat/chat_screen.dart';
+import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_drawer.dart';
 
@@ -21,10 +22,30 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   late int _currentIndex;
 
+  int? _roomId;
+  bool _isLoadingRoom = true;
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    _fetchLiveStatus();
+  }
+
+  Future<void> _fetchLiveStatus() async {
+    try {
+      final status = await LiveChatService.I.fetchGlobalStatus();
+      if (mounted) {
+        setState(() {
+          _roomId = status.roomId;
+          _isLoadingRoom = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingRoom = false);
+      }
+    }
   }
 
   final List<Widget> _screens = const [
@@ -102,12 +123,30 @@ class _BottomNavState extends State<BottomNav> {
             currentIndex: _currentIndex,
             onTap: (index) async {
               if (index == 3) {
+                if (_isLoadingRoom) {
+                  // Tampilkan loading indicator jika masih memuat
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Memuat ruang chat...')),
+                  );
+                  return;
+                }
+
+                if (_roomId == null) {
+                  // Tampilkan pesan error jika tidak ada room yang aktif
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Tidak ada siaran aktif saat ini')),
+                    );
+                  }
+                  return;
+                }
+
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => ChangeNotifierProvider(
-                      create: (_) => LiveChatProvider(roomId: 1)..init(),
-                      child: const LiveChatScreen(roomId: 1),
+                      create: (_) => LiveChatProvider(roomId: _roomId!)..init(),
+                      child: LiveChatScreen(roomId: _roomId!),
                     ),
                   ),
                 );
