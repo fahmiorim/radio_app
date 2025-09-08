@@ -49,17 +49,17 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     Color? titleColor,
     Color? iconColor,
     required BuildContext context,
-    bool showGradient = true,
+    bool showGradient = false,
   }) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
     return CustomAppBar(
       title: title,
-      backgroundColor: AppColors.transparent,
+      backgroundColor: colors.primary,
       elevation: 0,
-      titleColor: titleColor ?? colors.primary,
-      iconColor: iconColor ?? colors.primary,
+      titleColor: titleColor ?? colors.onPrimary,
+      iconColor: iconColor ?? colors.onPrimary,
       actions: actions,
       leading: leading,
       flexibleSpace: showGradient
@@ -150,7 +150,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actionsIconTheme: IconThemeData(color: effectiveIconColor, size: 24),
       leading:
           leading ??
-          (showBackButton ? _buildModernBackButton(context, colors) : null),
+          (showBackButton
+              ? _buildModernBackButton(context, colors, effectiveIconColor)
+              : null),
       leadingWidth: showBackButton ? 56 : null,
       actions: actions != null
           ? [
@@ -164,9 +166,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  // Tombol back dengan ikon berwarna primary dan latar transparan
-  Widget _buildModernBackButton(BuildContext context, ColorScheme colors) {
-    final fg = colors.primary;
+  // Tombol back modern dengan latar transparan
+  Widget _buildModernBackButton(
+      BuildContext context, ColorScheme colors, Color fg) {
     const bg = AppColors.transparent;
 
     return IconButton(
