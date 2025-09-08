@@ -341,7 +341,7 @@ class LiveChatSocketService {
           final users = hash.entries.map((entry) {
             final userId = _intOrString(entry.key);
             final user = _asMap(entry.value);
-            return {'id': userId, 'userInfo': user};
+            return {'userId': userId, 'userInfo': user};
           }).toList();
 
           // Kirim pesan sistem bahwa user telah bergabung
