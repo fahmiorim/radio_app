@@ -7,6 +7,12 @@ class ChatScreenWrapper extends StatefulWidget {
   final int roomId;
   const ChatScreenWrapper({Key? key, required this.roomId}) : super(key: key);
 
+  static Route<void> route(int roomId) {
+    return MaterialPageRoute(
+      builder: (_) => ChatScreenWrapper(roomId: roomId),
+    );
+  }
+
   @override
   State<ChatScreenWrapper> createState() => _ChatScreenWrapperState();
 }

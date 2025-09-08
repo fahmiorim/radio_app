@@ -138,11 +138,8 @@ class _BottomNavState extends State<BottomNav> {
                   return;
                 }
 
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ChatScreenWrapper(roomId: _roomId!),
-                  ),
+                final result = await Navigator.of(context).push(
+                  ChatScreenWrapper.route(_roomId!),
                 );
 
                 if (result == 'goHome') {
