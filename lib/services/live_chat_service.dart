@@ -55,13 +55,14 @@ class LiveChatService {
     if (code == 200 && body['status'] == true) {
       final data = _asMap(body['data']);
       final liveRoom = _asMap(data['live_room']);
+      final count = _toInt(data['likes'] ?? liveRoom['likes'] ?? 0);
       // bangun LiveChatStatus dari schema global
       return LiveChatStatus.fromJson({
         'is_live': data['is_live'],
         'title': liveRoom['judul'],
         'description': liveRoom['description'],
         'started_at': liveRoom['started_at'],
-        'likes': _toInt(liveRoom['likes'] ?? data['likes'] ?? 0),
+        'likes': count,
         'liked': liveRoom['liked'] ?? data['liked'] ?? false,
         'listener_count': _toInt(data['listener_count'] ?? 0),
         // tambahkan room_id agar provider bisa tahu channel chat
