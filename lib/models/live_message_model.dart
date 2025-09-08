@@ -21,12 +21,17 @@ class LiveChatMessage {
     // === Avatar handling ===
     String avatar = json['avatar']?.toString().trim() ?? '';
     if (avatar.isNotEmpty && !avatar.startsWith('http')) {
-      // normalisasi path avatar
-      if (avatar.startsWith('/')) {
-        avatar = '${AppApiConfig.assetBaseUrl}$avatar';
-      } else {
-        avatar = '${AppApiConfig.assetBaseUrl}/$avatar';
-      }
+      // Normalize the asset base URL (remove trailing slash if exists)
+      String baseUrl = AppApiConfig.assetBaseUrl.endsWith('/')
+          ? AppApiConfig.assetBaseUrl.substring(0, AppApiConfig.assetBaseUrl.length - 1)
+          : AppApiConfig.assetBaseUrl;
+      
+      // Normalize the avatar path (remove leading slash if exists)
+      String avatarPath = avatar.startsWith('/')
+          ? avatar.substring(1)
+          : avatar;
+          
+      avatar = '$baseUrl/$avatarPath';
     }
 
     // === ID parsing helper ===

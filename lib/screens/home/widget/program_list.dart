@@ -61,15 +61,48 @@ class _ProgramListState extends State<ProgramList>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(
+          const SectionTitle(
             title: 'Program Hari Ini',
-            onSeeAll: () => _openAll(context),
           ),
-          Padding(
+          const SizedBox(height: 4),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0),
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Gagal memuat data program. Silakan tarik untuk refresh.',
-              style: Theme.of(context).textTheme.bodyMedium,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Gagal memuat data program',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Silakan tarik untuk refresh',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ],
@@ -80,18 +113,40 @@ class _ProgramListState extends State<ProgramList>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(
+          const SectionTitle(
             title: 'Program Hari Ini',
-            onSeeAll: () => _openAll(context),
           ),
-          Padding(
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0),
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Tidak ada program untuk hari ini',
-              style: TextStyle(
-                color:
-                    Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.schedule,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Tidak ada program untuk hari ini',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ],
@@ -102,17 +157,42 @@ class _ProgramListState extends State<ProgramList>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(
-          title: 'Program Hari Ini',
-          onSeeAll: () => _openAll(context),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Program Hari Ini',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton(
+                onPressed: () => _openAll(context),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(50, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Lihat Semua',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         if (isLoading)
           const ProgramSkeleton()
         else if (programList.isEmpty)
           const SizedBox.shrink()
         else
-          SizedBox(
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0),
             height: 260,
             child: ListView.builder(
               key: const PageStorageKey('programs_list'),
@@ -120,7 +200,6 @@ class _ProgramListState extends State<ProgramList>
               physics: const BouncingScrollPhysics(),
               shrinkWrap: true,
               itemCount: programList.length,
-              padding: const EdgeInsets.only(left: 12),
               itemBuilder: (context, index) {
                 final program = programList[index];
                 final url = program.gambarUrl;

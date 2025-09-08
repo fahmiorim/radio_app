@@ -66,32 +66,60 @@ class _EventListState extends State<EventList>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionTitle(title: 'Event', onSeeAll: null),
-          Padding(
+          const SectionTitle(title: 'Event'),
+          const SizedBox(height: 4),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8.0),
             padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
+                Icon(Icons.error_outline, 
+                  color: Theme.of(context).colorScheme.error, 
+                  size: 40,
+                ),
                 const SizedBox(height: 12),
                 Text(
                   'Gagal memuat data event',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withOpacity(0.7),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: prov.refresh,
-                  child: const Text('Coba Lagi'),
+                if (error.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    error,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: prov.refresh,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: const Text('Coba Lagi'),
+                  ),
                 ),
               ],
             ),

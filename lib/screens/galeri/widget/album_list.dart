@@ -18,7 +18,6 @@ class AlbumList extends StatefulWidget {
 }
 
 class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
-
   bool _isMounted = false;
   List<AlbumModel>? _lastAlbums;
 
@@ -149,10 +148,9 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
-                              Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withOpacity(0.7),
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
                               AppColors.transparent,
                               AppColors.transparent,
                             ],
@@ -172,10 +170,9 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.55),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.55),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
@@ -233,8 +230,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                   Text(
                     '${album.photosCount ?? 0} Foto',
                     style: TextStyle(
-                      color:
-                          Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                       height: 1.2,
                     ),
@@ -298,10 +294,9 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                       child: Text(
                         'Tidak ada album tersedia',
                         style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                         ),
                       ),
                     )

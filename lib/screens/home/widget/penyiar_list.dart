@@ -46,6 +46,7 @@ class _PenyiarListState extends State<PenyiarList>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Selector<PenyiarProvider, _PenyiarVm>(
       selector: (_, p) => _PenyiarVm(
         isLoading: p.isLoading,
@@ -63,32 +64,53 @@ class _PenyiarListState extends State<PenyiarList>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SectionTitle(title: 'Penyiar Radio'),
+            const SizedBox(height: 4), // Reduced space after title
             SizedBox(
               height: 160,
               child: vm.isLoading && vm.items.isEmpty
-                  ? const PenyiarSkeleton()
-                  : vm.items.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Tidak ada data penyiar',
-                        style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7),
-                        ),
-                      ),
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      child: PenyiarSkeleton(),
                     )
-                  : ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      itemCount: vm.items.length,
-                      itemBuilder: (context, index) {
-                        final p = vm.items[index];
-                        return _PenyiarCard(penyiar: p);
-                      },
-                    ),
+                  : vm.items.isEmpty
+                      ? Container(
+                          height: 120,
+                          alignment: Alignment.center,
+                          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(12.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            'Tidak ada data penyiar',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          itemCount: vm.items.length,
+                          itemBuilder: (context, index) {
+                            final p = vm.items[index];
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                left: index == 0 ? 8.0 : 0,
+                                right: index == vm.items.length - 1 ? 8.0 : 12.0,
+                              ),
+                              child: _PenyiarCard(penyiar: p),
+                            );
+                          },
+                        ),
             ),
           ],
         );

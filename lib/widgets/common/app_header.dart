@@ -28,7 +28,6 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
   bool _isMounted = false;
   bool _isLoading = true;
   UserModel? _cachedUser;
-  StreamSubscription? _userSubscription;
 
   @override
   void initState() {
@@ -41,7 +40,6 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
   @override
   void dispose() {
     _isMounted = false;
-    _userSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -62,17 +60,13 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
     try {
       final userProvider = context.read<UserProvider>();
-
-      // Load data with cooldown check
       await userProvider.loadUser(cacheFirst: !forceRefresh);
 
       if (!_isMounted) return;
-
-      // Update cached user data
       if (userProvider.user != null) {
         _cachedUser = userProvider.user;
       }
-    } catch (e) {
+    } catch (_) {
       rethrow;
     } finally {
       if (_isMounted) {
@@ -82,6 +76,9 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
   }
 
   Widget _buildProfileAvatar(BuildContext context, UserModel? user) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     if (user == null) {
       return _buildInitialsAvatar('U');
     }
@@ -96,34 +93,51 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
     return Container(
       width: 40,
       height: 40,
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-          width: 1.5,
+        gradient: LinearGradient(
+          colors: [colors.primary, colors.secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: avatarUrl,
-          fit: BoxFit.cover,
-          placeholder: (context, url) => _buildShimmerAvatar(),
-          errorWidget: (context, url, error) => _buildInitialsAvatar(initial),
+      child: Container(
+        padding: const EdgeInsets.all(1.5),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          shape: BoxShape.circle,
+        ),
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: avatarUrl,
+            fit: BoxFit.cover,
+            placeholder: (context, url) => _buildShimmerAvatar(),
+            errorWidget: (context, url, error) => _buildInitialsAvatar(initial),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildShimmerAvatar() {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = Theme.of(context).colorScheme;
     return Shimmer.fromColors(
-      baseColor: colorScheme.surfaceVariant,
-      highlightColor: colorScheme.surface,
+      baseColor: colors.surfaceVariant,
+      highlightColor: colors.surface,
+      period: const Duration(seconds: 2),
       child: Container(
-        width: 40,
-        height: 40,
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: colors.surface,
           shape: BoxShape.circle,
         ),
       ),
@@ -132,23 +146,33 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
   Widget _buildInitialsAvatar(String initial) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withOpacity(0.2),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: theme.colorScheme.onPrimaryContainer.withOpacity(0.5),
-          width: 1.5,
+        gradient: LinearGradient(
+          colors: [colors.primary, colors.secondary],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Center(
         child: Text(
           initial,
           style: theme.textTheme.titleMedium?.copyWith(
-            color: theme.colorScheme.onPrimaryContainer,
+            color: colors.onPrimary,
             fontWeight: FontWeight.bold,
+            fontSize: 16,
           ),
         ),
       ),
@@ -157,86 +181,137 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     if (widget.isLoading) {
-      return const AppHeaderSkeleton();
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border(
+            bottom: BorderSide(
+              color: colors.outline.withOpacity(0.08),
+              width: 1,
+            ),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: colors.shadow.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: const AppHeaderSkeleton(),
+      );
     }
 
     return Selector<UserProvider, UserModel?>(
       selector: (_, provider) => provider.user,
       builder: (context, user, _) {
-        // Gunakan data yang di-cache jika tersedia dan tidak ada data baru
         final displayUser = user ?? _cachedUser;
 
         if (_isLoading && displayUser == null) {
           return const AppHeaderSkeleton();
         }
 
+        final shader = LinearGradient(
+          colors: [colors.primary, colors.secondary],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ).createShader(const Rect.fromLTWH(0, 0, 200, 60));
+
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.surface,
-                Theme.of(context).colorScheme.surfaceVariant,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            color: colors.surface,
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
             ),
-            borderRadius: BorderRadius.circular(16),
+            border: Border(
+              bottom: BorderSide(
+                color: colors.outline.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).shadowColor.withOpacity(0.2),
-                blurRadius: 8,
+                color: colors.shadow.withOpacity(0.05),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
+                spreadRadius: 2,
               ),
             ],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Logo + App name
               Row(
                 children: [
-                  Image.asset('assets/logo.png', height: 40),
-                  const SizedBox(width: 12),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: 'ODAN',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.2,
-                                fontFamily: 'Poppins',
-                                shadows: [
-                                  Shadow(
-                                    color: Theme.of(
-                                      context,
-                                    ).shadowColor.withOpacity(0.3),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
+                  // Logo mark
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [colors.primary, colors.secondary],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.primary.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
-                        TextSpan(
-                          text: ' FM',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.2,
-                                fontFamily: 'Poppins',
-                              ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      height: 28,
+                      color: colors.onPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // App Name: "ODAN" gradient text + "FM" solid
+                  Text(
+                    'ODAN',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      foreground: Paint()..shader = shader,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      fontFamily: 'Poppins',
+                      height: 1.2,
+                      shadows: [
+                        Shadow(
+                          color: colors.shadow.withOpacity(0.3),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'FM',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: colors.primary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
                 ],
               ),
+
+              // Avatar / Menu
               InkWell(
                 borderRadius: BorderRadius.circular(30),
                 onTap:

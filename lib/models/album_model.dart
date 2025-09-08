@@ -78,9 +78,11 @@ class AlbumModel {
       return coverImage;
     }
 
-    // If it's a path starting with /storage, construct full URL
+    // If it's a path starting with /storage, construct full URL using assetBaseUrl
     if (coverImage.startsWith('/storage/')) {
-      return 'http://192.168.1.7:8000$coverImage';
+      final base = AppApiConfig.assetBaseUrl.trim();
+      final path = coverImage.startsWith('/') ? coverImage : '/$coverImage';
+      return base.endsWith('/') ? '$base${path.substring(1)}' : '$base$path';
     }
 
     // For any other case, use _resolveAssetUrl

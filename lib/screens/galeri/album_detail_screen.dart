@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/models/album_model.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 
 class AlbumDetailScreen extends StatefulWidget {
   final String slug;
@@ -64,13 +64,20 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: colors.background,
+      appBar: CustomAppBar.transparent(
+        context: context,
+        title: 'Album',
+        titleColor: colors.onBackground,
+      ),
       body: Stack(
         children: [
-          // MiniPlayer di sini akan muncul di atas konten
-          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
           const AppBackground(),
+          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
 
           Consumer<AlbumProvider>(
             builder: (context, provider, _) {
@@ -116,15 +123,11 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
-        SliverAppBar(
-          expandedHeight: 250.0,
-          pinned: true,
-          backgroundColor: AppColors.transparent,
-          elevation: 0,
-          iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
-          flexibleSpace: FlexibleSpaceBar(
-            centerTitle: true,
-            background: Stack(
+        // Header Image
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 250,
+            child: Stack(
               fit: StackFit.expand,
               children: [
                 // COVER — gunakan URL yang sudah di-resolve
@@ -148,41 +151,20 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                   )
                 else
                   Container(color: theme.colorScheme.surface),
-
-                // Overlay gradient supaya judul kebaca
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          theme.colorScheme.onSurface.withOpacity(0.65),
-                          theme.colorScheme.onSurface.withOpacity(0.15),
-                          AppColors.transparent,
-                        ],
-                        stops: const [0, .4, 1],
-                      ),
-                    ),
-                  ),
-                ),
               ],
             ),
-            title: Text(
+          ),
+        ),
+
+        // Title Section
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+          sliver: SliverToBoxAdapter(
+            child: Text(
               album.name,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 16.0,
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    offset: Offset(1, 1),
-                    blurRadius: 3.0,
-                    color: theme.brightness == Brightness.dark
-                        ? theme.colorScheme.onSurface.withOpacity(0.6)
-                        : theme.colorScheme.onSurface.withOpacity(0.45),
-                  ),
-                ],
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ),

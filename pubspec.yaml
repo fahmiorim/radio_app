@@ -38,6 +38,7 @@ dependencies:
   dio_cookie_manager: ^3.3.0
   flutter_secure_storage: ^9.2.2
   intl: ^0.20.2
+  flutter_animate: ^4.2.0
 
   # ⇩⇩ UPDATE ke generasi terbaru yang saling cocok
   firebase_core: ^4.1.0

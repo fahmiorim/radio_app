@@ -156,7 +156,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           color: AppColors.transparent,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16.0,
-                            vertical: 12.0,
+                            vertical: 16.0,
                           ),
                           child: AppHeader(
                             key: const Key('app_header'),
@@ -168,19 +168,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         ),
                       ),
 
-                      // Content
+                      // Main Content
                       SliverPadding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 80),
+                        padding: const EdgeInsets.only(bottom: 100),
                         sliver: SliverList(
-                          delegate: SliverChildListDelegate(const [
-                            SizedBox(key: Key('top_padding'), height: 4),
-                            PenyiarList(),
-                            SizedBox(height: 8),
-                            ProgramList(),
-                            SizedBox(height: 4),
-                            EventList(),
-                            SizedBox(height: 8),
-                            ArtikelList(),
+                          delegate: SliverChildListDelegate([
+                            // Section: Penyiar
+                            const SizedBox(height: 14),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: PenyiarList(),
+                            ),
+
+                            // Section: Program
+                            const SizedBox(height: 32),
+                            const ProgramList(),
+
+                            // Section: Event
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: EventList(),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Section: Artikel
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: ArtikelList(),
+                            ),
+                            const SizedBox(height: 24),
                           ]),
                         ),
                       ),

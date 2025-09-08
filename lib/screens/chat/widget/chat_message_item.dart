@@ -15,10 +15,32 @@ class ChatMessageItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // batas lebar bubble maks 75% layar
-    final maxBubbleWidth = MediaQuery.of(context).size.width * 0.75;
     final colors = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+
+    // System message
+    if (message.isSystemMessage) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+        alignment: Alignment.center,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+          decoration: BoxDecoration(
+            color: colors.surfaceVariant.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            message.message,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: colors.onSurfaceVariant.withOpacity(0.9),
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
@@ -28,93 +50,98 @@ class ChatMessageItem extends StatelessWidget {
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
         children: [
-          // avatar lawan bicara di kiri
+          // Avatar kiri (lawan bicara)
           if (!isCurrentUser) ...[
             const SizedBox(width: 4),
-            _Avatar(url: message.userAvatar),
-            const SizedBox(width: 8),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: _Avatar(url: message.userAvatar), // ← pakai URL pengirim
+            ),
           ],
 
-          // bubble
+          // Bubble + username (untuk lawan bicara)
           Flexible(
             child: Column(
               crossAxisAlignment: isCurrentUser
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 4.0,
-                    bottom: 2.0,
-                    right: 4.0,
-                  ),
-                  child: Text(
-                    isCurrentUser ? 'You' : message.username,
-                    style: textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color:
-                          isCurrentUser ? colors.primary : colors.onSurfaceVariant,
+                if (!isCurrentUser)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0, bottom: 2.0),
+                    child: Text(
+                      message.username,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.onSurface.withOpacity(0.7),
+                      ),
                     ),
                   ),
-                ),
                 Container(
-                  constraints: BoxConstraints(maxWidth: maxBubbleWidth),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12.0,
-                    vertical: 8.0,
+                    vertical: 10,
+                    horizontal: 14,
                   ),
                   decoration: BoxDecoration(
                     color: isCurrentUser
-                        ? colors.primary
-                        : colors.surface,
+                        ? colors.primary.withOpacity(0.9)
+                        : colors.surfaceVariant,
                     borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(12.0),
-                      topRight: const Radius.circular(12.0),
-                      bottomLeft: isCurrentUser
-                          ? const Radius.circular(12.0)
-                          : const Radius.circular(0),
-                      bottomRight: isCurrentUser
-                          ? const Radius.circular(0)
-                          : const Radius.circular(12.0),
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
+                      bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
                     ),
                     boxShadow: [
-                      BoxShadow(
-                        color: colors.onSurface.withOpacity(0.05),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
-                      ),
+                      if (!isCurrentUser)
+                        BoxShadow(
+                          color: colors.shadow.withOpacity(0.1),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
                     ],
                   ),
-                  child: Text(
-                    message.message,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color:
-                          isCurrentUser ? colors.onPrimary : colors.onSurface,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(
-                    right: isCurrentUser ? 4.0 : 0,
-                    left: isCurrentUser ? 0 : 4.0,
-                    top: 2.0,
-                  ),
-                  child: Text(
-                    time,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colors.onSurfaceVariant,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        message.message,
+                        style: TextStyle(
+                          color: isCurrentUser
+                              ? colors.onPrimary
+                              : colors.onSurfaceVariant,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        time,
+                        style: TextStyle(
+                          color:
+                              (isCurrentUser
+                                      ? colors.onPrimary
+                                      : colors.onSurfaceVariant)
+                                  .withOpacity(0.7),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
 
-          if (isCurrentUser) ...[
-            const SizedBox(width: 4),
-            _Avatar(url: message.userAvatar),
-            const SizedBox(width: 8),
-          ],
+          // Avatar kanan (pesan milik user sendiri)
+          if (isCurrentUser)
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: _Avatar(
+                // kalau modelmu punya URL avatar pengirim, gunakan field yang sama
+                // karena untuk pesan milikmu, pengirim = kamu
+                url: message.userAvatar,
+              ),
+            ),
         ],
       ),
     );
@@ -127,9 +154,8 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // pakai CircleAvatar + Image.network (errorBuilder) biar fallback aman
-    final hasUrl = url != null && url!.isNotEmpty;
     final colors = Theme.of(context).colorScheme;
+    final hasUrl = url != null && url!.trim().isNotEmpty;
 
     return CircleAvatar(
       radius: 16,

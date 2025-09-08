@@ -24,6 +24,7 @@ import 'package:radio_odan_app/models/event_model.dart';
 
 // Screens (Galeri)
 import 'package:radio_odan_app/screens/galeri/album_screen.dart';
+import 'package:radio_odan_app/screens/galeri/video_screen.dart';
 
 // Screens (Profile & Player)
 import 'package:radio_odan_app/screens/profile/edit_profile_screen.dart';
@@ -47,12 +48,11 @@ class AppRoutes {
   static const String bottomNav = '/';
   static const String fullPlayer = '/full-player';
   static const String editProfile = '/edit-profile';
-
+  static const String allVideos = '/all-videos';
   static const String artikelDetail = '/artikel-detail';
   static const String programDetail = '/program-detail';
   static const String eventDetail = '/event-detail';
   static const String allPrograms = '/program-semua';
-  static const String allVideos = '/all-videos';
   static const String albumList = '/album-semua';
   static const String allEvents = '/events';
 
@@ -179,6 +179,9 @@ class AppRoutes {
           }
           return const NotFoundScreen();
         }
+
+      case allVideos:
+        return const AllVideosScreen();
 
       // --- Fallback 404
       default:

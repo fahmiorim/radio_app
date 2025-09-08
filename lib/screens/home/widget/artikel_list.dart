@@ -83,19 +83,40 @@ class ArtikelListState extends State<ArtikelList>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionTitle(
-            title: 'Program Hari Ini',
+            title: 'Artikel Terbaru',
             onSeeAll: () => _openAll(context),
           ),
-          Padding(
+          const SizedBox(height: 4),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8.0),
             padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Tidak ada program untuk hari ini',
-              style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withOpacity(0.7),
-              ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.article_outlined,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Belum ada artikel tersedia',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ],

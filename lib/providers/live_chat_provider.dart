@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:radio_odan_app/models/chat_model.dart';
 import 'package:radio_odan_app/models/live_message_model.dart';
+
 import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 
@@ -102,26 +103,67 @@ class LiveChatProvider with ChangeNotifier {
         final map = (user);
         final id = (map['userId'] ?? '').toString();
         if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
+          final username =
+              (map['userInfo']?['name'] ??
+                      map['userInfo']?['username'] ??
+                      'User')
+                  .toString();
+
           _onlineUsers.add(
             OnlineUser(
               id: id,
-              username:
-                  (map['userInfo']?['name'] ??
-                          map['userInfo']?['username'] ??
-                          'User')
-                      .toString(),
+              username: username,
               userAvatar:
                   (map['userInfo']?['avatar'] ?? map['userInfo']?['photo'])
                       ?.toString(),
               joinTime: DateTime.now(),
             ),
           );
+
+          // Add join notification message
+          final isCurrentUser =
+              _currentUserId != null && id == _currentUserId.toString();
+          final message = isCurrentUser
+              ? '🎉 Anda telah bergabung ke siaran'
+              : '🎉 $username bergabung ke siaran';
+
+          _messages.add(
+            ChatMessage(
+              id: 'join_${DateTime.now().millisecondsSinceEpoch}_$id',
+              username: 'System',
+              message: message,
+              timestamp: DateTime.now(),
+              isSystemMessage: true,
+              isJoinNotification: true,
+            ),
+          );
+
           notifyListeners();
         }
       },
       onUserLeft: (channel, user) {
         final id = (user['userId'] ?? '').toString();
+        final userLeft = _onlineUsers.firstWhere(
+          (x) => x.id == id,
+          orElse: () =>
+              OnlineUser(id: '', username: 'User', joinTime: DateTime.now()),
+        );
+
         _onlineUsers.removeWhere((x) => x.id == id);
+
+        // Add leave notification message if the user was in the list
+        if (userLeft.id.isNotEmpty) {
+          _messages.add(
+            ChatMessage(
+              id: 'leave_${DateTime.now().millisecondsSinceEpoch}_$id',
+              username: 'System',
+              message: '👋 ${userLeft.username} meninggalkan siaran',
+              timestamp: DateTime.now(),
+              isSystemMessage: true,
+            ),
+          );
+        }
+
         notifyListeners();
       },
       onMessage: (channel, messageData) {
@@ -225,8 +267,23 @@ class LiveChatProvider with ChangeNotifier {
   }
 
   // ==== HISTORY (HTTP + PAGINATION) ====
+  bool _isLoadingMore = false;
+  DateTime? _lastFetchTime;
+  static const Duration _fetchCooldown = Duration(seconds: 1);
+
   Future<void> loadMore() async {
-    if (!_isLive || !_hasMore) return;
+    // Prevent multiple concurrent fetches
+    if (_isLoadingMore || !_isLive || !_hasMore) return;
+
+    // Debounce rapid successive calls
+    final now = DateTime.now();
+    if (_lastFetchTime != null &&
+        now.difference(_lastFetchTime!) < _fetchCooldown) {
+      return;
+    }
+
+    _isLoadingMore = true;
+    _lastFetchTime = now;
 
     final rid = _currentRoomId ?? roomId;
     try {
@@ -235,6 +292,7 @@ class LiveChatProvider with ChangeNotifier {
         page: _page,
         perPage: _perPage,
       );
+
       if (items.isEmpty) {
         _hasMore = false;
       } else {
@@ -249,12 +307,26 @@ class LiveChatProvider with ChangeNotifier {
               ),
             )
             .toList();
-        _messages.insertAll(0, newMsgs); // older first, prepend
-        _page++;
+
+        // Filter out any messages we already have
+        final existingIds = _messages.map((m) => m.id).toSet();
+        final uniqueNewMsgs = newMsgs
+            .where((m) => !existingIds.contains(m.id))
+            .toList();
+
+        if (uniqueNewMsgs.isNotEmpty) {
+          _messages.insertAll(0, uniqueNewMsgs); // older first, prepend
+          _page++;
+        } else {
+          // If we didn't get any new messages, we've probably reached the end
+          _hasMore = false;
+        }
       }
     } catch (e) {
-      rethrow;
+      // Don't rethrow here to prevent breaking the UI
+      debugPrint('Error loading more messages: $e');
     } finally {
+      _isLoadingMore = false;
       notifyListeners();
     }
   }
@@ -267,7 +339,11 @@ class LiveChatProvider with ChangeNotifier {
     _currentUserId = userId;
   }
 
-  Future<void> send(String text, {String username = 'Anda'}) async {
+  Future<void> send(
+    String text, {
+    String username = 'Anda',
+    String? userAvatar,
+  }) async {
     final t = text.trim();
     if (t.isEmpty || !_isLive) return;
 
@@ -279,7 +355,13 @@ class LiveChatProvider with ChangeNotifier {
 
     // optimistic update
     _messages.add(
-      ChatMessage(id: tempId, username: username, message: t, timestamp: now),
+      ChatMessage(
+        id: tempId,
+        username: username,
+        message: t,
+        timestamp: now,
+        userAvatar: userAvatar,
+      ),
     );
     notifyListeners();
 

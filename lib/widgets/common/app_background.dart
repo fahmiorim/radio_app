@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:radio_odan_app/config/app_theme.dart';
 
 class AppBackground extends StatelessWidget {
   const AppBackground({
@@ -7,11 +6,13 @@ class AppBackground extends StatelessWidget {
     this.showTopRightBubble = true,
     this.showBottomLeftBubble = true,
     this.showCenterBubble = true,
+    this.child,
   });
 
   final bool showTopRightBubble;
   final bool showBottomLeftBubble;
   final bool showCenterBubble;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -21,32 +22,51 @@ class AppBackground extends StatelessWidget {
     return Stack(
       children: [
         Container(color: theme.colorScheme.background),
+        if (child != null) child!,
         if (showTopRightBubble)
-          AppTheme.bubble(
-            context: context,
-            size: 200,
-            top: -50,
-            right: -50,
-            opacity: isDarkMode ? 0.1 : 0.03,
-            usePrimaryColor: true,
+          Positioned(
+            top: -80,
+            right: -80,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withOpacity(
+                  isDarkMode ? 0.15 : 0.05,
+                ),
+              ),
+            ),
           ),
         if (showBottomLeftBubble)
-          AppTheme.bubble(
-            context: context,
-            size: 150,
-            bottom: -30,
-            left: -30,
-            opacity: isDarkMode ? 0.1 : 0.03,
-            usePrimaryColor: true,
+          Positioned(
+            bottom: -100,
+            left: -100,
+            child: Container(
+              width: 400,
+              height: 400,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withOpacity(
+                  isDarkMode ? 0.15 : 0.05,
+                ),
+              ),
+            ),
           ),
         if (showCenterBubble)
-          AppTheme.bubble(
-            context: context,
-            size: 50,
-            top: 100,
+          Positioned(
+            top: 150,
             left: 100,
-            opacity: isDarkMode ? 0.08 : 0.02,
-            usePrimaryColor: true,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: theme.colorScheme.primary.withOpacity(
+                  isDarkMode ? 0.1 : 0.03,
+                ),
+              ),
+            ),
           ),
       ],
     );

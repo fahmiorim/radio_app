@@ -7,7 +7,6 @@ import 'package:radio_odan_app/providers/program_provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/skeleton/all_programs_skeleton.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 // ⬇️ Import detail screen
@@ -95,14 +94,6 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
       appBar: CustomAppBar.transparent(
         context: context,
         title: 'Semua Program',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search
-            },
-          ),
-        ],
       ),
       body: Stack(
         children: [
@@ -235,28 +226,31 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
   Widget _buildProgramItem(ProgramModel program) {
     final prov = context.read<ProgramProvider>();
     final url = program.gambarUrl;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [colors.surface, colors.surface.withOpacity(0.9)],
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: colors.shadow.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: AppColors.transparent,
+        color: Colors.transparent,
         child: InkWell(
           onTap: () {
-            // 1) set selected di provider (hemat fetch kalau detail butuh data)
             prov.selectProgram(program);
-
-            // 2) navigasi ke ProgramDetailScreen dengan program ID
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -264,41 +258,114 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                 settings: RouteSettings(arguments: program.id),
               ),
             );
-
-            // Catatan:
-            // Jika kamu ingin TIDAK set selected (dan selalu fetch by id),
-            // gunakan:
-            // Navigator.pushNamed(context, '/program/detail', arguments: program.id);
           },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20.0,
-              vertical: 12.0,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colors.outline.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 80,
-                    height: 80,
-                    child: url.isEmpty
-                        ? _thumbPlaceholder()
-                        : CachedNetworkImage(
-                            imageUrl: url,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => _thumbLoading(),
-                            errorWidget: (_, __, ___) => _thumbPlaceholder(),
+                // Header with image and title
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Thumbnail with border
+                    Container(
+                      width: 70,
+                      height: 70,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: colors.primary.withOpacity(0.2),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.shadow.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(child: _ProgramTexts(program: program)),
-                Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context).colorScheme.onSurface,
-                  size: 24,
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: url.isEmpty
+                            ? _thumbPlaceholder()
+                            : CachedNetworkImage(
+                                imageUrl: url,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => _thumbLoading(),
+                                errorWidget: (_, __, ___) =>
+                                    _thumbPlaceholder(),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+
+                    // Title
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title with gradient text
+                          ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: [
+                                colors.primary,
+                                colors.primary.withOpacity(0.8),
+                              ],
+                            ).createShader(bounds),
+                            child: Text(
+                              program.namaProgram,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.onSurface,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+
+                          // Schedule row
+                          if ((program.jadwal ?? '').isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2),
+                                  child: Icon(
+                                    Icons.schedule_rounded,
+                                    size: 16,
+                                    color: colors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    program.jadwal!,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -310,69 +377,35 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
 
   Widget _thumbPlaceholder() => Builder(
     builder: (context) => Container(
-      color: Theme.of(context).primaryColor.withOpacity(0.1),
-      alignment: Alignment.center,
-      child: Icon(Icons.radio, size: 32, color: Theme.of(context).primaryColor),
-    ),
-  );
-
-  Widget _thumbLoading() => const Center(
-    child: SizedBox(
-      width: 18,
-      height: 18,
-      child: CircularProgressIndicator(strokeWidth: 2),
-    ),
-  );
-}
-
-class _ProgramTexts extends StatelessWidget {
-  const _ProgramTexts({required this.program});
-
-  final ProgramModel program;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          program.namaProgram,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
+            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+          ],
         ),
-        if ((program.jadwal ?? '').isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.schedule,
-                size: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  program.jadwal!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.radio_rounded,
+        size: 32,
+        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+      ),
+    ),
+  );
+
+  Widget _thumbLoading() => Center(
+    child: SizedBox(
+      width: 24,
+      height: 24,
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation<Color>(
+          Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    ),
+  );
 }

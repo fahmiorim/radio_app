@@ -178,39 +178,20 @@ class AlbumProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // First try to find the album in the existing lists
-      try {
-        // First try to find in featured albums
-        final cachedAlbum = _featuredAlbums.firstWhere(
-          (album) => album.slug == slug,
-        );
-        _albumDetail = AlbumDetailModel(
-          name: cachedAlbum.name,
-          album: cachedAlbum,
-          photos: const [],
-        );
-      } catch (_) {
-        try {
-          // Then try to find in all albums
-          final cachedAlbum = _allAlbums.firstWhere(
-            (album) => album.slug == slug,
-          );
-          _albumDetail = AlbumDetailModel(
-            name: cachedAlbum.name,
-            album: cachedAlbum,
-            photos: const [],
-          );
-        } catch (_) {
-          // If not found in cache, fetch from API
-          _albumDetail = await _svc.fetchAlbumDetail(slug);
-          // Cache the album details for future use
-          if (!_allAlbums.any((a) => a.id == _albumDetail?.album.id)) {
-            _allAlbums.add(_albumDetail!.album);
-          }
-        }
+      // Always fetch fresh data from the API
+      _albumDetail = await _svc.fetchAlbumDetail(slug);
+      
+      // Update the cached album if it exists in the lists
+      final cachedAlbumIndex = _allAlbums.indexWhere((a) => a.slug == slug);
+      if (cachedAlbumIndex != -1) {
+        _allAlbums[cachedAlbumIndex] = _albumDetail!.album;
+      } else {
+        // If not in the list, add it
+        _allAlbums.add(_albumDetail!.album);
       }
     } catch (e) {
       _detailError = 'Gagal memuat detail album. Silakan coba lagi.';
+      debugPrint('Error fetching album detail: $e');
     } finally {
       _isLoadingDetail = false;
       notifyListeners();

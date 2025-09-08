@@ -158,24 +158,43 @@ class AppDrawer extends StatelessWidget {
                                 ),
                                 // Theme Toggle
                                 Consumer<ThemeProvider>(
-                                  builder: (context, themeProvider, _) =>
-                                      _buildMenuItem(
-                                        context: context,
-                                        icon: Icons.light_mode,
-                                        title: "Tema Gelap",
-                                        onTap: () {
-                                          themeProvider.toggleTheme(
-                                            !themeProvider.isDarkMode,
-                                          );
+                                  builder: (context, themeProvider, _) {
+                                    final bool isDark =
+                                        themeProvider.isDarkMode;
+                                    return _buildMenuItem(
+                                      context: context,
+                                      icon: isDark
+                                          ? Icons.light_mode
+                                          : Icons.dark_mode,
+                                      title: isDark
+                                          ? "Tema Terang"
+                                          : "Tema Gelap",
+                                      onTap: () {
+                                        themeProvider.toggleTheme(!isDark);
+                                      },
+                                      trailing: Switch.adaptive(
+                                        value: isDark,
+                                        onChanged: (value) {
+                                          themeProvider.toggleTheme(value);
                                         },
-                                        trailing: Switch.adaptive(
-                                          value: themeProvider.isDarkMode,
-                                          onChanged: (value) {
-                                            themeProvider.toggleTheme(value);
-                                          },
-                                          activeColor: colorScheme.primary,
-                                        ),
+                                        activeColor: colorScheme.primary,
+                                        activeTrackColor:
+                                            colorScheme.primaryContainer,
+                                        thumbColor:
+                                            MaterialStateProperty.resolveWith<
+                                              Color
+                                            >((Set<MaterialState> states) {
+                                              if (states.contains(
+                                                MaterialState.selected,
+                                              )) {
+                                                return colorScheme.onPrimary;
+                                              }
+                                              return colorScheme
+                                                  .onSurfaceVariant;
+                                            }),
                                       ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),

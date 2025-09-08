@@ -18,7 +18,7 @@ class _ChatColors {
 
 class AppColors {
   // ========== Light Theme ==========
-  static const Color lightPrimary = Color(0xFF6750A4); // Material 3 purple
+  static const Color lightPrimary = Color(0xFF1976D2); // Material 3 blue
   static const Color lightBackground = Color(0xFFF8F9FA); // Soft gray background
   static const Color lightSurface = Color(0xFFFFFFFF); // White surface
 
@@ -31,7 +31,7 @@ class AppColors {
   static const Color lightCardSurface = Color(0xFFFFFFFF); // White card surface
   static const Color lightDivider = Color(0x1F000000); // 12% black divider
   static const Color lightBorder = Color(0x33000000); // 20% black border
-  static const Color lightSentBubble = lightPrimary; // Primary purple
+  static const Color lightSentBubble = lightPrimary; // Primary blue
   static const Color lightSentBubbleText = Color(0xFFFFFFFF); // White text
   static const Color lightReceivedBubble = Color(0xFFE0E0E0); // Light gray
   static const Color lightReceivedBubbleText = lightTextPrimary; // Dark text

@@ -23,8 +23,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final logoPath =
-        theme.brightness == Brightness.dark ? 'assets/logo-white.png' : 'assets/logo.png';
+    final logoPath = theme.brightness == Brightness.dark
+        ? 'assets/logo.png'
+        : 'assets/logo.png';
 
     return Scaffold(
       body: Stack(
