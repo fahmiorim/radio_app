@@ -79,10 +79,8 @@ class AppTheme {
           color: colorScheme.onPrimary,
         ),
         iconTheme: IconThemeData(color: colorScheme.onPrimary, size: 24),
-        systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
-          statusBarColor: colorScheme.primary, // Match app bar color
-          statusBarIconBrightness: Brightness.light, // Light icons for dark app bar
-        ),
+        systemOverlayStyle:
+            SystemUiOverlayStyle.light, // status bar icons putih
       ),
     );
 
@@ -341,10 +339,8 @@ class AppTheme {
     final isDark = theme.brightness == Brightness.dark;
     final color = usePrimaryColor
         ? colorScheme.primary.withOpacity(opacity)
-        : (isDark
-                ? colorScheme.surfaceVariant
-                : colorScheme.secondary)
-            .withOpacity(opacity);
+        : (isDark ? colorScheme.surfaceVariant : colorScheme.secondary)
+              .withOpacity(opacity);
 
     return Positioned(
       top: top,

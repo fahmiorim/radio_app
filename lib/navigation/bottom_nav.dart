@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'package:radio_odan_app/providers/live_chat_provider.dart';
 import 'package:radio_odan_app/screens/home/home_screen.dart';
-import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
+import 'chat_screen_wrapper.dart';
 import 'package:radio_odan_app/screens/galeri/galeri_screen.dart';
-import 'package:radio_odan_app/screens/chat/chat_screen.dart';
+import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
 import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_drawer.dart';
@@ -48,10 +45,10 @@ class _BottomNavState extends State<BottomNav> {
     }
   }
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    ArtikelScreen(),
-    GaleriScreen(),
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const ArtikelScreen(),
+    const GaleriScreen(),
   ];
 
   @override
@@ -144,10 +141,7 @@ class _BottomNavState extends State<BottomNav> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ChangeNotifierProvider(
-                      create: (_) => LiveChatProvider(roomId: _roomId!)..init(),
-                      child: LiveChatScreen(roomId: _roomId!),
-                    ),
+                    builder: (_) => ChatScreenWrapper(roomId: _roomId!),
                   ),
                 );
 
