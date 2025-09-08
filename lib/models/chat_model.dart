@@ -18,9 +18,15 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    // Handle username with proper validation
+    String? rawUsername = json['username']?.toString().trim();
+    String username = (rawUsername != null && rawUsername.isNotEmpty && rawUsername.toLowerCase() != 'user')
+        ? rawUsername
+        : 'Anonymous';
+        
     return ChatMessage(
       id: json['id']?.toString() ?? '',
-      username: json['username']?.toString() ?? 'Anonymous',
+      username: username,
       message: json['message']?.toString() ?? '',
       timestamp: json['timestamp'] != null 
           ? DateTime.tryParse(json['timestamp'].toString()) ?? DateTime.now()

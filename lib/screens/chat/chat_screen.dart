@@ -38,15 +38,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    
+
     // Initialize user in the next frame to ensure context is available
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.read<UserProvider>().user;
       final prov = context.read<LiveChatProvider>();
-      
+
       print('🎯 Initializing LiveChatScreen for room ${widget.roomId}');
       print('🎯 Current live status: ${prov.isLive}');
-      
+
       if (user != null) {
         prov.setCurrentUserId(
           user.id,
@@ -57,7 +57,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       } else {
         print('⚠️ No user logged in');
       }
-      
+
       // Add listener for live status changes
       prov.addListener(_onLiveStatusChanged);
     });
@@ -283,36 +283,36 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 // The LiveChatScreen should only be shown when isLive is true
                 // This is now handled by the ChatScreenWrapper
                 // So we can safely assume we're live if we get here
-                  ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.only(
-                      bottom: 80,
-                      left: 8,
-                      right: 8,
-                      top: 8,
-                    ),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      if (_isUserScrolledUp && index == _firstUnreadIndex) {
-                        return Column(
-                          children: [
-                            UnreadMessagesLabel(count: unreadCount),
-                            ChatMessageItem(
-                              message: message,
-                              isCurrentUser: _isCurrentUser(message.username),
-                              time: prov.formatTime(message.timestamp),
-                            ),
-                          ],
-                        );
-                      }
-                      return ChatMessageItem(
-                        message: message,
-                        isCurrentUser: _isCurrentUser(message.username),
-                        time: prov.formatTime(message.timestamp),
-                      );
-                    },
+                ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(
+                    bottom: 80,
+                    left: 8,
+                    right: 8,
+                    top: 8,
                   ),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    if (_isUserScrolledUp && index == _firstUnreadIndex) {
+                      return Column(
+                        children: [
+                          UnreadMessagesLabel(count: unreadCount),
+                          ChatMessageItem(
+                            message: message,
+                            isCurrentUser: _isCurrentUser(message.username),
+                            time: prov.formatTime(message.timestamp),
+                          ),
+                        ],
+                      );
+                    }
+                    return ChatMessageItem(
+                      message: message,
+                      isCurrentUser: _isCurrentUser(message.username),
+                      time: prov.formatTime(message.timestamp),
+                    );
+                  },
+                ),
                 if (_isUserScrolledUp && unreadCount > 0)
                   Positioned(
                     bottom: 80,
@@ -368,14 +368,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void _onLiveStatusChanged() {
     final prov = context.read<LiveChatProvider>();
     print('🔄 Live status changed to: ${prov.isLive}');
-    
+
     if (prov.isLive) {
       // If we just went live, scroll to bottom to show latest messages
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollToBottom();
       });
     }
-    
+
     if (mounted) {
       setState(() {
         // Trigger a rebuild when live status changes
@@ -389,7 +389,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     _scrollController.dispose();
     _messageController.dispose();
     _scrollTimer?.cancel();
-    
+
     // Remove the status change listener
     try {
       final prov = context.read<LiveChatProvider>();
@@ -397,7 +397,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     } catch (e) {
       print('⚠️ Error removing listener: $e');
     }
-    
+
     super.dispose();
   }
 }

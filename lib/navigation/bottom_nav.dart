@@ -129,7 +129,7 @@ class _BottomNavState extends State<BottomNav> {
 
                 // Navigate to chat screen even if there's no active broadcast
                 // The ChatScreenWrapper will handle showing the no-live placeholder
-                final result = await Navigator.of(
+                await Navigator.of(
                   context,
                 ).push(ChatScreenWrapper.route(_roomId));
                 return;

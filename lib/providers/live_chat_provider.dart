@@ -81,7 +81,9 @@ class LiveChatProvider with ChangeNotifier {
 
       // Subscribe to chat room if live
       if (_isLive) {
-        print('🎙️ Live broadcast detected, subscribing to room ${_currentRoomId}...');
+        print(
+          '🎙️ Live broadcast detected, subscribing to room ${_currentRoomId}...',
+        );
         await _subscribePublicOnce();
       } else {
         print('⏸️  No active broadcast detected');
@@ -113,12 +115,12 @@ class LiveChatProvider with ChangeNotifier {
       onStatusUpdate: (data) {
         print('\n🔔 === STATUS UPDATE RECEIVED ===');
         print('📡 Raw data: $data');
-        
+
         // event: LiveRoomStatusUpdated
         final isLive = data['is_live'] == true || data['status'] == 'started';
         print('📢 Live status: $isLive');
         print('🔍 Previous live status: $_isLive');
-        
+
         if (isLive != _isLive) {
           print('🔄 Live status changed from $_isLive to $isLive');
           _isLive = isLive;
@@ -127,7 +129,9 @@ class LiveChatProvider with ChangeNotifier {
         }
 
         if (!_isLive) {
-          print('❌ Stream is not live, clearing messages and notifying listeners');
+          print(
+            '❌ Stream is not live, clearing messages and notifying listeners',
+          );
           _messages.clear();
           _onlineUsers.clear();
           _currentRoomId = null;
@@ -148,15 +152,24 @@ class LiveChatProvider with ChangeNotifier {
         loadMore();
       },
       onUserJoined: (channel, user) {
-        final map = (user);
-        final id = (map['userId'] ?? '').toString();
-        if (id.isEmpty || id == '0') return;
-        if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
-          final username =
-              (map['userInfo']?['name'] ??
-                      map['userInfo']?['username'] ??
-                      'User')
-                  .toString();
+        try {
+          final map = user as Map<String, dynamic>;
+          final id = (map['userId'] ?? '').toString();
+          if (id.isEmpty || id == '0') return;
+
+          // Skip if user already exists in the list
+          if (_onlineUsers.indexWhere((x) => x.id == id) != -1) return;
+
+          // Extract username with fallback to 'Pengguna' if not found or invalid
+          String username = (map['userInfo']?['name'] ?? 
+                           map['userInfo']?['username'] ?? 
+                           'Pengguna ${id.substring(0, 4)}').toString().trim();
+          
+          // Skip if username is empty or contains only whitespace
+          if (username.isEmpty) {
+            print('⚠️ Skipped adding user with empty username');
+            return;
+          }
 
           _onlineUsers.add(
             OnlineUser(
@@ -188,32 +201,37 @@ class LiveChatProvider with ChangeNotifier {
           );
 
           notifyListeners();
+        } catch (e) {
+          print('❌ Error in onUserJoined: $e');
         }
       },
       onUserLeft: (channel, user) {
-        final id = (user['userId'] ?? '').toString();
-        final userLeft = _onlineUsers.firstWhere(
-          (x) => x.id == id,
-          orElse: () =>
-              OnlineUser(id: '', username: 'User', joinTime: DateTime.now()),
-        );
-
-        _onlineUsers.removeWhere((x) => x.id == id);
-
-        // Add leave notification message if the user was in the list
-        if (userLeft.id.isNotEmpty) {
-          _messages.add(
-            ChatMessage(
-              id: 'leave_${DateTime.now().millisecondsSinceEpoch}_$id',
-              username: 'System',
-              message: '👋 ${userLeft.username} meninggalkan siaran',
-              timestamp: DateTime.now(),
-              isSystemMessage: true,
-            ),
+        try {
+          final id = (user['userId'] ?? '').toString();
+          final userLeft = _onlineUsers.firstWhere(
+            (x) => x.id == id,
+            orElse: () =>
+                OnlineUser(id: '', username: 'User', joinTime: DateTime.now()),
           );
-        }
 
-        notifyListeners();
+          _onlineUsers.removeWhere((x) => x.id == id);
+
+          // Add leave notification message if the user was in the list
+          if (userLeft.id.isNotEmpty) {
+            _messages.add(
+              ChatMessage(
+                id: 'leave_${DateTime.now().millisecondsSinceEpoch}_$id',
+                username: 'System',
+                message: '👋 ${userLeft.username} meninggalkan siaran',
+                timestamp: DateTime.now(),
+                isSystemMessage: true,
+              ),
+            );
+            notifyListeners();
+          }
+        } catch (e) {
+          print('❌ Error in onUserLeft: $e');
+        }
       },
       onMessage: (channel, messageData) {
         try {
@@ -237,9 +255,10 @@ class LiveChatProvider with ChangeNotifier {
           if (isDuplicate) return;
 
           // Check if this is a message from the current user
-          final isFromCurrentUser = _currentUserId != null && 
-                                 msg.userId.toString() == _currentUserId.toString();
-          
+          final isFromCurrentUser =
+              _currentUserId != null &&
+              msg.userId.toString() == _currentUserId.toString();
+
           _messages.add(
             ChatMessage(
               id: messageId,
@@ -248,8 +267,8 @@ class LiveChatProvider with ChangeNotifier {
               timestamp: msg.timestamp,
               // For current user's messages, always use the stored avatar
               // For others, use the one from the server
-              userAvatar: isFromCurrentUser 
-                  ? _currentUserAvatar ?? msg.avatar 
+              userAvatar: isFromCurrentUser
+                  ? _currentUserAvatar ?? msg.avatar
                   : msg.avatar,
             ),
           );
@@ -270,19 +289,21 @@ class LiveChatProvider with ChangeNotifier {
     print('\n🔄 === REFRESHING STATUS ===');
     print('🔍 Current roomId: $roomId');
     print('🔍 Current live status: $_isLive');
-    
+
     try {
       _isLoading = true;
       notifyListeners();
 
       print('🌐 Fetching status from API...');
       final status = await _http.fetchStatus(roomId);
-      print('✅ Status received - isLive: ${status.isLive}, roomId: ${status.roomId}');
-      
+      print(
+        '✅ Status received - isLive: ${status.isLive}, roomId: ${status.roomId}',
+      );
+
       final statusChanged = _isLive != status.isLive;
       _isLive = status.isLive;
       _currentRoomId = status.roomId;
-      
+
       if (statusChanged) {
         print('🔄 Live status changed to: $_isLive');
       }
@@ -296,36 +317,37 @@ class LiveChatProvider with ChangeNotifier {
           _onlineUsers.clear();
           _onlineUsers.addAll(
             onlineUsers
-                .where((u) =>
-                    u['id'] != null &&
-                    u['id'].toString().isNotEmpty &&
-                    u['id'].toString() != '0')
+                .where(
+                  (u) =>
+                      u['id'] != null &&
+                      u['id'].toString().isNotEmpty &&
+                      u['id'].toString() != '0',
+                )
                 .map((user) {
-              final rawAvatar = user['avatar']?.toString().trim();
-              String? avatarUrl;
-              if (rawAvatar != null && rawAvatar.isNotEmpty) {
-                if (rawAvatar.startsWith('http')) {
-                  avatarUrl = rawAvatar;
-                } else {
-                  var base = AppApiConfig.assetBaseUrl;
-                  if (base.endsWith('/')) {
-                    base = base.substring(0, base.length - 1);
+                  final rawAvatar = user['avatar']?.toString().trim();
+                  String? avatarUrl;
+                  if (rawAvatar != null && rawAvatar.isNotEmpty) {
+                    if (rawAvatar.startsWith('http')) {
+                      avatarUrl = rawAvatar;
+                    } else {
+                      var base = AppApiConfig.assetBaseUrl;
+                      if (base.endsWith('/')) {
+                        base = base.substring(0, base.length - 1);
+                      }
+                      var path = rawAvatar.startsWith('/')
+                          ? rawAvatar.substring(1)
+                          : rawAvatar;
+                      avatarUrl = '$base/$path';
+                    }
                   }
-                  var path = rawAvatar.startsWith('/')
-                      ? rawAvatar.substring(1)
-                      : rawAvatar;
-                  avatarUrl = '$base/$path';
-                }
-              }
 
-              return OnlineUser(
-                id: user['id']?.toString() ?? '',
-                username:
-                    (user['name'] ?? user['username'] ?? 'User').toString(),
-                userAvatar: avatarUrl,
-                joinTime: DateTime.now(),
-              );
-            }),
+                  return OnlineUser(
+                    id: user['id']?.toString() ?? '',
+                    username: (user['name'] ?? user['username'] ?? 'Pengguna ${user['id']?.toString().substring(0, 4) ?? ''}').toString().trim(),
+                    userAvatar: avatarUrl,
+                    joinTime: DateTime.now(),
+                  );
+                }),
           );
         } catch (e) {
           debugPrint('Error fetching online users: $e');
@@ -344,7 +366,9 @@ class LiveChatProvider with ChangeNotifier {
       _messages.clear();
       rethrow;
     } finally {
-      print('✅ Status refresh completed. isLive: $_isLive, roomId: $_currentRoomId');
+      print(
+        '✅ Status refresh completed. isLive: $_isLive, roomId: $_currentRoomId',
+      );
       _isLoading = false;
       notifyListeners();
     }
@@ -445,11 +469,7 @@ class LiveChatProvider with ChangeNotifier {
   final Set<String> _pendingMessageIds = {};
 
   // Set current user info after login
-  void setCurrentUserId(
-    int userId, {
-    String? name,
-    String? avatar,
-  }) {
+  void setCurrentUserId(int userId, {String? name, String? avatar}) {
     _currentUserId = userId;
     if (avatar != null && avatar.isNotEmpty) {
       _currentUserAvatar = avatar;
@@ -498,7 +518,7 @@ class LiveChatProvider with ChangeNotifier {
 
     // Use the stored avatar if available, otherwise use the one passed in
     final avatarToUse = _currentUserAvatar ?? userAvatar;
-    
+
     // optimistic update
     _messages.add(
       ChatMessage(
