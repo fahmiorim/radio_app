@@ -440,6 +440,8 @@ class LiveChatProvider with ChangeNotifier {
       );
     }
 
+    _onlineUsers.removeWhere((u) => u.id.isEmpty);
+
     notifyListeners();
   }
 
