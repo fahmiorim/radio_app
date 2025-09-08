@@ -7,7 +7,6 @@ import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/screens/chat/widget/chat_message_item.dart';
 import 'package:radio_odan_app/screens/chat/widget/message_input_field.dart';
 import 'package:radio_odan_app/screens/chat/widget/unread_messages_label.dart';
-import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 
@@ -39,14 +38,29 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScroll);
-    final user = context.read<UserProvider>().user;
-    if (user != null) {
-      context.read<LiveChatProvider>().setCurrentUserId(
-        user.id,
-        name: user.name,
-        avatar: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
-      );
-    }
+    
+    // Initialize user in the next frame to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.read<UserProvider>().user;
+      final prov = context.read<LiveChatProvider>();
+      
+      print('🎯 Initializing LiveChatScreen for room ${widget.roomId}');
+      print('🎯 Current live status: ${prov.isLive}');
+      
+      if (user != null) {
+        prov.setCurrentUserId(
+          user.id,
+          name: user.name,
+          avatar: user.avatarUrl.isNotEmpty ? user.avatarUrl : null,
+        );
+        print('👤 User set: ${user.name} (${user.id})');
+      } else {
+        print('⚠️ No user logged in');
+      }
+      
+      // Add listener for live status changes
+      prov.addListener(_onLiveStatusChanged);
+    });
   }
 
   void _handleScroll() {
@@ -266,9 +280,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             body: Stack(
               children: [
                 const AppBackground(),
-                if (!prov.isLive)
-                  const NoLivePlaceholder()
-                else
+                // The LiveChatScreen should only be shown when isLive is true
+                // This is now handled by the ChatScreenWrapper
+                // So we can safely assume we're live if we get here
                   ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.only(
@@ -351,12 +365,39 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     );
   }
 
+  void _onLiveStatusChanged() {
+    final prov = context.read<LiveChatProvider>();
+    print('🔄 Live status changed to: ${prov.isLive}');
+    
+    if (prov.isLive) {
+      // If we just went live, scroll to bottom to show latest messages
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToBottom();
+      });
+    }
+    
+    if (mounted) {
+      setState(() {
+        // Trigger a rebuild when live status changes
+      });
+    }
+  }
+
   @override
   void dispose() {
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _messageController.dispose();
     _scrollTimer?.cancel();
+    
+    // Remove the status change listener
+    try {
+      final prov = context.read<LiveChatProvider>();
+      prov.removeListener(_onLiveStatusChanged);
+    } catch (e) {
+      print('⚠️ Error removing listener: $e');
+    }
+    
     super.dispose();
   }
 }

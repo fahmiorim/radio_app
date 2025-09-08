@@ -146,19 +146,25 @@ class LiveChatService {
     try {
       _ensure();
       final headers = await _authHeaders();
+      final url = '/api/live-chat/$roomId/status';
+      print('🌐 Fetching status from: $url');
+      
       final res = await _dio.get<dynamic>(
-        '/api/live-chat/$roomId/status',
+        url,
         options: Options(
           headers: headers,
           validateStatus: (s) => s != null && s < 500,
           followRedirects: false,
         ),
       );
+      
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
+      print('📡 Status response (HTTP $code): $body');
 
       if (code == 200 && body['success'] == true) {
         final data = _asMap(body['data']);
+        print('✅ Parsed status data: $data');
         return LiveChatStatus.fromJson(data);
       }
       if (code == 401 || code == 403) {

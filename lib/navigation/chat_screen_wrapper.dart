@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/providers/live_chat_provider.dart';
 import 'package:radio_odan_app/screens/chat/chat_screen.dart';
+import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
 
 class ChatScreenWrapper extends StatefulWidget {
-  final int roomId;
+  final int? roomId;
   const ChatScreenWrapper({Key? key, required this.roomId}) : super(key: key);
 
   // route KEMBALIKAN nilai bila ingin pop dengan result
-  static Route<String?> route(int roomId) => MaterialPageRoute<String?>(
+  static Route<String?> route(int? roomId) => MaterialPageRoute<String?>(
     builder: (_) => ChatScreenWrapper(roomId: roomId),
   );
 
@@ -24,11 +25,16 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
   @override
   void initState() {
     super.initState();
-    _provider = LiveChatProvider(roomId: widget.roomId);
-    // Schedule the initialization for the next frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initializeProvider();
-    });
+    if (widget.roomId != null) {
+      _provider = LiveChatProvider(roomId: widget.roomId!);
+      // Schedule the initialization for the next frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeProvider();
+      });
+    } else {
+      // If no roomId, mark as initialized to show the placeholder
+      _isInitialized = true;
+    }
   }
 
   Future<void> _initializeProvider() async {
@@ -63,35 +69,59 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<LiveChatProvider>.value(
+    if (widget.roomId == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Live Chat'),
+          leading: const BackButton(),
+        ),
+        body: const NoLivePlaceholder(),
+      );
+    }
+
+    if (_hasError) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Error'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: const Center(
+          child: Text('Gagal memuat chat. Silakan coba lagi.'),
+        ),
+      );
+    }
+
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return ChangeNotifierProvider.value(
       value: _provider,
-      child: Builder(
-        builder: (context) {
-          if (_hasError) {
+      child: Consumer<LiveChatProvider>(
+        builder: (context, prov, _) {
+          // Only show LiveChatScreen if the broadcast is live
+          if (prov.isLive) {
+            return LiveChatScreen(roomId: widget.roomId!);
+          } else {
+            // Show the placeholder with a back button
             return Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Gagal memuat obrolan'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _initializeProvider,
-                      child: const Text('Coba Lagi'),
-                    ),
-                  ],
+              appBar: AppBar(
+                title: const Text('Live Chat'),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
+              body: const NoLivePlaceholder(),
             );
           }
-          
-          if (!_isInitialized) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          
-          return LiveChatScreen(roomId: widget.roomId);
         },
       ),
     );

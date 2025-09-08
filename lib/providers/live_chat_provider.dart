@@ -46,8 +46,6 @@ class LiveChatProvider with ChangeNotifier {
   final int _perPage = 20;
 
   // connection/subscription guards
-  bool _socketReady = false;
-  bool _statusSubscribed = false;
   bool _presenceSubscribed = false;
   bool _publicSubscribed = false;
 
@@ -66,47 +64,73 @@ class LiveChatProvider with ChangeNotifier {
   // ==== INIT ====
   Future<void> init() async {
     if (_isInitialized) return;
+    print('🔌 Initializing LiveChatProvider...');
 
-    // 1) connect socket (sekali)
-    if (!_socketReady) {
-      await _sock.connect();
-      _socketReady = true;
-    }
-
-    // 2) pasang callbacks realtime (sekali aja, sebelum subscribe)
-    _wireRealtimeCallbacks();
-
-    // 3) subscribe status & presence (sekali)
-    await _subscribeStatusOnce();
-    await _subscribePresenceOnce();
-
-    // 4) initial HTTP load status + messages
-    await refreshStatus();
-
-    // join listener to track listener count
     try {
-      final res = await _http.joinListener(roomId);
-      final lid = res['listenerId'];
-      if (lid is int) {
-        _listenerId = lid;
-      } else if (lid != null) {
-        _listenerId = int.tryParse(lid.toString());
-      }
-    } catch (_) {}
+      // Initialize socket connection
+      print('🔄 Initializing socket connection...');
+      await _sock.connect();
 
-    _isInitialized = true;
+      // Load initial status
+      print('🔄 Loading initial status...');
+      await refreshStatus();
+
+      // Wire up realtime callbacks
+      print('🔌 Wiring up realtime callbacks...');
+      _wireRealtimeCallbacks();
+
+      // Subscribe to chat room if live
+      if (_isLive) {
+        print('🎙️ Live broadcast detected, subscribing to room ${_currentRoomId}...');
+        await _subscribePublicOnce();
+      } else {
+        print('⏸️  No active broadcast detected');
+      }
+
+      await _subscribePresenceOnce();
+
+      // join listener to track listener count
+      try {
+        final res = await _http.joinListener(roomId);
+        final lid = res['listenerId'];
+        if (lid is int) {
+          _listenerId = lid;
+        } else if (lid != null) {
+          _listenerId = int.tryParse(lid.toString());
+        }
+      } catch (_) {}
+
+      _isInitialized = true;
+    } catch (e) {
+      print('❌ Error initializing LiveChatProvider: $e');
+      rethrow;
+    }
   }
 
   // === Realtime callbacks wiring ===
   void _wireRealtimeCallbacks() {
     _sock.setCallbacks(
       onStatusUpdate: (data) {
+        print('\n🔔 === STATUS UPDATE RECEIVED ===');
+        print('📡 Raw data: $data');
+        
         // event: LiveRoomStatusUpdated
         final isLive = data['is_live'] == true || data['status'] == 'started';
-        _isLive = isLive;
+        print('📢 Live status: $isLive');
+        print('🔍 Previous live status: $_isLive');
+        
+        if (isLive != _isLive) {
+          print('🔄 Live status changed from $_isLive to $isLive');
+          _isLive = isLive;
+        } else {
+          print('ℹ️  Live status unchanged ($isLive)');
+        }
 
-        if (!isLive) {
+        if (!_isLive) {
+          print('❌ Stream is not live, clearing messages and notifying listeners');
           _messages.clear();
+          _onlineUsers.clear();
+          _currentRoomId = null;
           notifyListeners();
           return;
         }
@@ -243,18 +267,32 @@ class LiveChatProvider with ChangeNotifier {
 
   // ==== STATUS (HTTP) ====
   Future<void> refreshStatus() async {
+    print('\n🔄 === REFRESHING STATUS ===');
+    print('🔍 Current roomId: $roomId');
+    print('🔍 Current live status: $_isLive');
+    
     try {
       _isLoading = true;
       notifyListeners();
 
+      print('🌐 Fetching status from API...');
       final status = await _http.fetchStatus(roomId);
+      print('✅ Status received - isLive: ${status.isLive}, roomId: ${status.roomId}');
+      
+      final statusChanged = _isLive != status.isLive;
       _isLive = status.isLive;
       _currentRoomId = status.roomId;
+      
+      if (statusChanged) {
+        print('🔄 Live status changed to: $_isLive');
+      }
 
-      // Ambil daftar pengguna online saat pertama kali memuat status
+      // Get online users list if live
       if (_isLive) {
+        print('👥 Fetching online users...');
         try {
           final onlineUsers = await _http.getOnlineUsers(roomId);
+          print('✅ Found ${onlineUsers.length} online users');
           _onlineUsers.clear();
           _onlineUsers.addAll(
             onlineUsers
@@ -294,23 +332,20 @@ class LiveChatProvider with ChangeNotifier {
         await _subscribePublicOnce();
         await loadMore();
       } else {
+        print('⏸️  No active broadcast, clearing messages and online users');
         _messages.clear();
         _onlineUsers.clear();
       }
     } catch (e) {
+      print('❌ Error refreshing status: $e');
       _isLive = false;
       _messages.clear();
       rethrow;
     } finally {
+      print('✅ Status refresh completed. isLive: $_isLive, roomId: $_currentRoomId');
       _isLoading = false;
       notifyListeners();
     }
-  }
-
-  Future<void> _subscribeStatusOnce() async {
-    if (_statusSubscribed) return;
-    await _sock.subscribeToStatus();
-    _statusSubscribed = true;
   }
 
   // ==== PRESENCE ====

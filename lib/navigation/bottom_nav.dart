@@ -127,19 +127,11 @@ class _BottomNavState extends State<BottomNav> {
                   return;
                 }
 
-                if (_roomId == null) {
-                  // Tampilkan pesan error jika tidak ada room yang aktif
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tidak ada siaran aktif saat ini'),
-                    ),
-                  );
-                } else {
-                  final result = await Navigator.of(
-                    context,
-                  ).push(ChatScreenWrapper.route(_roomId!));
-                }
+                // Navigate to chat screen even if there's no active broadcast
+                // The ChatScreenWrapper will handle showing the no-live placeholder
+                final result = await Navigator.of(
+                  context,
+                ).push(ChatScreenWrapper.route(_roomId));
                 return;
               } else {
                 setState(() {
