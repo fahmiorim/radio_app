@@ -47,6 +47,8 @@ class LiveChatProvider with ChangeNotifier {
   // Track current user ID to prevent self-message duplicates
   int? _currentUserId;
 
+  int? _listenerId;
+
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
@@ -69,6 +71,17 @@ class LiveChatProvider with ChangeNotifier {
 
     // 4) initial HTTP load status + messages
     await refreshStatus();
+
+    // join listener to track listener count
+    try {
+      final res = await _http.joinListener(roomId);
+      final lid = res['listenerId'];
+      if (lid is int) {
+        _listenerId = lid;
+      } else if (lid != null) {
+        _listenerId = int.tryParse(lid.toString());
+      }
+    } catch (_) {}
 
     _isInitialized = true;
   }
@@ -418,7 +431,16 @@ class LiveChatProvider with ChangeNotifier {
   }
 
   // ==== LIFECYCLE ====
+  Future<void> leaveRoom() async {
+    if (_listenerId == null) return;
+    try {
+      await _http.leaveListener(_listenerId!);
+    } catch (_) {}
+    _listenerId = null;
+  }
+
   Future<void> shutdown() async {
+    await leaveRoom();
     try {
       await _sock.unsubscribePublic(_currentRoomId ?? roomId);
     } catch (_) {}
