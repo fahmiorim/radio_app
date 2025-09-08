@@ -680,8 +680,9 @@ class LiveChatSocketService {
       final userData = _asMap(payload['user'] ?? payload['data'] ?? payload);
       final userInfo = _asMap(userData['userInfo'] ?? userData);
 
+      final uid = _toInt(userData['userId'] ?? userData['id']);
       final processedUser = <String, dynamic>{
-        'userId': _toInt(userData['userId'] ?? userData['id']).toString(),
+        'userId': uid > 0 ? uid.toString() : '',
         'userInfo': {
           'name': userInfo['name']?.toString() ?? 'Unknown User',
           'avatar': userInfo['avatar']?.toString(),
