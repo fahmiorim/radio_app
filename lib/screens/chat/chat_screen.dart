@@ -18,7 +18,8 @@ class LiveChatScreen extends StatefulWidget {
   State<LiveChatScreen> createState() => _LiveChatScreenState();
 }
 
-class _LiveChatScreenState extends State<LiveChatScreen> {
+class _LiveChatScreenState extends State<LiveChatScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -37,10 +38,24 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_handleScroll);
     final userId = context.read<UserProvider>().user?.id;
     if (userId != null) {
       context.read<LiveChatProvider>().setCurrentUserId(userId);
+    }
+    context.read<LiveChatProvider>().joinListener();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final prov = context.read<LiveChatProvider>();
+    if (state == AppLifecycleState.paused) {
+      prov.leaveListener();
+    } else if (state == AppLifecycleState.resumed) {
+      if (prov.isLive) {
+        prov.joinListener();
+      }
     }
   }
 
@@ -324,6 +339,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   void dispose() {
+    context.read<LiveChatProvider>().leaveListener();
+    WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _messageController.dispose();

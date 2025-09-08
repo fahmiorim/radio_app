@@ -47,6 +47,12 @@ class LiveChatProvider with ChangeNotifier {
   // Track current user ID to prevent self-message duplicates
   int? _currentUserId;
 
+  // Listener tracking
+  int? _listenerId;
+  int _listenerCount = 0;
+  int? get listenerId => _listenerId;
+  int get listenerCount => _listenerCount;
+
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
@@ -71,6 +77,32 @@ class LiveChatProvider with ChangeNotifier {
     await refreshStatus();
 
     _isInitialized = true;
+  }
+
+  Future<void> joinListener() async {
+    if (!_isLive) return;
+    try {
+      final res = await _http.joinListener(_currentRoomId ?? roomId);
+      _listenerId = res['listenerId'] as int?;
+      final count = res['listenerCount'];
+      if (count is int) _listenerCount = count;
+    } catch (e) {
+      debugPrint('Error join listener: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> leaveListener() async {
+    final id = _listenerId;
+    if (id == null) return;
+    try {
+      _listenerCount = await _http.leaveListener(id);
+    } catch (e) {
+      debugPrint('Error leave listener: $e');
+    } finally {
+      _listenerId = null;
+    }
+    notifyListeners();
   }
 
   // === Realtime callbacks wiring ===
