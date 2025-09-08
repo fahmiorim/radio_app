@@ -186,7 +186,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        await context.read<LiveChatProvider>().shutdown();
+        final prov = context.read<LiveChatProvider>();
+        await prov.leaveRoom();
+        await prov.shutdown();
         return true;
       },
       child: Consumer<LiveChatProvider>(
@@ -220,6 +222,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () async {
+                  await prov.leaveRoom();
                   await prov.shutdown();
                   if (!mounted) return;
                   Navigator.pop(context, 'goHome');
