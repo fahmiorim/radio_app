@@ -38,9 +38,11 @@ class LiveChatService {
     return d?.toInt() ?? 0;
   }
 
-  Future<LiveChatStatus> fetchGlobalStatus() async {
+  Future<LiveChatStatus> fetchGlobalStatus({String caller = 'unknown'}) async {
     _ensure();
     final headers = await _authHeaders();
+    headers['X-Caller'] = caller; // opsional: jejak siapa pemanggilnya
+
     final res = await _dio.get<dynamic>(
       '/api/mobile/live/status',
       options: Options(
@@ -52,22 +54,41 @@ class LiveChatService {
 
     final code = res.statusCode ?? 0;
     final body = _asMap(res.data);
-    if (code == 200 && body['status'] == true) {
+    print('🔍 Global status response - status: $code, body: $body');
+
+    if (code == 200 && (body['status'] == true || body['success'] == true)) {
       final data = _asMap(body['data']);
       final liveRoom = _asMap(data['live_room']);
-      final count = _toInt(data['likes'] ?? liveRoom['likes'] ?? 0);
-      // bangun LiveChatStatus dari schema global
-      return LiveChatStatus.fromJson({
-        'is_live': data['is_live'],
-        'title': liveRoom['judul'],
-        'description': liveRoom['description'],
-        'started_at': liveRoom['started_at'],
+
+      // Get like count from live_room if available
+      final count = _toInt(
+        liveRoom['like_count'] ?? data['likes'] ?? data['like_count'] ?? 0,
+      );
+
+      // Create initial status without liked status
+      final roomId = liveRoom['id'] ?? data['room_id'];
+      final status = LiveChatStatus.fromJson({
+        'is_live': data['is_live'] ?? false,
+        'title': liveRoom['judul'] ?? data['title'] ?? '',
+        'description': liveRoom['description'] ?? data['description'] ?? '',
+        'started_at': liveRoom['started_at'] ?? data['started_at'],
         'likes': count,
-        'liked': liveRoom['liked'] ?? data['liked'] ?? false,
+        'liked': false, // Will be updated below
         'listener_count': _toInt(data['listener_count'] ?? 0),
-        // tambahkan room_id agar provider bisa tahu channel chat
-        'room_id': liveRoom['id'],
+        'room_id': roomId,
       });
+
+      // If we have a room ID, try to get the like status from the chat status endpoint
+      if (roomId != null) {
+        try {
+          final chatStatus = await fetchStatus(roomId);
+          return status.copyWith(liked: chatStatus.liked);
+        } catch (e) {
+          print('⚠️ Could not fetch chat status: $e');
+        }
+      }
+
+      return status;
     }
     throw Exception(
       body['message']?.toString() ??
@@ -82,7 +103,6 @@ class LiveChatService {
   }) async {
     try {
       _ensure();
-
       final headers = await _authHeaders();
       final res = await _dio.get<dynamic>(
         '/api/live-chat/$roomId/fetch',
@@ -92,7 +112,6 @@ class LiveChatService {
         },
         options: Options(
           headers: headers,
-          // Anggap 4xx akan diproses manual (tidak dilempar sebagai DioError)
           validateStatus: (s) => s != null && s < 500,
           followRedirects: false,
         ),
@@ -108,7 +127,6 @@ class LiveChatService {
             .toList(growable: false);
       }
 
-      // Tangani 4xx dengan pesan yang jelas
       final msg =
           body['message']?.toString() ??
           'Failed to fetch messages (HTTP $code)';
@@ -176,15 +194,18 @@ class LiveChatService {
 
       if (code == 200 && body['success'] == true) {
         final data = _asMap(body['data']);
-        final users = (data['users'] as List? ?? []).cast<Map<String, dynamic>>();
+        final users = (data['users'] as List? ?? [])
+            .cast<Map<String, dynamic>>();
         return users;
       }
-      
+
       if (code == 401 || code == 403) {
         throw Exception('Unauthorized');
       }
-      
-      final msg = body['message']?.toString() ?? 'Failed to fetch online users (HTTP $code)';
+
+      final msg =
+          body['message']?.toString() ??
+          'Failed to fetch online users (HTTP $code)';
       throw Exception(msg);
     } on DioException catch (e) {
       final code = e.response?.statusCode;
@@ -253,16 +274,14 @@ class LiveChatService {
       final code = res.statusCode ?? 0;
       final body = _asMap(res.data);
       final src = _asMap(body['data'] ?? body);
-      final ok = body['success'] == true ||
+      final ok =
+          body['success'] == true ||
           body['status'] == true ||
           src.containsKey('liked') ||
           src.containsKey('likes');
 
       if (code == 200 && ok) {
-        return {
-          'liked': src['liked'] == true,
-          'likes': _toInt(src['likes']),
-        };
+        return {'liked': src['liked'] == true, 'likes': _toInt(src['likes'])};
       }
       if (code == 401 || code == 403) {
         throw Exception('Unauthorized');

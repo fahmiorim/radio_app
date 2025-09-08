@@ -1,10 +1,14 @@
+// lib/screens/full_player.dart
+import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 import 'package:radio_odan_app/audio/audio_player_manager.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
 import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/services/live_chat_socket_service.dart';
@@ -24,15 +28,53 @@ class _FullPlayerState extends State<FullPlayer> {
   bool _isLive = false;
   int? _liveRoomId;
 
-  Widget _buildDefaultCover() {
-    return Image.asset(
-      'assets/odanlogo.png',
-      width: double.infinity,
-      fit: BoxFit.contain,
-      errorBuilder: (context, error, stackTrace) => Icon(
-        Icons.music_note,
-        size: 100,
-        color: Theme.of(context).colorScheme.onSurface,
+  // Flag untuk mencegah aksi ganda
+  bool _busyToggle = false;
+  bool _showLikeAnimation = false;
+  final Random _random = Random();
+  final List<IconData> _reactions = [
+    Icons.favorite,
+    Icons.thumb_up,
+    Icons.star,
+    Icons.emoji_emotions,
+  ];
+  
+  // Room yang saat ini disubscribe untuk like
+  int? _subscribedRoomId;
+
+  // Animasi floating emoji
+  Widget _buildFloatingEmoji() {
+    if (!_showLikeAnimation) return const SizedBox.shrink();
+    
+    final icon = _reactions[_random.nextInt(_reactions.length)];
+    final size = 20.0 + _random.nextDouble() * 30.0;
+    final duration = Duration(milliseconds: 1000 + _random.nextInt(1000));
+    final offsetX = -20.0 + _random.nextDouble() * 40.0;
+    
+    return Positioned(
+      bottom: 20,
+      right: 0,
+      left: 0,
+      child: Center(
+        child: Icon(
+          icon,
+          color: Colors.red,
+          size: size,
+        )
+        .animate(
+          onComplete: (controller) {
+            if (mounted) {
+              setState(() => _showLikeAnimation = false);
+            }
+          },
+        )
+        .slide(
+          begin: const Offset(0, 0),
+          end: Offset(offsetX / 50, -2.0),
+          duration: duration,
+          curve: Curves.easeOut,
+        )
+        .fadeOut(duration: duration),
       ),
     );
   }
@@ -42,8 +84,30 @@ class _FullPlayerState extends State<FullPlayer> {
     super.initState();
     _initializePlayer();
     _initLike();
+    _setupSocketListeners();
   }
 
+  // ====== Helpers UI ======
+  Widget _buildDefaultCover() {
+    return Image.asset(
+      'assets/odanlogo.png',
+      width: double.infinity,
+      fit: BoxFit.contain,
+      errorBuilder: (context, _, __) => Icon(
+        Icons.music_note,
+        size: 100,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+    );
+  }
+
+  String _clean(String? s) {
+    final t = s?.trim();
+    if (t == null || t.isEmpty || t.toLowerCase() == 'null') return '';
+    return t;
+  }
+
+  // ====== Init audio ======
   Future<void> _initializePlayer() async {
     try {
       final radioProvider = Provider.of<RadioStationProvider>(
@@ -54,78 +118,75 @@ class _FullPlayerState extends State<FullPlayer> {
       if (currentStation != null) {
         await _audioManager.playRadio(currentStation);
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal memutar radio. Coba lagi nanti.'),
-          ),
-        );
-      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memutar radio. Coba lagi nanti.')),
+      );
     }
   }
 
+  // ====== Like initialization ======
   Future<void> _initLike() async {
     try {
       debugPrint('🔄 Fetching initial like status...');
       
-      // First, ensure WebSocket is connected
-      try {
-        await LiveChatSocketService.I.ensureConnected();
-        debugPrint('✅ WebSocket connection established');
-      } catch (e) {
-        debugPrint('⚠️ Could not establish WebSocket connection: $e');
-      }
-      
-      // Then fetch the current status
-      final status = await LiveChatService.I.fetchGlobalStatus();
-      debugPrint('📊 Initial status: isLive=${status.isLive}, likes=${status.likes}, liked=${status.liked}, roomId=${status.roomId}');
-      
-      if (mounted) {
-        setState(() {
-          _isLive = status.isLive;
-          _likeCount = status.likes;
-          _liked = status.liked;
-          _liveRoomId = status.roomId;
-        });
+      // Set initial state to show loading
+      setState(() {
+        _likeCount = 0; // Initialize with 0 first
+        _liked = false;
+      });
 
-        if (_isLive && _liveRoomId != null) {
-          debugPrint('🔌 Subscribing to like updates for room $_liveRoomId');
-          
-          // Add a small delay to ensure WebSocket is ready
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          try {
-            await LiveChatSocketService.I.subscribeLike(
-              roomId: _liveRoomId!,
-              onUpdated: (count) {
-                debugPrint('❤️ Received like update: $count');
-                if (mounted) {
-                  setState(() {
-                    _likeCount = count;
-                    // Don't update _liked here as we only get count updates
-                  });
-                }
-              },
-            );
-            debugPrint('✅ Successfully subscribed to like updates');
-          } catch (e) {
-            debugPrint('❌ Error subscribing to like updates: $e');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Tidak dapat terhubung ke pembaruan like.'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
-          }
-        } else {
-          debugPrint('ℹ️ Not live or no room ID, skipping WebSocket subscription');
-        }
+      // Fetch initial like status
+      debugPrint('🔄 Fetching global status...');
+      final status = await LiveChatService.I.fetchGlobalStatus();
+      debugPrint(
+        '📊 Initial status => live=${status.isLive}, likes=${status.likes}, liked=${status.liked}',
+      );
+
+      if (!mounted) return;
+
+      // Update the UI with the latest status
+      debugPrint('📥 Initial like status - liked: ${status.liked}, count: ${status.likes}');
+      setState(() {
+        _isLive = status.isLive;
+        _likeCount = status.likes < 0 ? 0 : status.likes;
+        _liked = status.liked; // No need for null check as it's non-nullable
+        _liveRoomId = status.roomId;
+        debugPrint('✨ Set initial like state - liked: $_liked, count: $_likeCount');
+        debugPrint('✨ isLive: $_isLive, roomId: $_liveRoomId');
+      });
+
+      // Subscribe to like updates if we have a room ID
+      if (status.roomId != null) {
+        await _subscribeToLikeUpdates(status.roomId!);
       }
     } catch (e) {
       debugPrint('❌ Error initializing like status: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal memuat status like.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  // ====== Refresh like status ======
+  Future<void> _refreshLikeStatus() async {
+    if (_liveRoomId == null) return;
+    
+    try {
+      final status = await LiveChatService.I.fetchGlobalStatus();
+      if (mounted) {
+        setState(() {
+          _liked = status.liked;
+          _likeCount = status.likes < 0 ? 0 : status.likes;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ Error refreshing like status: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -137,44 +198,125 @@ class _FullPlayerState extends State<FullPlayer> {
     }
   }
 
-  Future<void> _toggleLike() async {
-    if (_liveRoomId == null) {
-      debugPrint('❌ Cannot toggle like: liveRoomId is null');
-      return;
-    }
+  // ====== WebSocket Handlers ======
+  void _setupSocketListeners() {
+    // No need for direct callback setup as we'll use subscribeLike with callback
+  }
+
+  // Subscribe to like updates for a room
+  Future<void> _subscribeToLikeUpdates(int roomId) async {
+    if (_subscribedRoomId == roomId) return;
+    
+    // Unsubscribe from previous room if any
+    await _unsubscribeFromLikeUpdates();
     
     try {
-      debugPrint('🔄 Toggling like for room: $_liveRoomId');
-      final res = await LiveChatService.I.toggleLike(_liveRoomId!);
-      
+      await LiveChatSocketService.I.subscribeLike(
+        roomId: roomId,
+        onUpdated: (count) {
+          if (mounted) {
+            setState(() {
+              _likeCount = count < 0 ? 0 : count;
+            });
+          }
+        },
+      );
+      _subscribedRoomId = roomId;
+      debugPrint('✅ Subscribed to like updates for room $roomId');
+    } catch (e) {
+      debugPrint('❌ Failed to subscribe to like updates: $e');
+    }
+  }
+
+  // Unsubscribe from like updates
+  Future<void> _unsubscribeFromLikeUpdates() async {
+    if (_subscribedRoomId != null) {
+      try {
+        await LiveChatSocketService.I.unsubscribeLike(_subscribedRoomId!);
+        debugPrint('✅ Unsubscribed from like updates for room $_subscribedRoomId');
+      } catch (e) {
+        debugPrint('❌ Failed to unsubscribe from like updates: $e');
+      } finally {
+        _subscribedRoomId = null;
+      }
+    }
+  }
+
+  // Format number to K/M
+  String _formatCount(int count) {
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K';
+    }
+    return count.toString();
+  }
+
+  // ====== Toggle like ======
+  Future<void> _toggleLike() async {
+    if (_liveRoomId == null || _busyToggle) return;
+    _busyToggle = true;
+    
+    final prevLiked = _liked;
+    final prevCount = _likeCount;
+
+    try {
+      // Optimistic UI
       if (mounted) {
         setState(() {
-          _liked = res['liked'] == true;
-          _likeCount = (res['likes'] as int?) ?? _likeCount;
-          debugPrint('✅ Like toggled: liked=$_liked, count=$_likeCount');
+          _liked = !prevLiked;
+          final next = _liked ? prevCount + 1 : (prevCount > 0 ? prevCount - 1 : 0);
+          _likeCount = next < 0 ? 0 : next;
         });
       }
+
+      // Toggle like via REST API
+      debugPrint('🔄 Toggling like for room $_liveRoomId. Current liked: $_liked');
+      final result = await LiveChatService.I.toggleLike(_liveRoomId!);
+      debugPrint('✅ Like toggle result: $result');
+      
+      // Update with actual server state if available
+      if (result.isNotEmpty && mounted) {
+        debugPrint('📊 Like update data: $result');
+        setState(() {
+          _liked = result['liked'] == true;
+          _likeCount = (result['likes'] as int?) ?? _likeCount;
+          debugPrint('✨ Updated like status - liked: $_liked, count: $_likeCount');
+        });
+      } else {
+        // Fallback to refresh if no result
+        await _refreshLikeStatus();
+      }
+
+      if (!mounted) return;
     } catch (e) {
-      debugPrint('❌ Error toggling like: $e');
+      if (!mounted) return;
+      // Revert jika gagal
+      setState(() {
+        _liked = prevLiked;
+        _likeCount = prevCount;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gagal mengupdate like. Coba lagi nanti.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal memperbarui like. Coba lagi nanti.'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        _busyToggle = false;
       }
     }
   }
 
   @override
   void dispose() {
-    if (_liveRoomId != null) {
-      LiveChatSocketService.I.unsubscribeLike(_liveRoomId!);
-    }
+    // Unsubscribe like channel jika ada
+    _unsubscribeFromLikeUpdates();
     super.dispose();
   }
 
+  // ====== UI ======
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -198,15 +340,9 @@ class _FullPlayerState extends State<FullPlayer> {
       );
     }
 
-    String clean(String? s) {
-      final t = s?.trim();
-      if (t == null || t.isEmpty || t.toLowerCase() == 'null') return '';
-      return t;
-    }
-
-    final cover = clean(nowPlaying?.artUrl);
-    final title = clean(nowPlaying?.title);
-    final artist = clean(nowPlaying?.artist);
+    final cover = _clean(nowPlaying?.artUrl);
+    final title = _clean(nowPlaying?.title);
+    final artist = _clean(nowPlaying?.artist);
 
     return Scaffold(
       appBar: AppBar(
@@ -238,7 +374,7 @@ class _FullPlayerState extends State<FullPlayer> {
           SafeArea(
             child: Column(
               children: [
-                // === Cover image ===
+                // === Cover ===
                 Expanded(
                   flex: 5,
                   child: Center(
@@ -251,7 +387,7 @@ class _FullPlayerState extends State<FullPlayer> {
                                 imageUrl: cover,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                errorWidget: (context, url, error) =>
+                                errorWidget: (context, _, __) =>
                                     _buildDefaultCover(),
                               )
                             : _buildDefaultCover(),
@@ -260,11 +396,11 @@ class _FullPlayerState extends State<FullPlayer> {
                   ),
                 ),
 
-                // === Title & Host & LIVE ===
+                // === Title / Artist / LIVE ===
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
+                    horizontal: 16,
+                    vertical: 8,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -289,23 +425,24 @@ class _FullPlayerState extends State<FullPlayer> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.error,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          'LIVE',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onError,
-                            fontWeight: FontWeight.bold,
+                      if (_isLive)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.error,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            'LIVE',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.onError,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
@@ -313,7 +450,7 @@ class _FullPlayerState extends State<FullPlayer> {
                 // === Progress Bar ===
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 40.0,
+                    horizontal: 40,
                     vertical: 15,
                   ),
                   child: StreamBuilder<Duration>(
@@ -322,7 +459,7 @@ class _FullPlayerState extends State<FullPlayer> {
                       final pos = snapshot.data ?? Duration.zero;
                       final duration = _audioManager.player.duration;
 
-                      // Radio live → durasi null/0, pakai indeterminate
+                      // Radio live → duration null/0 = indeterminate
                       final isIndeterminate =
                           duration == null || duration.inMilliseconds <= 0;
                       double? progress;
@@ -330,7 +467,9 @@ class _FullPlayerState extends State<FullPlayer> {
                         final denom = duration.inMilliseconds == 0
                             ? 1
                             : duration.inMilliseconds;
-                        progress = (pos.inMilliseconds / denom).clamp(0.0, 1.0);
+                        progress = (pos.inMilliseconds / denom)
+                            .clamp(0.0, 1.0)
+                            .toDouble();
                         if (progress.isNaN) progress = 0.0;
                       }
 
@@ -354,7 +493,7 @@ class _FullPlayerState extends State<FullPlayer> {
                   ),
                 ),
 
-                // === Player Controls (Heart = Like) ===
+                // === Controls ===
                 Expanded(
                   flex: 2,
                   child: Center(
@@ -371,36 +510,79 @@ class _FullPlayerState extends State<FullPlayer> {
                         return Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // HEART = LIKE
-                            Row(
+                            // Heart (Like)
+                            // Modern Like Button with Count
+                            Stack(
+                              clipBehavior: Clip.none,
                               children: [
-                                IconButton(
-                                  icon: Icon(
-                                    _liked
-                                        ? Icons.favorite
-                                        : Icons.favorite_border,
+                                // Like Button
+                                GestureDetector(
+                                  onTap: _isLive && !_busyToggle
+                                      ? () async {
+                                          debugPrint('❤️ Like button tapped. Current liked: $_liked');
+                                          await _toggleLike();
+                                          if (_liked) {
+                                            debugPrint('🎉 Showing like animation');
+                                            setState(() => _showLikeAnimation = true);
+                                          }
+                                        }
+                                      : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _isLive
+                                          ? (_liked
+                                              ? Colors.red.withOpacity(0.1)
+                                              : theme.colorScheme.surfaceVariant)
+                                          : theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: _isLive
+                                            ? (_liked
+                                                ? Colors.red
+                                                : theme.colorScheme.outline.withOpacity(0.5))
+                                            : theme.colorScheme.outline.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          _liked
+                                              ? Icons.favorite
+                                              : Icons.favorite_border,
+                                          color: _isLive
+                                              ? (_liked
+                                                  ? Colors.red
+                                                  : theme.colorScheme.onSurfaceVariant)
+                                              : theme.disabledColor,
+                                          size: 20,
+                                        ),
+                                        if (_likeCount > 0) ...[
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            _formatCount(_likeCount),
+                                            style: TextStyle(
+                                              color: _isLive
+                                                  ? (_liked
+                                                      ? Colors.red
+                                                      : theme.colorScheme.onSurfaceVariant)
+                                                  : theme.disabledColor,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                                   ),
-                                  color: _isLive
-                                      ? (_liked
-                                            ? const Color(0xFFDB2777)
-                                            : theme
-                                                  .colorScheme
-                                                  .onSurfaceVariant)
-                                      : theme.disabledColor,
-                                  iconSize: 28,
-                                  onPressed: _isLive ? _toggleLike : null,
-                                  tooltip: _liked ? 'Batalkan Suka' : 'Suka',
                                 ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '$_likeCount',
-                                  style: TextStyle(
-                                    color: _isLive
-                                        ? Colors.white70
-                                        : theme.disabledColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                // Like animation
+                                if (_showLikeAnimation) _buildFloatingEmoji(),
                               ],
                             ),
 
@@ -461,6 +643,7 @@ class _FullPlayerState extends State<FullPlayer> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 30),
               ],
             ),
