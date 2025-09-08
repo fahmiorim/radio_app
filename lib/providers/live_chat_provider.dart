@@ -150,7 +150,7 @@ class LiveChatProvider with ChangeNotifier {
       onUserJoined: (channel, user) {
         final map = (user);
         final id = (map['userId'] ?? '').toString();
-        if (id.isEmpty) return;
+        if (id.isEmpty || id == '0') return;
         if (_onlineUsers.indexWhere((x) => x.id == id) == -1) {
           final username =
               (map['userInfo']?['name'] ??
