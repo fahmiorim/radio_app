@@ -475,7 +475,7 @@ class LiveChatProvider with ChangeNotifier {
       );
     }
 
-    _onlineUsers.removeWhere((u) => u.id.isEmpty);
+    _onlineUsers.removeWhere((u) => u.id.isEmpty || u.id == '0');
 
     notifyListeners();
   }
