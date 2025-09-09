@@ -55,7 +55,7 @@ class _RadioAppState extends State<RadioApp> {
     
     // Initialize deep links after a short delay to ensure context is ready
     await Future.delayed(const Duration(milliseconds: 100));
-    _deepLinkHandler.init();
+    await _deepLinkHandler.init();
     
     // Check for initial deep link
     if (mounted) {
