@@ -46,9 +46,10 @@ class _RadioAppState extends State<RadioApp> {
     
     // Initialize deep link handler
     _deepLinkHandler = DeepLinkHandler();
-    _deepLinkHandler.registerHandler((uri) {
-      _deepLinkHandler.handleDeepLink(uri);
-    }, navigatorKey);
+    _deepLinkHandler.registerHandler(
+      _deepLinkHandler.handleDeepLink,
+      navigatorKey,
+    );
     
     // Initialize date formatting
     initializeDateFormatting('id_ID', null);
