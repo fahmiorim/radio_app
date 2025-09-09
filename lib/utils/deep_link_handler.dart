@@ -8,12 +8,15 @@ typedef DeepLinkCallback = void Function(Uri uri);
 class DeepLinkHandler {
   StreamSubscription? _sub;
   DeepLinkCallback? _onDeepLink;
-  BuildContext? _context;
+  GlobalKey<NavigatorState>? _navigatorKey;
   final AppLinks _appLinks = AppLinks();
 
-  void registerHandler(DeepLinkCallback onDeepLink, BuildContext context) {
+  void registerHandler(
+    DeepLinkCallback onDeepLink,
+    GlobalKey<NavigatorState> navigatorKey,
+  ) {
     _onDeepLink = onDeepLink;
-    _context = context;
+    _navigatorKey = navigatorKey;
   }
 
   Future<void> init() async {
@@ -55,17 +58,17 @@ class DeepLinkHandler {
 
   void dispose() {
     _sub?.cancel();
-    _context = null;
+    _navigatorKey = null;
     _onDeepLink = null;
   }
 
   void handleDeepLink(Uri? uri) async {
     debugPrint('[DeepLinkHandler] Handling deep link: $uri');
-    if (uri == null || _context == null) {
-      debugPrint('[DeepLinkHandler] No URI or context available');
+    final navigator = _navigatorKey?.currentState;
+    if (uri == null || navigator == null) {
+      debugPrint('[DeepLinkHandler] No URI or navigator available');
       return;
     }
-    final context = _context!;
 
     try {
       final isHost = uri.host == 'odanfm.batubarakab.go.id';
@@ -87,7 +90,7 @@ class DeepLinkHandler {
           // Decode the email (in case it's URL encoded)
           final decodedEmail = Uri.decodeComponent(email);
           debugPrint('[DeepLinkHandler] Decoded email: $decodedEmail');
-          _navigateToResetPassword(context, token, decodedEmail);
+          _navigateToResetPassword(token, decodedEmail);
         } else {
           debugPrint('[DeepLinkHandler] Missing token or email in URL');
         }
@@ -102,7 +105,7 @@ class DeepLinkHandler {
           // Decode the email (in case it's URL encoded)
           final decodedEmail = Uri.decodeComponent(email);
           debugPrint('[DeepLinkHandler] Decoded email: $decodedEmail');
-          _navigateToResetPassword(context, token, decodedEmail);
+          _navigateToResetPassword(token, decodedEmail);
         } else {
           debugPrint('[DeepLinkHandler] Missing token or email in URL');
         }
@@ -113,25 +116,25 @@ class DeepLinkHandler {
   }
 
   void _navigateToResetPassword(
-    BuildContext context,
     String token,
     String email,
   ) {
     debugPrint('[DeepLinkHandler] _navigateToResetPassword called');
-    debugPrint('[DeepLinkHandler] Context mounted: ${context.mounted}');
-    
-    if (context.mounted) {
+    final navigator = _navigatorKey?.currentState;
+    debugPrint('[DeepLinkHandler] Navigator mounted: ${navigator?.mounted}');
+
+    if (navigator != null && navigator.mounted) {
       try {
         debugPrint('[DeepLinkHandler] Navigating to reset password with token: $token, email: $email');
-        
+
         // Check current route
-        final currentRoute = ModalRoute.of(context)?.settings.name;
+        final currentRoute = ModalRoute.of(navigator.context)?.settings.name;
         debugPrint('[DeepLinkHandler] Current route: $currentRoute');
-        
+
         // Navigate to reset password screen
         debugPrint('[DeepLinkHandler] Pushing reset password route: ${AppRoutes.resetPassword}');
-        
-        Navigator.of(context).pushNamedAndRemoveUntil(
+
+        navigator.pushNamedAndRemoveUntil(
           AppRoutes.resetPassword,
           (route) => false, // Remove all routes below
           arguments: {
@@ -139,14 +142,14 @@ class DeepLinkHandler {
             'email': email,
           },
         );
-        
+
         debugPrint('[DeepLinkHandler] Navigation completed');
       } catch (e, stackTrace) {
         debugPrint('[DeepLinkHandler] Navigation error: $e');
         debugPrint(stackTrace.toString());
       }
     } else {
-      debugPrint('[DeepLinkHandler] Context not mounted, cannot navigate');
+      debugPrint('[DeepLinkHandler] Navigator not mounted, cannot navigate');
     }
   }
 }
