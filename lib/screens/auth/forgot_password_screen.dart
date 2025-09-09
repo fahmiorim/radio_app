@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
-import 'package:radio_odan_app/config/app_routes.dart';
+
+import 'package:radio_odan_app/screens/auth/reset_password_confirm_screen.dart';
 
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 
@@ -27,25 +28,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (form == null || !form.validate()) return;
 
     setState(() => _loading = true);
-    final err = await AuthService.I.sendPasswordResetEmail(_emailC.text.trim());
+    final email = _emailC.text.trim();
+    final err = await AuthService.I.sendPasswordResetEmail(email);
     if (!mounted) return;
     setState(() => _loading = false);
 
     final theme = Theme.of(context);
     if (err == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Link reset password telah dikirim. Cek email Anda.',
-          ),
-          backgroundColor: theme.colorScheme.primary,
-        ),
-      );
-      // Arahkan ke layar verifikasi/info atau kembali ke login
-      Navigator.pushReplacementNamed(
+      // Navigate to reset password confirmation screen
+      Navigator.pushReplacement(
         context,
-        AppRoutes.verification,
-        arguments: _emailC.text.trim(),
+        MaterialPageRoute(
+          builder: (context) => ResetPasswordConfirmScreen(email: email),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -19,10 +19,11 @@ import 'package:radio_odan_app/providers/radio_station_provider.dart';
 import 'package:radio_odan_app/providers/theme_provider.dart';
 
 import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/utils/deep_link_handler.dart';
 
 class RadioApp extends StatefulWidget {
   final SharedPreferences prefs;
-  
+
   const RadioApp({super.key, required this.prefs});
 
   @override
@@ -30,15 +31,41 @@ class RadioApp extends StatefulWidget {
 }
 
 class _RadioAppState extends State<RadioApp> {
+  late final DeepLinkHandler _deepLinkHandler;
+
   @override
   void initState() {
     super.initState();
-    // Initialize date formatting for Indonesian locale
+    _initializeAppAndDeepLinks();
+  }
+
+  Future<void> _initializeAppAndDeepLinks() async {
+    await initializeApp();
+    
+    // Initialize deep link handler
+    _deepLinkHandler = DeepLinkHandler();
+    _deepLinkHandler.registerHandler((uri) {
+      _deepLinkHandler.handleDeepLink(uri);
+    }, context);
+    
+    // Initialize date formatting
     initializeDateFormatting('id_ID', null);
+    
+    // Initialize deep links after a short delay to ensure context is ready
+    await Future.delayed(const Duration(milliseconds: 100));
+    _deepLinkHandler.init();
+    
+    // Check for initial deep link
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _deepLinkHandler.checkInitialLink();
+      });
+    }
   }
 
   @override
   void dispose() {
+    _deepLinkHandler.dispose();
     super.dispose();
   }
 

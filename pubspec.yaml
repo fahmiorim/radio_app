@@ -39,18 +39,16 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   intl: ^0.20.2
   flutter_animate: ^4.2.0
-
-  # ⇩⇩ UPDATE ke generasi terbaru yang saling cocok
   firebase_core: ^4.1.0
   firebase_auth: ^6.0.2
   firebase_messaging: ^16.0.1
   google_sign_in: ^6.1.6
-  # ⇧⇧
+  app_links: ^6.1.1
+  http: ^1.2.2
 
   flutter_localizations:
     sdk: flutter
   flutter_html: ^3.0.0
-  http: ^1.2.2
   flutter_dotenv: ^6.0.0
   logger: ^2.0.2+1
   collection: ^1.18.0

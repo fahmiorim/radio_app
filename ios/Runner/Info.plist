@@ -45,9 +45,46 @@
 	<true/>
 <key>UIApplicationSupportsIndirectInputEvents</key>
 <true/>
+
+<!-- URL Schemes -->
 <key>CFBundleURLTypes</key>
 <array>
+    <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleURLName</key>
+        <string>odanfm.app</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>odanfm</string>
+        </array>
+    </dict>
+</array>
+
+<!-- Universal Links -->
+<key>com.apple.developer.associated-domains</key>
+<array>
+    <string>applinks:odanfm.batubarakab.go.id</string>
+</array>
+
+<!-- App Transport Security -->
+<key>NSAppTransportSecurity</key>
 <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+    <key>NSExceptionDomains</key>
+    <dict>
+        <key>odanfm.batubarakab.go.id</key>
+        <dict>
+            <key>NSIncludesSubdomains</key>
+            <true/>
+            <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+            <key>NSTemporaryExceptionMinimumTLSVersion</key>
+            <string>TLSv1.1</string>
+        </dict>
+    </dict>
+</dict>
 <key>CFBundleTypeRole</key>
 <string>Editor</string>
 <key>CFBundleURLSchemes</key>
