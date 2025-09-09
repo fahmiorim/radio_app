@@ -21,6 +21,8 @@ import 'package:radio_odan_app/providers/theme_provider.dart';
 import 'package:radio_odan_app/config/api_client.dart';
 import 'package:radio_odan_app/utils/deep_link_handler.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 class RadioApp extends StatefulWidget {
   final SharedPreferences prefs;
 
@@ -46,7 +48,7 @@ class _RadioAppState extends State<RadioApp> {
     _deepLinkHandler = DeepLinkHandler();
     _deepLinkHandler.registerHandler((uri) {
       _deepLinkHandler.handleDeepLink(uri);
-    }, context);
+    }, navigatorKey);
     
     // Initialize date formatting
     initializeDateFormatting('id_ID', null);
@@ -87,6 +89,7 @@ class _RadioAppState extends State<RadioApp> {
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, _) {
           return MaterialApp(
+            navigatorKey: navigatorKey,
             title: 'Odan FM',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
