@@ -114,21 +114,9 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
     return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Semua Album',
-        titleColor: colors.onBackground,
-        iconColor: colors.onBackground,
-      ),
-      body: Stack(
-        children: [
-          const AppBackground(),
-          _buildBody(),
-        ],
-      ),
+      appBar: CustomAppBar(title: 'Semua Album'),
+      body: Stack(children: [const AppBackground(), _buildBody()]),
       bottomNavigationBar: const MiniPlayer(),
     );
   }

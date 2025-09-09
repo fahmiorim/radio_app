@@ -155,12 +155,8 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
         final error = prov.detailError;
 
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.background,
-          appBar: CustomAppBar.transparent(
-            context: context,
+          appBar: CustomAppBar(
             title: program?.namaProgram ?? 'Detail Program',
-            titleColor: Theme.of(context).colorScheme.onSurface,
-            iconColor: Theme.of(context).colorScheme.onSurface,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
               onPressed: () {

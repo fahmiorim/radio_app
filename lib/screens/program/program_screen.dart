@@ -91,10 +91,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar.transparent(
-        context: context,
-        title: 'Semua Program',
-      ),
+      appBar: CustomAppBar(title: 'Semua Program'),
       body: Stack(
         children: [
           const AppBackground(),

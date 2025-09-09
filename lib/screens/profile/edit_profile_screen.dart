@@ -8,6 +8,7 @@ import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/services/user_service.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -123,26 +124,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
+      appBar: CustomAppBar(title: 'Edit Profile'),
       body: Stack(
         children: [
           const AppBackground(),
           CustomScrollView(
             slivers: [
-              SliverAppBar(
-                title: Text(
-                  'Edit Profile',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                backgroundColor: colorScheme.surface,
-                elevation: 0,
-                iconTheme: IconThemeData(color: colorScheme.onSurface),
-                floating: true,
-                snap: true,
-                pinned: true,
-              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -245,8 +232,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   height: 24,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.5,
-                                    valueColor:
-                                        AlwaysStoppedAnimation<Color>(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
                                       colorScheme.onPrimary,
                                     ),
                                   ),
@@ -257,9 +243,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     Icon(
                                       Icons.save_alt_rounded,
                                       size: 20,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
                                     ),
                                     const SizedBox(width: 8),
                                     const Text('Simpan Perubahan'),

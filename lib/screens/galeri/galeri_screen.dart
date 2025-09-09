@@ -50,14 +50,11 @@ class _GaleriScreenState extends State<GaleriScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: CustomAppBar.transparent(
-        context: context,
-        title: 'Galeri',
-      ),
+      appBar: CustomAppBar(title: 'Galeri'),
       body: Stack(
         children: [
           const AppBackground(),

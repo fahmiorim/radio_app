@@ -111,17 +111,14 @@ class _ArtikelScreenState extends State<ArtikelScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: CustomAppBar.transparent(
-        context: context,
-        title: 'Artikel',
-      ),
+      appBar: CustomAppBar(title: 'Artikel'),
       body: Stack(
         children: [
           const AppBackground(),
-          Consumer<ArtikelProvider>(builder: (_, p, __) => _buildBody(p)),
+          Consumer<ArtikelProvider>(builder: (_, p, _) => _buildBody(p)),
         ],
       ),
     );
@@ -130,7 +127,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
   Widget _buildBody(ArtikelProvider p) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    
+
     if (p.isLoading && p.artikels.isEmpty) {
       return const ArtikelAllSkeleton();
     }
@@ -140,11 +137,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              color: colors.error,
-              size: 48,
-            ),
+            Icon(Icons.error_outline, color: colors.error, size: 48),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -162,7 +155,10 @@ class _ArtikelScreenState extends State<ArtikelScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.primary,
                 foregroundColor: colors.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

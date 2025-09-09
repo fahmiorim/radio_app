@@ -136,6 +136,19 @@ class AppDrawer extends StatelessWidget {
                                 ),
                                 _buildMenuItem(
                                   context: context,
+                                  icon: Icons.lock_reset_rounded,
+                                  title: "Ganti Password",
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.pushNamed(
+                                      context, 
+                                      AppRoutes.changePassword,
+                                      arguments: {'user': user},
+                                    );
+                                  },
+                                ),
+                                _buildMenuItem(
+                                  context: context,
                                   icon: Icons.star,
                                   title: "Nilai Kami",
                                   onTap: () {},

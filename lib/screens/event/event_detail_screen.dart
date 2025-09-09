@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 import 'package:radio_odan_app/models/event_model.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
+
+// Ensure date formatting is initialized at app startup
+void ensureDateFormattingInitialized() {
+  initializeDateFormatting('id_ID');
+}
 
 class EventDetailScreen extends StatelessWidget {
   final Event event;
@@ -17,17 +23,14 @@ class EventDetailScreen extends StatelessWidget {
       builder: (context) {
         final theme = Theme.of(context);
         final colors = theme.colorScheme;
-        
+
         return Card(
           color: colors.surface,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: colors.outline.withOpacity(0.1),
-              width: 1,
-            ),
+            side: BorderSide(color: colors.outline.withOpacity(0.1), width: 1),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -37,11 +40,7 @@ class EventDetailScreen extends StatelessWidget {
                 if (icon != null)
                   Row(
                     children: [
-                      Icon(
-                        icon,
-                        color: colors.primary,
-                        size: 20,
-                      ),
+                      Icon(icon, color: colors.primary, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         title,
@@ -101,7 +100,7 @@ class EventDetailScreen extends StatelessWidget {
         builder: (context) {
           final theme = Theme.of(context);
           final colors = theme.colorScheme;
-          
+
           return ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
@@ -121,9 +120,7 @@ class EventDetailScreen extends StatelessWidget {
                       imageUrl: url,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Center(
-                        child: CircularProgressIndicator(
-                          color: colors.primary,
-                        ),
+                        child: CircularProgressIndicator(color: colors.primary),
                       ),
                       errorWidget: (context, url, error) => Center(
                         child: Column(
@@ -153,10 +150,12 @@ class EventDetailScreen extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
+    ensureDateFormattingInitialized();
     return DateFormat('EEEE, d MMMM y', 'id_ID').format(date);
   }
 
   String _formatTime(DateTime date) {
+    ensureDateFormattingInitialized();
     return DateFormat('HH:mm', 'id_ID').format(date);
   }
 
@@ -166,12 +165,9 @@ class EventDetailScreen extends StatelessWidget {
     final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: CustomAppBar.transparent(
-        context: context,
+      backgroundColor: colors.surface,
+      appBar: CustomAppBar(
         title: event.judul,
-        titleColor: colors.onBackground,
-        iconColor: colors.onBackground,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -213,10 +209,13 @@ class EventDetailScreen extends StatelessWidget {
                                   child: Builder(
                                     builder: (context) => Text(
                                       event.judul,
-                                      style: theme.textTheme.headlineSmall?.copyWith(
-                                        color: Theme.of(context).textTheme.bodySmall?.color,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall?.color,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -233,13 +232,16 @@ class EventDetailScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Text(
-                                    event.status == 'active' ? 'Aktif' : 'Tidak Aktif',
-                                    style: theme.textTheme.labelMedium?.copyWith(
-                                      color: event.status == 'active'
-                                          ? colors.onTertiaryContainer
-                                          : colors.onErrorContainer,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    event.status == 'active'
+                                        ? 'Aktif'
+                                        : 'Tidak Aktif',
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: event.status == 'active'
+                                              ? colors.onTertiaryContainer
+                                              : colors.onErrorContainer,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                   ),
                                 ),
                               ],

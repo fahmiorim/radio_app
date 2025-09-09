@@ -58,10 +58,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
         if (error != null || artikel == null) {
           return Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            appBar: CustomAppBar.transparent(
-              context: context,
-              title: 'Error',
-            ),
+            appBar: CustomAppBar(title: 'Error'),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -94,10 +91,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
 
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: CustomAppBar.transparent(
-            context: context,
-            title: artikel.title,
-          ),
+          appBar: CustomAppBar(title: artikel.title),
           body: RefreshIndicator(
             onRefresh: _loadArticle,
             color: Theme.of(context).primaryColor,
@@ -177,10 +171,9 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                               alignment: Alignment.center,
                               child: Icon(
                                 Icons.broken_image,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.54),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.54),
                               ),
                             ),
                           ),
@@ -251,10 +244,9 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                         Text(
                           'Konten belum tersedia.',
                           style: TextStyle(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
                       const SizedBox(height: 80),

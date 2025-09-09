@@ -147,18 +147,14 @@ class _AllVideosScreenState extends State<AllVideosScreen>
     final colors = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: CustomAppBar(
-        title: 'Semua Video',
-        titleColor: colors.onBackground,
-        iconColor: colors.onBackground,
-      ),
+      backgroundColor: colors.surface,
+      appBar: CustomAppBar(title: 'Semua Video'),
       body: Stack(
         children: [
-            const AppBackground(),
+          const AppBackground(),
 
-            // Content
-            Positioned.fill(
+          // Content
+          Positioned.fill(
             child: Consumer<VideoProvider>(
               builder: (context, vp, _) {
                 return RefreshIndicator(
@@ -175,12 +171,13 @@ class _AllVideosScreenState extends State<AllVideosScreen>
       bottomNavigationBar: const MiniPlayer(),
     );
   }
+
   Widget _buildLoadingSkeleton() {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
-    
+
     return ListView.builder(
       padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
       itemCount: 3,
@@ -196,10 +193,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(
-            color: colors.outline.withOpacity(0.1),
-            width: 1,
-          ),
+          border: Border.all(color: colors.outline.withOpacity(0.1), width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -368,7 +362,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16, left: 8, right: 8),
       decoration: BoxDecoration(
@@ -381,10 +375,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(
-          color: colors.outline.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: colors.outline.withOpacity(0.1), width: 1),
       ),
       child: Material(
         color: Colors.transparent,
@@ -427,7 +418,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                             child: CircularProgressIndicator(
                               value: loadingProgress.expectedTotalBytes != null
                                   ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
+                                        loadingProgress.expectedTotalBytes!
                                   : null,
                               strokeWidth: 2,
                             ),

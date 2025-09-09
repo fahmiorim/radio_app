@@ -116,6 +116,9 @@ class _RadioAppState extends State<RadioApp> {
 Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize date formatting for the intl package (Indonesian locale)
+  await initializeDateFormatting('id_ID', null);
+
   // Initialize Firebase with default settings
   await Firebase.initializeApp();
 

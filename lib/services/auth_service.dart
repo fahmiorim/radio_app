@@ -272,7 +272,6 @@ class AuthService {
         return 'Terlalu banyak permintaan. $waitTime';
       }
 
-      // Handle other errors
       final errorData = response.data as Map<String, dynamic>?;
       return errorData?['message']?.toString() ??
           'Gagal mengirim ulang email verifikasi';
@@ -339,6 +338,81 @@ class AuthService {
       return _extractApiError(e, 'Gagal reset password.');
     } catch (e) {
       return e.toString();
+    }
+  }
+
+  // ===================== Change Password =====================
+  /// Changes the user's password
+  /// Returns a Map with the following structure:
+  /// {
+  ///   'success': bool,
+  ///   'message': String?,
+  ///   'errors': Map<String, dynamic>?
+  /// }
+  Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await ApiClient.I.dio.post(
+        '/change-password',
+        data: {
+          'current_password': currentPassword,
+          'password': newPassword,
+          'password_confirmation': newPassword,
+        },
+        options: Options(
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      final data = response.data as Map<String, dynamic>? ?? {};
+      
+      // Check if the response indicates success
+      if (response.statusCode == 200 && data['status'] == true) {
+        return {
+          'success': true,
+          'message': data['message']?.toString() ?? 'Password berhasil diubah.',
+        };
+      }
+      
+      // Handle validation errors (status 422)
+      if (response.statusCode == 422) {
+        return {
+          'success': false,
+          'message': data['message']?.toString() ?? 'Validasi gagal. Silakan periksa input Anda.',
+          'errors': data['errors'] as Map<String, dynamic>? ?? {},
+        };
+      }
+      
+      // Handle other error cases
+      return {
+        'success': false,
+        'message': data['message']?.toString() ?? 'Gagal mengubah password. Silakan coba lagi.',
+        'errors': data['errors'] as Map<String, dynamic>?,
+      };
+    } on DioException catch (e) {
+      String errorMessage = 'Terjadi kesalahan saat mengubah password.';
+      Map<String, dynamic>? errors;
+      
+      if (e.response != null) {
+        final responseData = e.response?.data as Map<String, dynamic>? ?? {};
+        errorMessage = responseData['message']?.toString() ?? errorMessage;
+        errors = responseData['errors'] as Map<String, dynamic>?;
+      } else {
+        errorMessage = e.message ?? errorMessage;
+      }
+      
+      return {
+        'success': false,
+        'message': errorMessage,
+        'errors': errors,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Terjadi kesalahan tak terduga. Silakan coba lagi.',
+      };
     }
   }
 

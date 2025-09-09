@@ -43,9 +43,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
             message,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.onBackground,
-                ),
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onBackground,
+            ),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -64,16 +64,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    
     return Scaffold(
-      backgroundColor: colors.background,
-      appBar: CustomAppBar.transparent(
-        context: context,
-        title: 'Album',
-        titleColor: colors.onBackground,
-      ),
+      appBar: CustomAppBar(title: 'Album'),
       body: Stack(
         children: [
           const AppBackground(),
@@ -143,7 +135,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         color: theme.colorScheme.surface,
                         child: Icon(
                           Icons.error,
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
                           size: 40,
                         ),
                       ),
@@ -179,12 +173,18 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                 album.description?.trim().isNotEmpty == true
                     ? album.description!.trim()
                     : 'Tidak ada deskripsi',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16.0),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 16.0,
+                ),
               ),
               const SizedBox(height: 20),
               Text(
                 'Total Foto: ${photos.length}',
-                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const SizedBox(height: 16),
             ]),
@@ -233,7 +233,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                             color: Theme.of(context).colorScheme.surface,
                             child: Icon(
                               Icons.broken_image,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withOpacity(0.7),
                               size: 40,
                             ),
                           ),
@@ -254,7 +256,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                   'Belum ada foto di album ini',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.6),
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -266,7 +270,6 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
       ],
     );
   }
-
 }
 
 /// Viewer foto full-screen dengan PhotoView + Hero + cache reuse
@@ -281,7 +284,9 @@ class _PhotoViewer extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.onSurface),
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
       ),
       body: Center(
         child: Hero(
@@ -290,7 +295,9 @@ class _PhotoViewer extends StatelessWidget {
             imageProvider: CachedNetworkImageProvider(imageUrl),
             minScale: PhotoViewComputedScale.contained,
             maxScale: PhotoViewComputedScale.covered * 2,
-            backgroundDecoration: BoxDecoration(color: Theme.of(context).colorScheme.surface),
+            backgroundDecoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+            ),
           ),
         ),
       ),

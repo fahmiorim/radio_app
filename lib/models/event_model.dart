@@ -84,8 +84,14 @@ class Event {
     'updated_at': updatedAt?.toIso8601String(),
   };
 
-  String get formattedTanggal =>
-      DateFormat("EEEE, d MMMM yyyy", "id_ID").format(tanggal);
+  String get formattedTanggal {
+    try {
+      return DateFormat("EEEE, d MMMM yyyy", "id_ID").format(tanggal);
+    } catch (e) {
+      // Fallback to default format if there's an error with the locale
+      return DateFormat("EEEE, d MMMM yyyy").format(tanggal);
+    }
+  }
 
   String get gambarUrl {
     final raw = gambar.trim();

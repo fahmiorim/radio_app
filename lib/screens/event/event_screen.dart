@@ -100,16 +100,9 @@ class _AllEventsScreenState extends State<AllEventsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    
     return Scaffold(
       key: const Key('all_events_screen'),
-      appBar: CustomAppBar.transparent(
-        context: context,
-        title: 'Semua Event',
-      ),
-      backgroundColor: colors.background,
+      appBar: CustomAppBar(title: 'Semua Event'),
       body: Stack(
         children: [
           const AppBackground(),
@@ -130,18 +123,14 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         if (provider.error != null && provider.events.isEmpty) {
           final theme = Theme.of(context);
           final colors = theme.colorScheme;
-          
+
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: colors.error,
-                    size: 48,
-                  ),
+                  Icon(Icons.error_outline, color: colors.error, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Gagal memuat event',
@@ -183,7 +172,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         if (provider.events.isEmpty) {
           final theme = Theme.of(context);
           final colors = theme.colorScheme;
-          
+
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -28,6 +28,7 @@ import 'package:radio_odan_app/screens/galeri/video_screen.dart';
 
 // Screens (Profile & Player)
 import 'package:radio_odan_app/screens/profile/edit_profile_screen.dart';
+import 'package:radio_odan_app/screens/auth/change_password_screen.dart';
 import 'package:radio_odan_app/screens/player/player_screen.dart';
 
 // Services
@@ -48,6 +49,7 @@ class AppRoutes {
   static const String bottomNav = '/';
   static const String fullPlayer = '/full-player';
   static const String editProfile = '/edit-profile';
+  static const String changePassword = '/change-password';
   static const String allVideos = '/all-videos';
   static const String artikelDetail = '/artikel-detail';
   static const String programDetail = '/program-detail';
@@ -113,6 +115,7 @@ class AppRoutes {
         return const SplashScreen();
       case login:
         return const LoginScreen();
+
       case register:
         return const RegisterScreen();
       case forgotPassword:
@@ -176,6 +179,16 @@ class AppRoutes {
           final user = args['user'];
           if (user != null) {
             return EditProfileScreen(user: user);
+          }
+          return const NotFoundScreen();
+        }
+
+      case changePassword:
+        {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          final user = args['user'];
+          if (user != null) {
+            return ChangePasswordScreen(user: user);
           }
           return const NotFoundScreen();
         }
