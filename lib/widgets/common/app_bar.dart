@@ -38,7 +38,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.shape,
     this.primary = true,
     this.flexibleSpace,
-  }) : backgroundColor = backgroundColor ?? AppColors.lightPrimary,
+  }) : backgroundColor = backgroundColor,
        super(key: key);
 
   // Transparan + blur + gradasi halus dari surface → transparan
@@ -53,13 +53,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return CustomAppBar(
       title: title,
-      backgroundColor: colors.primary,
+      backgroundColor: isDark ? colors.surface.withOpacity(0.9) : colors.surface.withOpacity(0.7),
       elevation: 0,
-      titleColor: titleColor ?? colors.onPrimary,
-      iconColor: iconColor ?? colors.onPrimary,
+      titleColor: titleColor ?? (isDark ? colors.onSurface : colors.onSurface),
+      iconColor: iconColor ?? (isDark ? colors.onSurface : colors.onSurface),
       actions: actions,
       leading: leading,
       flexibleSpace: showGradient
@@ -72,12 +73,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        colors.surface.withOpacity(0.90),
-                        colors.surface.withOpacity(0.70),
-                        colors.surface.withOpacity(0.40),
-                        colors.surface.withOpacity(
-                          0.0,
-                        ), // transparan tanpa hardcode
+                        colors.surface.withOpacity(isDark ? 0.9 : 0.7),
+                        colors.surface.withOpacity(isDark ? 0.7 : 0.5),
+                        colors.surface.withOpacity(isDark ? 0.4 : 0.3),
+                        colors.surface.withOpacity(0.0),
                       ],
                       stops: const [0.0, 0.30, 0.60, 1.0],
                     ),
@@ -121,11 +120,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final colors = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    // Use onPrimary for icons and text when background is primary color
-    final isPrimaryBackground = backgroundColor == colors.primary || 
-                              (backgroundColor == null && theme.appBarTheme.backgroundColor == colors.primary);
-    final effectiveIconColor = isPrimaryBackground ? colors.onPrimary : (iconColor ?? colors.onSurface);
-    final effectiveTitleColor = isPrimaryBackground ? colors.onPrimary : (titleColor ?? colors.onSurface);
+    // Always use the theme's app bar background color
+    final effectiveBackgroundColor = backgroundColor ?? theme.appBarTheme.backgroundColor ?? colors.surface;
+    
+    // Use the theme's text and icon colors
+    final effectiveTitleColor = titleColor ?? theme.appBarTheme.titleTextStyle?.color ?? colors.onSurface;
+    final effectiveIconColor = iconColor ?? theme.appBarTheme.iconTheme?.color ?? colors.onSurface;
 
     return AppBar(
       title: Text(
@@ -137,7 +137,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           height: 1.2,
         ),
       ),
-      backgroundColor: backgroundColor ?? colors.primary,
+      backgroundColor: effectiveBackgroundColor,
       elevation: elevation,
       centerTitle: centerTitle,
       titleSpacing: titleSpacing,

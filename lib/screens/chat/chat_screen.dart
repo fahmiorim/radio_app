@@ -223,12 +223,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       },
       child: Consumer<LiveChatProvider>(
         builder: (context, prov, _) {
-          final colors = Theme.of(context).colorScheme;
           if (prov.isLoading) {
             return Scaffold(
-              appBar: CustomAppBar(
+              appBar: CustomAppBar.dark(
                 title: 'Live Chat',
-                backgroundColor: colors.primary,
+                context: context,
               ),
               body: const Center(child: CircularProgressIndicator()),
             );
@@ -251,9 +250,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               : messages.length - _firstUnreadIndex;
 
           return Scaffold(
-            appBar: CustomAppBar(
+            appBar: CustomAppBar.dark(
               title: prov.isLive ? 'Live Chat - ON AIR' : 'Live Chat',
-              backgroundColor: colors.primary,
+              context: context,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () async {
@@ -263,7 +262,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   Navigator.pop(context, 'goHome');
                 },
               ),
-              centerTitle: true,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.people_alt),

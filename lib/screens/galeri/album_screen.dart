@@ -294,29 +294,46 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                     margin: const EdgeInsets.only(bottom: 8),
                   ),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        color: colors.surfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        width: 60,
-                        height: 12,
-                        color: colors.surfaceVariant,
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              color: colors.surfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Container(
+                                height: 12,
+                                color: colors.surfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(width: 12),
-                      Container(
-                        width: 12,
-                        height: 12,
-                        color: colors.surfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        width: 40,
-                        height: 12,
-                        color: colors.surfaceVariant,
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 12,
+                              height: 12,
+                              color: colors.surfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Container(
+                                height: 12,
+                                color: colors.surfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

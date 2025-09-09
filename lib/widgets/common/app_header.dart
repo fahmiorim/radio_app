@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
 
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
@@ -76,52 +75,38 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
   }
 
   Widget _buildProfileAvatar(BuildContext context, UserModel? user) {
+    if (user == null) return _buildShimmerAvatar();
+
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-
-    if (user == null) {
-      return _buildInitialsAvatar('U');
-    }
-
+    final avatarUrl = user.avatarUrl.isNotEmpty ? user.avatarUrl : null;
     final initial = user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U';
-    final avatarUrl = user.avatarUrl;
 
-    if (avatarUrl.isEmpty) {
+    if (avatarUrl == null) {
       return _buildInitialsAvatar(initial);
     }
 
     return Container(
       width: 40,
       height: 40,
-      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [colors.primary, colors.secondary],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
         boxShadow: [
           BoxShadow(
-            color: colors.primary.withOpacity(0.15),
-            blurRadius: 8,
+            color: colors.shadow.withOpacity(0.1),
+            blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Container(
-        padding: const EdgeInsets.all(1.5),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          shape: BoxShape.circle,
-        ),
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: avatarUrl,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => _buildShimmerAvatar(),
-            errorWidget: (context, url, error) => _buildInitialsAvatar(initial),
-          ),
+      child: ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: avatarUrl,
+          width: 40,
+          height: 40,
+          fit: BoxFit.cover,
+          placeholder: (context, url) => _buildShimmerAvatar(),
+          errorWidget: (context, url, error) => _buildInitialsAvatar(initial),
         ),
       ),
     );
@@ -129,17 +114,12 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
   Widget _buildShimmerAvatar() {
     final colors = Theme.of(context).colorScheme;
-    return Shimmer.fromColors(
-      baseColor: colors.surfaceVariant,
-      highlightColor: colors.surface,
-      period: const Duration(seconds: 2),
-      child: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: colors.surface,
-          shape: BoxShape.circle,
-        ),
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: colors.surfaceVariant,
+        shape: BoxShape.circle,
       ),
     );
   }
@@ -153,15 +133,15 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
       height: 40,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colors.primary, colors.secondary],
+          colors: [colors.primary, colors.primaryContainer],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: colors.primary.withOpacity(0.15),
-            blurRadius: 8,
+            color: colors.shadow.withOpacity(0.1),
+            blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
@@ -181,32 +161,12 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isLoading || _isLoading) {
+      return const AppHeaderSkeleton();
+    }
+    
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-
-    if (widget.isLoading) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          border: Border(
-            bottom: BorderSide(
-              color: colors.outline.withOpacity(0.08),
-              width: 1,
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: colors.shadow.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-        child: const AppHeaderSkeleton(),
-      );
-    }
 
     return Selector<UserProvider, UserModel?>(
       selector: (_, provider) => provider.user,
@@ -216,12 +176,6 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
         if (_isLoading && displayUser == null) {
           return const AppHeaderSkeleton();
         }
-
-        final shader = LinearGradient(
-          colors: [colors.primary, colors.secondary],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ).createShader(const Rect.fromLTWH(0, 0, 200, 60));
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -257,11 +211,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [colors.primary, colors.secondary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      color: colors.primary,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
@@ -271,11 +221,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
                         ),
                       ],
                     ),
-                    child: Image.asset(
-                      'assets/logo.png',
-                      height: 28,
-                      color: colors.onPrimary,
-                    ),
+                    child: Image.asset('assets/logo.png', height: 30),
                   ),
                   const SizedBox(width: 12),
 
@@ -283,7 +229,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
                   Text(
                     'ODAN',
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      foreground: Paint()..shader = shader,
+                      color: colors.primary,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.5,
                       fontFamily: 'Poppins',

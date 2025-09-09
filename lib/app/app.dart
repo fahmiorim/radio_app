@@ -3,6 +3,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:radio_odan_app/config/app_theme.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
@@ -20,7 +21,9 @@ import 'package:radio_odan_app/providers/theme_provider.dart';
 import 'package:radio_odan_app/config/api_client.dart';
 
 class RadioApp extends StatefulWidget {
-  const RadioApp({super.key});
+  final SharedPreferences prefs;
+  
+  const RadioApp({super.key, required this.prefs});
 
   @override
   State<RadioApp> createState() => _RadioAppState();
@@ -43,7 +46,7 @@ class _RadioAppState extends State<RadioApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider(widget.prefs)),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ProgramProvider()),
