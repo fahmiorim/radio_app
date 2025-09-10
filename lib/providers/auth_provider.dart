@@ -10,6 +10,18 @@ import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/api_client.dart';
 
 class AuthProvider with ChangeNotifier {
+  AuthProvider({
+    FlutterSecureStorage? storage,
+    AuthService? authService,
+    ApiClient? apiClient,
+  })  : _storage = storage ?? const FlutterSecureStorage(),
+        _authService = authService ?? AuthService.I,
+        _apiClient = apiClient ?? ApiClient.I;
+
+  final FlutterSecureStorage _storage;
+  final AuthService _authService;
+  final ApiClient _apiClient;
+
   UserModel? _user;
   String? _token;
   bool _loading = false;
@@ -21,8 +33,7 @@ class AuthProvider with ChangeNotifier {
 
   // ================= Init (restore session) =================
   Future<void> init() async {
-    final storage = const FlutterSecureStorage();
-    final token = await storage.read(key: 'user_token');
+    final token = await _storage.read(key: 'user_token');
 
     if ((token ?? '').isEmpty) {
       _token = null;
@@ -34,22 +45,22 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      ApiClient.I.setBearer(token!);
-      final me = await AuthService.I.getCurrentUser();
+      _apiClient.setBearer(token!);
+      final me = await _authService.getCurrentUser();
       if (me != null) {
         _user = me;
         _token = token;
       } else {
-        await storage.delete(key: 'user_token');
+        await _storage.delete(key: 'user_token');
         _token = null;
         _user = null;
-        ApiClient.I.clearBearer();
+        _apiClient.clearBearer();
       }
     } catch (_) {
-      await storage.delete(key: 'user_token');
+      await _storage.delete(key: 'user_token');
       _token = null;
       _user = null;
-      ApiClient.I.clearBearer();
+      _apiClient.clearBearer();
     } finally {
       _loading = false;
       notifyListeners();
@@ -61,13 +72,13 @@ class AuthProvider with ChangeNotifier {
     _loading = true;
     notifyListeners();
 
-    final res = await AuthService.I.login(email, password);
+    final res = await _authService.login(email, password);
 
     _loading = false;
     if (res.status) {
       _user = res.user;
       _token = res.token;
-      if ((_token ?? '').isNotEmpty) ApiClient.I.setBearer(_token!);
+      if ((_token ?? '').isNotEmpty) _apiClient.setBearer(_token!);
       notifyListeners();
       return null;
     } else {
@@ -81,18 +92,17 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await AuthService.I.register(name, email, password);
+      final res = await _authService.register(name, email, password);
 
       if (res.status) {
         _user = res.user;
         _token = res.token;
 
         if ((_token ?? '').isNotEmpty) {
-          ApiClient.I.setBearer(_token!);
+          _apiClient.setBearer(_token!);
 
           // Save token to secure storage
-          final storage = const FlutterSecureStorage();
-          await storage.write(key: 'user_token', value: _token);
+          await _storage.write(key: 'user_token', value: _token);
         }
 
         return null; // Success, no error
@@ -116,15 +126,15 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await AuthService.I.loginWithFirebaseUser(user);
+      final res = await _authService.loginWithFirebaseUser(user);
       if (res.status) {
         _user = res.user;
         _token = res.token;
 
-        if ((_token ?? '').isNotEmpty) ApiClient.I.setBearer(_token!);
+        if ((_token ?? '').isNotEmpty) _apiClient.setBearer(_token!);
 
         // optional persist extra
-        await const FlutterSecureStorage().write(
+        await _storage.write(
           key: 'user_data',
           value: jsonEncode(res.user?.toJson() ?? {}),
         );
@@ -146,7 +156,7 @@ class AuthProvider with ChangeNotifier {
   Future<String?> resendVerificationEmail() async {
     _loading = true;
     notifyListeners();
-    final res = await AuthService.I.resendVerificationEmail();
+    final res = await _authService.resendVerificationEmail();
     _loading = false;
     notifyListeners();
     return res;
@@ -162,7 +172,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _isEmailVerified = await AuthService.I.checkEmailVerified();
+      _isEmailVerified = await _authService.checkEmailVerified();
       return _isEmailVerified;
     } finally {
       _loading = false;
@@ -174,12 +184,12 @@ class AuthProvider with ChangeNotifier {
     _loading = true;
     notifyListeners();
     try {
-      await AuthService.I.logout();
+      await _authService.logout();
     } finally {
-      await const FlutterSecureStorage().delete(key: 'user_token');
+      await _storage.delete(key: 'user_token');
       _user = null;
       _token = null;
-      ApiClient.I.clearBearer();
+      _apiClient.clearBearer();
       _loading = false;
       notifyListeners();
     }
