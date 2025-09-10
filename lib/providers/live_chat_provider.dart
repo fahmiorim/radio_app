@@ -102,14 +102,18 @@ class LiveChatProvider with ChangeNotifier {
   }
 
   // === Realtime callbacks wiring ===
+  bool _initialPresenceSync = false;
+  
   void _wireRealtimeCallbacks() {
     _sock.setCallbacks(
       onStatusUpdate: (data) {
         // event: LiveRoomStatusUpdated
         final isLive = data['is_live'] == true || data['status'] == 'started';
-
-        if (isLive != _isLive) {
+        final statusChanged = isLive != _isLive;
+        
+        if (statusChanged) {
           _isLive = isLive;
+          _initialPresenceSync = false; // Reset presence sync flag when status changes
         }
 
         if (!_isLive) {
@@ -137,9 +141,6 @@ class LiveChatProvider with ChangeNotifier {
           final id = (user['userId'] ?? '').toString();
           if (id.isEmpty || id == '0') return;
 
-          // Skip if user already exists in the list
-          if (_onlineUsers.indexWhere((x) => x.id == id) != -1) return;
-
           // Extract username with fallback to 'Pengguna' if not found or invalid
           String username =
               (user['userInfo']?['name'] ??
@@ -153,36 +154,58 @@ class LiveChatProvider with ChangeNotifier {
             return;
           }
 
-          _onlineUsers.add(
-            OnlineUser(
+          // Check if user already exists in the online users list
+          final existingUserIndex = _onlineUsers.indexWhere((x) => x.id == id);
+          final userExists = existingUserIndex != -1;
+          
+          // Only process join notification after initial presence sync
+          if (_initialPresenceSync) {
+            // Only show join notification if this is a new user joining
+            if (!userExists) {
+              final isCurrentUser =
+                  _currentUserId != null && id == _currentUserId.toString();
+              final message = isCurrentUser
+                  ? '🎉 Anda telah bergabung ke siaran'
+                  : '🎉 $username bergabung ke siaran';
+
+              _messages.add(
+                ChatMessage(
+                  id: 'join_${DateTime.now().millisecondsSinceEpoch}_$id',
+                  userId: id,
+                  username: 'System',
+                  message: message,
+                  timestamp: DateTime.now(),
+                  isSystemMessage: true,
+                  isJoinNotification: true,
+                ),
+              );
+            }
+          }
+          
+          // Update or add user to online list
+          if (userExists) {
+            // Update existing user info if needed
+            final existing = _onlineUsers[existingUserIndex];
+            _onlineUsers[existingUserIndex] = OnlineUser(
               id: id,
               username: username,
-              userAvatar:
-                  (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])
-                      ?.toString(),
-              joinTime: DateTime.now(),
-            ),
-          );
-
-          // Add join notification message
-          final isCurrentUser =
-              _currentUserId != null && id == _currentUserId.toString();
-          final message = isCurrentUser
-              ? '🎉 Anda telah bergabung ke siaran'
-              : '🎉 $username bergabung ke siaran';
-
-          _messages.add(
-            ChatMessage(
-              id: 'join_${DateTime.now().millisecondsSinceEpoch}_$id',
-              username: 'System',
-              message: message,
-              timestamp: DateTime.now(),
-              isSystemMessage: true,
-              isJoinNotification: true,
-            ),
-          );
-
-          notifyListeners();
+              userAvatar: (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])?.toString() ?? existing.userAvatar,
+              joinTime: existing.joinTime,
+            );
+          } else {
+            _onlineUsers.add(
+              OnlineUser(
+                id: id,
+                username: username,
+                userAvatar: (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])?.toString(),
+                joinTime: DateTime.now(),
+              ),
+            );
+          }
+          
+          if (_initialPresenceSync) {
+            notifyListeners();
+          }
         } catch (_) {}
       },
       onUserLeft: (channel, user) {
@@ -201,6 +224,7 @@ class LiveChatProvider with ChangeNotifier {
             _messages.add(
               ChatMessage(
                 id: 'leave_${DateTime.now().millisecondsSinceEpoch}_$id',
+                userId: '', // System message doesn't have a user
                 username: 'System',
                 message: '👋 ${userLeft.username} meninggalkan siaran',
                 timestamp: DateTime.now(),
@@ -279,6 +303,7 @@ class LiveChatProvider with ChangeNotifier {
           _messages.add(
             ChatMessage(
               id: messageId,
+              userId: msg.userId.toString(),
               username: msg.name.isNotEmpty ? msg.name : 'Pengguna',
               message: msg.message,
               timestamp: msg.timestamp,
@@ -310,53 +335,69 @@ class LiveChatProvider with ChangeNotifier {
       _isLive = status.isLive;
       _currentRoomId = status.roomId;
 
-      if (statusChanged) {}
+      if (statusChanged) {
+        _initialPresenceSync = false; // Reset presence sync flag when status changes
+      }
 
       // Get online users list if live
       if (_isLive) {
         try {
           final onlineUsers = await _http.getOnlineUsers(roomId);
+          
+          // Store existing user IDs to track who was removed
+          final existingUserIds = _onlineUsers.map((u) => u.id).toSet();
+          final newUserIds = <String>{};
 
-          _onlineUsers.clear();
-          _onlineUsers.addAll(
-            onlineUsers
-                .where(
-                  (u) =>
-                      u['id'] != null &&
-                      u['id'].toString().isNotEmpty &&
-                      u['id'].toString() != '0',
-                )
-                .map((user) {
-                  final rawAvatar = user['avatar']?.toString().trim();
-                  String? avatarUrl;
-                  if (rawAvatar != null && rawAvatar.isNotEmpty) {
-                    if (rawAvatar.startsWith('http')) {
-                      avatarUrl = rawAvatar;
-                    } else {
-                      var base = AppApiConfig.assetBaseUrl;
-                      if (base.endsWith('/')) {
-                        base = base.substring(0, base.length - 1);
-                      }
-                      var path = rawAvatar.startsWith('/')
-                          ? rawAvatar.substring(1)
-                          : rawAvatar;
-                      avatarUrl = '$base/$path';
-                    }
-                  }
+          // Update or add users
+          for (final user in onlineUsers) {
+            if (user['id'] == null ||
+                user['id'].toString().isEmpty ||
+                user['id'].toString() == '0') {
+              continue;
+            }
 
-                  return OnlineUser(
-                    id: user['id']?.toString() ?? '',
-                    username:
-                        (user['name'] ??
-                                user['username'] ??
-                                'Pengguna ${user['id']?.toString().substring(0, 4) ?? ''}')
-                            .toString()
-                            .trim(),
-                    userAvatar: avatarUrl,
-                    joinTime: DateTime.now(),
-                  );
-                }),
-          );
+            final id = user['id'].toString();
+            newUserIds.add(id);
+            
+            final existingIndex = _onlineUsers.indexWhere((u) => u.id == id);
+            final username = (user['name']?.toString() ??
+                            user['username']?.toString() ??
+                            'Pengguna ${id.length > 4 ? id.substring(0, 4) : id}')
+                        .toString()
+                        .trim();
+            final avatarUrl = user['avatar']?.toString() ??
+                            user['photo']?.toString();
+
+            if (existingIndex != -1) {
+              // Update existing user
+              final existing = _onlineUsers[existingIndex];
+              _onlineUsers[existingIndex] = OnlineUser(
+                id: id,
+                username: username,
+                userAvatar: avatarUrl ?? existing.userAvatar,
+                joinTime: existing.joinTime, // Preserve original join time
+              );
+            } else {
+              // Add new user (but don't show join notification yet)
+              _onlineUsers.add(
+                OnlineUser(
+                  id: id,
+                  username: username,
+                  userAvatar: avatarUrl,
+                  joinTime: DateTime.now(),
+                ),
+              );
+            }
+          }
+          
+          // Mark presence as synced after first successful refresh
+          if (!_initialPresenceSync) {
+            _initialPresenceSync = true;
+          }
+          
+          // Remove users that are no longer online
+          _onlineUsers.removeWhere((user) => !newUserIds.contains(user.id));
+          
         } catch (_) {}
 
         await _subscribePublicOnce();
@@ -364,6 +405,7 @@ class LiveChatProvider with ChangeNotifier {
       } else {
         _messages.clear();
         _onlineUsers.clear();
+        _initialPresenceSync = false;
       }
     } catch (e) {
       _isLive = false;
@@ -435,6 +477,7 @@ class LiveChatProvider with ChangeNotifier {
             .map(
               (m) => ChatMessage(
                 id: m.id.toString(),
+                userId: m.userId.toString(),
                 username: m.name,
                 message: m.message,
                 timestamp: m.timestamp,
@@ -523,6 +566,7 @@ class LiveChatProvider with ChangeNotifier {
     _messages.add(
       ChatMessage(
         id: tempId,
+        userId: _currentUserId?.toString() ?? '',
         username: username,
         message: t,
         timestamp: now,
@@ -549,6 +593,7 @@ class LiveChatProvider with ChangeNotifier {
       _messages.add(
         ChatMessage(
           id: finalId,
+          userId: sent.userId?.toString() ?? _currentUserId?.toString() ?? '',
           username: sent.name,
           message: sent.message,
           timestamp: sent.timestamp,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/providers/live_chat_provider.dart';
+import 'package:radio_odan_app/models/chat_model.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/screens/chat/widget/chat_message_item.dart';
 import 'package:radio_odan_app/screens/chat/widget/message_input_field.dart';
@@ -27,11 +28,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   int _lastMessageCount = 0;
   Timer? _scrollTimer;
 
-  bool _isCurrentUser(String username) {
+  bool _isCurrentUser(ChatMessage message) {
+    if (message.userId.isEmpty) return false; // System messages
     final user = Provider.of<UserProvider>(context, listen: false).user;
-    final current = user?.name;
-    if (current == null) return false;
-    return current.toLowerCase() == username.toLowerCase();
+    if (user == null) return false;
+    return user.id.toString() == message.userId;
   }
 
   @override
@@ -292,7 +293,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           UnreadMessagesLabel(count: unreadCount),
                           ChatMessageItem(
                             message: message,
-                            isCurrentUser: _isCurrentUser(message.username),
+                            isCurrentUser: _isCurrentUser(message),
                             time: prov.formatTime(message.timestamp),
                           ),
                         ],
@@ -300,7 +301,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     }
                     return ChatMessageItem(
                       message: message,
-                      isCurrentUser: _isCurrentUser(message.username),
+                      isCurrentUser: _isCurrentUser(message),
                       time: prov.formatTime(message.timestamp),
                     );
                   },

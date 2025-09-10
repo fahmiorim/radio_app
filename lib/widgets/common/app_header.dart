@@ -164,7 +164,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
     if (widget.isLoading || _isLoading) {
       return const AppHeaderSkeleton();
     }
-    
+
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 

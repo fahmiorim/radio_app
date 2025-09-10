@@ -43,6 +43,9 @@ class UserService {
         }
       }
 
+      // Set the bearer token for all subsequent requests
+      ApiClient.I.setBearer(token);
+      
       // Hit API
       final res = await ApiClient.I.dio.get('/user');
       if (res.statusCode == 200) {

@@ -1,5 +1,6 @@
 class ChatMessage {
   final String id;
+  final String userId;  // ID unik pengguna
   final String username;
   final String message;
   final DateTime timestamp;
@@ -9,6 +10,7 @@ class ChatMessage {
 
   ChatMessage({
     required this.id,
+    required this.userId,
     required this.username,
     required this.message,
     required this.timestamp,
@@ -26,6 +28,7 @@ class ChatMessage {
         
     return ChatMessage(
       id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? json['userId']?.toString() ?? '',
       username: username,
       message: json['message']?.toString() ?? '',
       timestamp: json['timestamp'] != null 
