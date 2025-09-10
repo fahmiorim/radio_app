@@ -43,17 +43,12 @@ class _RadioAppState extends State<RadioApp> {
   }
 
   Future<void> _initializeAppAndDeepLinks() async {
-    await initializeApp();
-    
     // Initialize deep link handler
     _deepLinkHandler = DeepLinkHandler();
     _deepLinkHandler.registerHandler(
       _deepLinkHandler.handleDeepLink,
       navigatorKey,
     );
-    
-    // Initialize date formatting
-    initializeDateFormatting('id_ID', null);
     
     // Initialize deep links after a short delay to ensure context is ready
     await Future.delayed(const Duration(milliseconds: 100));
@@ -114,9 +109,12 @@ class _RadioAppState extends State<RadioApp> {
   }
 }
 
+bool _isAppInitialized = false;
 bool _isAudioInitialized = false;
 
 Future<void> initializeApp() async {
+  if (_isAppInitialized) return;
+  _isAppInitialized = true;
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize date formatting for the intl package (Indonesian locale)
