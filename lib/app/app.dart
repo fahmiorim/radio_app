@@ -20,6 +20,7 @@ import 'package:radio_odan_app/providers/theme_provider.dart';
 
 import 'package:radio_odan_app/config/api_client.dart';
 import 'package:radio_odan_app/utils/deep_link_handler.dart';
+import 'package:radio_odan_app/audio/audio_player_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,12 +33,13 @@ class RadioApp extends StatefulWidget {
   State<RadioApp> createState() => _RadioAppState();
 }
 
-class _RadioAppState extends State<RadioApp> {
+class _RadioAppState extends State<RadioApp> with WidgetsBindingObserver {
   late final DeepLinkHandler _deepLinkHandler;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeAppAndDeepLinks();
   }
 
@@ -68,8 +70,17 @@ class _RadioAppState extends State<RadioApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _deepLinkHandler.dispose();
+    AudioPlayerManager.instance.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      AudioPlayerManager.instance.stop();
+    }
   }
 
   @override
