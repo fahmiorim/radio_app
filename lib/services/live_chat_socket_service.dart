@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 import 'package:dio/dio.dart';
@@ -34,6 +35,13 @@ class LiveChatSocketService {
 
   // Like callbacks per-room
   final Map<int, void Function(int)> _likeUpdateCallbacks = {};
+
+  // Stream controller for live status updates
+  final StreamController<Map<String, dynamic>> _statusController =
+      StreamController.broadcast();
+
+  /// Public stream of status update events.
+  Stream<Map<String, dynamic>> get statusStream => _statusController.stream;
 
   void setCallbacks({
     Function(String, Map<String, dynamic>)? onUserJoined,
@@ -105,6 +113,7 @@ class LiveChatSocketService {
                     event.eventName.endsWith('.status.updated') ||
                     event.eventName == 'status.updated')) {
               _onStatusUpdate?.call(payload);
+              _statusController.add(payload);
               return;
             }
 
@@ -407,12 +416,16 @@ class LiveChatSocketService {
     }
   }
 
-  Future<void> subscribeToStatus() async {
+  Future<Stream<Map<String, dynamic>>> subscribeToStatus() async {
     const channelName = 'live-room-status';
     try {
-      if (_subscribedChannels[channelName] == true) return;
+      await ensureConnected();
+      if (_subscribedChannels[channelName] == true) {
+        return _statusController.stream;
+      }
       await _pusher.subscribe(channelName: channelName);
       _subscribedChannels[channelName] = true;
+      return _statusController.stream;
     } catch (e) {
       rethrow;
     }

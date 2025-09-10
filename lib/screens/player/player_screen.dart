@@ -13,6 +13,7 @@ import 'package:radio_odan_app/widgets/common/app_background.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
 import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/services/live_chat_socket_service.dart';
+import 'package:radio_odan_app/providers/live_status_provider.dart';
 
 class FullPlayer extends StatefulWidget {
   const FullPlayer({super.key});
@@ -28,6 +29,8 @@ class _FullPlayerState extends State<FullPlayer> {
   bool _liked = false;
   bool _isLive = false;
   int? _liveRoomId;
+
+  late final LiveStatusProvider _statusProvider;
 
   // Flag untuk mencegah aksi ganda
   bool _busyToggle = false;
@@ -80,8 +83,10 @@ class _FullPlayerState extends State<FullPlayer> {
   void initState() {
     super.initState();
     _initializePlayer();
-    _initLike();
     _setupSocketListeners();
+    _statusProvider = Provider.of<LiveStatusProvider>(context, listen: false);
+    _statusProvider.addListener(_handleStatusChange);
+    _handleStatusChange();
   }
 
   // ====== Helpers UI ======
@@ -123,41 +128,57 @@ class _FullPlayerState extends State<FullPlayer> {
     }
   }
 
-  // ====== Like initialization ======
-  Future<void> _initLike() async {
-    try {
-      // Set initial state to show loading
+  // ====== Live status handling ======
+  void _handleStatusChange() {
+    final isLive = _statusProvider.isLive;
+    final roomId = _statusProvider.roomId;
+
+    if (!isLive) {
+      _onLiveEnded();
+      return;
+    }
+
+    if (roomId != null && roomId != _liveRoomId) {
+      _onLiveStarted(roomId);
+    } else if (isLive && !_isLive) {
+      setState(() => _isLive = true);
+    }
+  }
+
+  Future<void> _onLiveStarted(int roomId) async {
+    await _unsubscribeFromLikeUpdates();
+    setState(() {
+      _isLive = true;
+      _liveRoomId = roomId;
+      _likeCount = 0;
+      _liked = false;
+    });
+    await _loadLikeStatus();
+    await _subscribeToLikeUpdates(roomId);
+  }
+
+  void _onLiveEnded() {
+    _unsubscribeFromLikeUpdates();
+    if (mounted) {
       setState(() {
-        _likeCount = 0; // Initialize with 0 first
+        _isLive = false;
+        _liveRoomId = null;
+        _likeCount = 0;
         _liked = false;
       });
-
-      // Fetch initial like status
-      final status = await LiveChatService.I.fetchGlobalStatus();
-
-      if (!mounted) return;
-
-      // Update the UI with the latest status
-      setState(() {
-        _isLive = status.isLive;
-        _likeCount = status.likes < 0 ? 0 : status.likes;
-        _liked = status.liked; // No need for null check as it's non-nullable
-        _liveRoomId = status.roomId;
-      });
-
-      // Subscribe to like updates if we have a room ID
-      if (status.roomId != null) {
-        await _subscribeToLikeUpdates(status.roomId!);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gagal memuat status like.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
     }
+  }
+
+  Future<void> _loadLikeStatus() async {
+    try {
+      final status = await LiveChatService.I.fetchGlobalStatus();
+      if (mounted) {
+        setState(() {
+          _likeCount = status.likes < 0 ? 0 : status.likes;
+          _liked = status.liked;
+        });
+      }
+    } catch (_) {}
   }
 
   // ====== Refresh like status ======
@@ -287,7 +308,7 @@ class _FullPlayerState extends State<FullPlayer> {
 
   @override
   void dispose() {
-    // Unsubscribe like channel jika ada
+    _statusProvider.removeListener(_handleStatusChange);
     _unsubscribeFromLikeUpdates();
     super.dispose();
   }

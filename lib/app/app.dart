@@ -17,6 +17,8 @@ import 'package:radio_odan_app/providers/video_provider.dart';
 import 'package:radio_odan_app/providers/album_provider.dart';
 import 'package:radio_odan_app/providers/radio_station_provider.dart';
 import 'package:radio_odan_app/providers/theme_provider.dart';
+import 'package:radio_odan_app/providers/live_status_provider.dart';
+import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 
 import 'package:radio_odan_app/config/api_client.dart';
 import 'package:radio_odan_app/utils/deep_link_handler.dart';
@@ -45,6 +47,9 @@ class _RadioAppState extends State<RadioApp> with WidgetsBindingObserver {
 
   Future<void> _initializeAppAndDeepLinks() async {
     await initializeApp();
+
+    // Subscribe to global live status updates
+    await LiveChatSocketService.I.subscribeToStatus();
     
     // Initialize deep link handler
     _deepLinkHandler = DeepLinkHandler();
@@ -97,6 +102,7 @@ class _RadioAppState extends State<RadioApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => VideoProvider()),
         ChangeNotifierProvider(create: (_) => AlbumProvider()),
         ChangeNotifierProvider(create: (_) => RadioStationProvider()),
+        ChangeNotifierProvider(create: (_) => LiveStatusProvider()),
       ],
       child: Consumer2<AuthProvider, ThemeProvider>(
         builder: (context, authProvider, themeProvider, _) {
