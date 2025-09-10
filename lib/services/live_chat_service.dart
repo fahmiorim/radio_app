@@ -20,7 +20,9 @@ class LiveChatService {
     };
   }
 
-  void _ensure() => ApiClient.I.ensureInterceptors();
+  Future<void> _ensure() async {
+    await ApiClient.I.ensureInterceptors();
+  }
 
   Map<String, dynamic> _asMap(dynamic raw) {
     if (raw is Map) return Map<String, dynamic>.from(raw);
@@ -39,7 +41,7 @@ class LiveChatService {
   }
 
   Future<LiveChatStatus> fetchGlobalStatus({String caller = 'unknown'}) async {
-    _ensure();
+    await _ensure();
     final headers = await _authHeaders();
     headers['X-Caller'] = caller; // opsional: jejak siapa pemanggilnya
 
@@ -99,7 +101,7 @@ class LiveChatService {
     int? perPage,
   }) async {
     try {
-      _ensure();
+      await _ensure();
       final headers = await _authHeaders();
       final res = await _dio.get<dynamic>(
         '/api/live-chat/$roomId/fetch',
@@ -141,7 +143,7 @@ class LiveChatService {
 
   Future<LiveChatStatus> fetchStatus(int roomId) async {
     try {
-      _ensure();
+      await _ensure();
       final headers = await _authHeaders();
       final url = '/api/live-chat/$roomId/status';
 
@@ -178,7 +180,7 @@ class LiveChatService {
 
   Future<List<Map<String, dynamic>>> getOnlineUsers(int roomId) async {
     try {
-      _ensure();
+      await _ensure();
       final headers = await _authHeaders();
       final res = await _dio.get<dynamic>(
         '/live-chat/$roomId/status',
@@ -220,7 +222,7 @@ class LiveChatService {
 
   Future<LiveChatMessage> sendMessage(int roomId, String text) async {
     try {
-      _ensure();
+      await _ensure();
 
       final headers = await _authHeaders();
       final res = await _dio.post<dynamic>(
@@ -261,7 +263,7 @@ class LiveChatService {
 
   Future<Map<String, dynamic>> toggleLike(int roomId) async {
     try {
-      _ensure();
+      await _ensure();
       final headers = await _authHeaders();
       final res = await _dio.post<dynamic>(
         '/api/live-chat/$roomId/like-toggle',
@@ -300,7 +302,7 @@ class LiveChatService {
 
   Future<Map<String, dynamic>> joinListener(int roomId) async {
     try {
-      _ensure();
+      await _ensure();
       final headers = await _authHeaders();
       final res = await _dio.post<dynamic>(
         '/api/live-chat/listener/join',
@@ -337,7 +339,7 @@ class LiveChatService {
 
   Future<int> leaveListener(int listenerId) async {
     try {
-      _ensure();
+      await _ensure();
       final headers = await _authHeaders();
       final res = await _dio.post<dynamic>(
         '/api/live-chat/listener/$listenerId/leave',
