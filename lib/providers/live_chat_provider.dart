@@ -605,7 +605,7 @@ class LiveChatProvider with ChangeNotifier {
     _listenerId = null;
   }
 
-  Future<void> shutdown() async {
+  Future<void> shutdown({bool disconnectSocket = false}) async {
     await leaveRoom();
     try {
       await _sock.unsubscribePublic(_currentRoomId ?? roomId);
@@ -613,11 +613,15 @@ class LiveChatProvider with ChangeNotifier {
     try {
       await _sock.unsubscribePresence(roomId);
     } catch (_) {}
-    try {
-      await _sock.unsubscribeStatus();
-    } catch (_) {}
-    try {
-      await _sock.disconnect();
-    } catch (_) {}
+
+    // Keep global status subscription and socket connection alive by default
+    if (disconnectSocket) {
+      try {
+        await _sock.unsubscribeStatus();
+      } catch (_) {}
+      try {
+        await _sock.disconnect();
+      } catch (_) {}
+    }
   }
 }
