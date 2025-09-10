@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "967860960628-0lt7hn15iifh6fegrg2g4020s2liehd8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.odanfm.radio",
+            "certificate_hash": "fd28cd7eaffc1f7042a91141c64b64a00b8dabca"
+          }
+        },
+        {
           "client_id": "967860960628-8gfb31a2nafea07168nndef3g3pdopsl.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/providers/auth_provider.dart';
@@ -47,7 +48,7 @@ class AppDrawer extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              // Background decorative elements
+              // Background dekoratif
               Positioned(
                 top: -50,
                 right: -50,
@@ -141,7 +142,7 @@ class AppDrawer extends StatelessWidget {
                                   onTap: () {
                                     Navigator.pop(context);
                                     Navigator.pushNamed(
-                                      context, 
+                                      context,
                                       AppRoutes.changePassword,
                                       arguments: {'user': user},
                                     );
@@ -159,9 +160,7 @@ class AppDrawer extends StatelessWidget {
                                   title: "Logout",
                                   iconColor: colorScheme.error,
                                   onTap: () async {
-                                    await context
-                                        .read<AuthProvider>()
-                                        .logout();
+                                    await context.read<AuthProvider>().logout();
                                     if (context.mounted) {
                                       Navigator.pushNamedAndRemoveUntil(
                                         context,
@@ -171,7 +170,7 @@ class AppDrawer extends StatelessWidget {
                                     }
                                   },
                                 ),
-                                // Theme Toggle
+                                // Toggle Tema
                                 Consumer<ThemeProvider>(
                                   builder: (context, themeProvider, _) {
                                     final bool isDark =
@@ -198,15 +197,15 @@ class AppDrawer extends StatelessWidget {
                                         thumbColor:
                                             MaterialStateProperty.resolveWith<
                                               Color
-                                            >((Set<MaterialState> states) {
-                                              if (states.contains(
-                                                MaterialState.selected,
-                                              )) {
-                                                return colorScheme.onPrimary;
-                                              }
-                                              return colorScheme
-                                                  .onSurfaceVariant;
-                                            }),
+                                            >(
+                                              (states) =>
+                                                  states.contains(
+                                                    MaterialState.selected,
+                                                  )
+                                                  ? colorScheme.onPrimary
+                                                  : colorScheme
+                                                        .onSurfaceVariant,
+                                            ),
                                       ),
                                     );
                                   },
@@ -215,7 +214,7 @@ class AppDrawer extends StatelessWidget {
                             ),
                           ),
 
-                          // Footer versi
+                          // Footer versi (dinamis dari package_info_plus)
                           Container(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 72),
                             child: Column(
@@ -244,13 +243,24 @@ class AppDrawer extends StatelessWidget {
                                   ],
                                 ),
                                 const SizedBox(height: 6),
-                                Text(
-                                  "v2.0.0",
-                                  style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant
-                                        .withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
+                                FutureBuilder<PackageInfo>(
+                                  future: PackageInfo.fromPlatform(),
+                                  builder: (context, snap) {
+                                    final style = TextStyle(
+                                      color: colorScheme.onSurfaceVariant
+                                          .withOpacity(0.7),
+                                      fontSize: 12,
+                                    );
+                                    if (!snap.hasData) {
+                                      return Text("v—", style: style);
+                                    }
+                                    final info = snap.data!;
+                                    // pubspec: version: 1.0.3+3  -> version=1.0.3, buildNumber=3
+                                    return Text(
+                                      "v${info.version} (${info.buildNumber})",
+                                      style: style,
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -285,8 +295,7 @@ class AppDrawer extends StatelessWidget {
       );
     }
 
-    final url =
-        user?.avatarUrl ?? ''; // ⬅️ pakai getter yang sudah dinormalisasi
+    final url = user?.avatarUrl ?? '';
 
     if (url.isNotEmpty) {
       return CachedNetworkImage(
@@ -322,7 +331,6 @@ class AppDrawer extends StatelessWidget {
     ColorScheme colorScheme,
     UserModel? user,
   ) {
-    // Catatan: jika `name` di UserModel non-nullable (String), akses pakai user?.name aman dengan null-check di user.
     final initial = (user != null && user.name.trim().isNotEmpty)
         ? user.name[0].toUpperCase()
         : 'U';
@@ -387,10 +395,12 @@ class AppDrawer extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-        ),
+        trailing:
+            trailing ??
+            Icon(
+              Icons.chevron_right,
+              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+            ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         hoverColor: colorScheme.onSurface.withOpacity(0.1),
