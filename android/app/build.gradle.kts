@@ -1,11 +1,12 @@
+// android/app/build.gradle.kts
 import java.util.Properties
 import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")           // ✅ gunakan id Kotlin untuk KTS
-    id("com.google.gms.google-services")         // (boleh tetap jika pakai Firebase)
-    id("dev.flutter.flutter-gradle-plugin")      // harus terakhir
+    id("org.jetbrains.kotlin.android")
+    id("com.google.gms.google-services")
+    id("dev.flutter.flutter-gradle-plugin")
 }
 
 val keystoreProperties = Properties().apply {
@@ -38,7 +39,7 @@ android {
 
     signingConfigs {
         create("release") {
-            // ✅ Aman: hanya set jika properti tersedia
+            // Set hanya jika key.properties tersedia lengkap
             val alias = keystoreProperties.getProperty("keyAlias")
             val keyPass = keystoreProperties.getProperty("keyPassword")
             val storePath = keystoreProperties.getProperty("storeFile")
@@ -58,11 +59,9 @@ android {
     }
 
     buildTypes {
-        // biarkan debug pakai default debug keystore
-        getByName("debug") { }
+        getByName("debug") {}
 
         getByName("release") {
-            // ✅ assign hanya jika credential ada
             val ready = sequenceOf(
                 "keyAlias", "keyPassword", "storeFile", "storePassword"
             ).all { !keystoreProperties.getProperty(it).isNullOrBlank() }
@@ -72,12 +71,18 @@ android {
             }
 
             isMinifyEnabled = true
+            isShrinkResources = true
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+}
+
+dependencies {
+    implementation("org.slf4j:slf4j-android:1.7.36")
 }
 
 flutter {
