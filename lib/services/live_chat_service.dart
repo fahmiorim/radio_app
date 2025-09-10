@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:dio/dio.dart';
 import 'package:radio_odan_app/config/api_client.dart';
 import 'package:radio_odan_app/models/live_message_model.dart';
@@ -82,7 +84,13 @@ class LiveChatService {
         try {
           final chatStatus = await fetchStatus(roomId);
           return status.copyWith(liked: chatStatus.liked);
-        } catch (_) {}
+        } catch (e, s) {
+          developer.log(
+            'Failed to fetch chat status',
+            error: e,
+            stackTrace: s,
+          );
+        }
       }
 
       return status;
