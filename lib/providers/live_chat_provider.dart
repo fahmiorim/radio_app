@@ -61,7 +61,7 @@ class LiveChatProvider with ChangeNotifier {
   int? _listenerId;
 
   bool _isInitialized = false;
-  bool _isInitialPresenceSync = false;
+  bool _isInitialPresenceSync = false; // <— dipakai untuk cegah spam join msg
   bool get isInitialized => _isInitialized;
 
   // ==== INIT ====
@@ -71,6 +71,8 @@ class LiveChatProvider with ChangeNotifier {
     try {
       // Initialize socket connection
       await _sock.connect();
+      // Pastikan subscribe ke status live
+      await _sock.subscribeToStatus();
 
       // Load initial status
       await refreshStatus();
@@ -105,15 +107,26 @@ class LiveChatProvider with ChangeNotifier {
   // === Realtime callbacks wiring ===
   void _wireRealtimeCallbacks() {
     _sock.setCallbacks(
-      onStatusUpdate: (data) {
-        // event: LiveRoomStatusUpdated
-        final isLive = data['is_live'] == true || data['status'] == 'started';
+      onStatusUpdate: (data) async {
+        final nowLive = data['is_live'] == true || data['status'] == 'started';
 
-        if (isLive != _isLive) {
-          _isLive = isLive;
-        }
+        // === LIVE -> OFFLINE ===
+        if (!nowLive && _isLive) {
+          final rid = _currentRoomId ?? roomId;
+          try {
+            await _sock.unsubscribePublic(rid);
+          } catch (_) {}
+          _publicSubscribed = false;
 
-        if (!_isLive) {
+          // (opsional) kalau mau lepas presence juga:
+          // try { await _sock.unsubscribePresence(rid); } catch (_) {}
+          // _presenceSubscribed = false;
+
+          // reset pagination biar sesi baru fresh
+          _page = 1;
+          _hasMore = true;
+
+          _isLive = false;
           _messages.clear();
           _onlineUsers.clear();
           _currentRoomId = null;
@@ -121,23 +134,54 @@ class LiveChatProvider with ChangeNotifier {
           return;
         }
 
-        // update roomId jika dikirim
-        final rid =
-            data['roomId'] ?? data['room_id'] ?? data['liveRoomId'];
-        if (rid is int) {
-          _currentRoomId = rid;
-        } else if (rid is String) {
-          _currentRoomId = int.tryParse(rid);
+        // === OFFLINE -> LIVE ===
+        if (nowLive && !_isLive) {
+          _isLive = true;
+
+          // ambil roomId baru dari payload/status
+          final ridRaw =
+              data['roomId'] ?? data['room_id'] ?? data['liveRoomId'];
+          int? newRid = (ridRaw is int)
+              ? ridRaw
+              : int.tryParse(ridRaw?.toString() ?? '');
+          newRid ??= roomId; // fallback
+
+          final oldRid = _currentRoomId;
+          _currentRoomId = newRid;
+
+          // reset state supaya subscribe ulang
+          _page = 1;
+          _hasMore = true;
+          _messages.clear();
+          _publicSubscribed = false;
+          notifyListeners();
+
+          // kalau room berganti, resubscribe presence (opsional tapi bagus)
+          if (oldRid != null && oldRid != newRid) {
+            try {
+              await _sock.unsubscribePresence(oldRid);
+            } catch (_) {}
+            _presenceSubscribed = false;
+          }
+          await _subscribePresenceOnce();
+
+          await _subscribePublicOnce(); // subscribe channel chat lagi
+          await loadMore(); // tarik pesan awal
+          return;
         }
 
-        // saat live start → subscribe chat + tarik history awal
-        _page = 1;
-        _hasMore = true;
-        _messages.clear();
-        notifyListeners();
-        _subscribePublicOnce();
-        loadMore();
+        // tidak ada transisi: sinkronkan saja
+        _isLive = nowLive;
+        if (_isLive) {
+          final rid = data['roomId'] ?? data['room_id'] ?? data['liveRoomId'];
+          if (rid is int)
+            _currentRoomId = rid;
+          else
+            _currentRoomId =
+                int.tryParse(rid?.toString() ?? '') ?? _currentRoomId;
+        }
       },
+
       onUserJoined: (channel, user) {
         try {
           final id = (user['userId'] ?? '').toString();
@@ -174,7 +218,8 @@ class LiveChatProvider with ChangeNotifier {
               ),
             );
 
-            if (isCurrentUser || !_isInitialPresenceSync) {
+            // Tampilkan pesan join HANYA jika bukan initial presence sync
+            if (!_isInitialPresenceSync) {
               final message = isCurrentUser
                   ? '🎉 Anda telah bergabung ke siaran'
                   : '🎉 $username bergabung ke siaran';
@@ -225,6 +270,16 @@ class LiveChatProvider with ChangeNotifier {
       },
       onMessage: (channel, messageData) {
         try {
+          // Hapus pesan
+          if (channel == 'message.deleted') {
+            final id = messageData['id']?.toString();
+            if (id != null) {
+              _messages.removeWhere((m) => m.id == id);
+              notifyListeners();
+            }
+            return;
+          }
+
           // 0) Normalisasi payload -> Map<String, dynamic>
           dynamic payload = messageData;
           if (payload is String) {
@@ -275,13 +330,12 @@ class LiveChatProvider with ChangeNotifier {
               ? msg.id.toString()
               : 'srv_${msg.userId}_${msg.timestamp.millisecondsSinceEpoch}';
 
-          // 4) Cegah echo/duplikat
+          // 4) Cegah echo/duplikat (dari current user)
           if (_currentUserId != null &&
               msg.userId.toString() == _currentUserId.toString()) {
-            // Biasanya sudah tampil via optimistic UI -> skip agar tak dobel
             return;
           }
-          if (_pendingMessageIds.any((id) => messageId.contains(id))) return;
+          // 5) Cegah duplikat berdasarkan ID
           if (_messages.any((m) => m.id == messageId)) return;
 
           final isFromCurrentUser =
@@ -307,7 +361,14 @@ class LiveChatProvider with ChangeNotifier {
         } catch (_) {}
       },
 
-      onSystem: (_) {},
+      onSystem: (sys) {
+        final type = sys['type'];
+        if (type == 'presence_sync_start') {
+          _isInitialPresenceSync = true;
+        } else if (type == 'presence_sync_end') {
+          _isInitialPresenceSync = false;
+        }
+      },
     );
   }
 
@@ -391,7 +452,8 @@ class LiveChatProvider with ChangeNotifier {
   // ==== PRESENCE ====
   Future<void> _subscribePresenceOnce() async {
     if (_presenceSubscribed) return;
-    await _sock.subscribeToPresence(roomId);
+    final rid = _currentRoomId ?? roomId; // <- pakai current room kalau ada
+    await _sock.subscribeToPresence(rid);
     _presenceSubscribed = true;
   }
 
@@ -465,9 +527,9 @@ class LiveChatProvider with ChangeNotifier {
 
         if (uniqueNewMsgs.isNotEmpty) {
           _messages.insertAll(0, uniqueNewMsgs); // older first, prepend
+          _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
           _page++;
         } else {
-          // If we didn't get any new messages, we've probably reached the end
           _hasMore = false;
         }
       }
@@ -527,7 +589,6 @@ class LiveChatProvider with ChangeNotifier {
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     final now = DateTime.now();
 
-    // Add to pending set
     _pendingMessageIds.add(tempId);
 
     // Use the stored avatar if available, otherwise use the one passed in
@@ -551,7 +612,6 @@ class LiveChatProvider with ChangeNotifier {
 
       // Remove the temporary message
       _messages.removeWhere((m) => m.id == tempId);
-      // Check if the confirmed message already exists
       final finalId = sent.id.toString();
       if (_messages.any((m) => m.id == finalId)) {
         _pendingMessageIds.remove(tempId);
@@ -560,28 +620,22 @@ class LiveChatProvider with ChangeNotifier {
         return;
       }
 
-      // Add the confirmed message from server, always use the stored avatar for current user's messages
       _messages.add(
         ChatMessage(
           id: finalId,
-          userId: sent.userId?.toString() ?? _currentUserId?.toString() ?? '',
+          userId: sent.userId.toString(),
           username: sent.name,
           message: sent.message,
           timestamp: sent.timestamp,
-          // Always use the stored avatar for current user's messages
           userAvatar: _currentUserAvatar ?? sent.avatar,
         ),
       );
 
-      // Remove from pending set
       _pendingMessageIds.remove(tempId);
-
-      // Sort messages by timestamp to maintain order
       _messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
       notifyListeners();
     } catch (e) {
-      // rollback optimistic update
       _messages.removeWhere((m) => m.id == tempId);
       _pendingMessageIds.remove(tempId);
       notifyListeners();
@@ -597,7 +651,6 @@ class LiveChatProvider with ChangeNotifier {
     if (diff.inHours < 1) return '${diff.inMinutes} menit lalu';
     if (diff.inDays < 1) return '${diff.inHours} jam lalu';
     return '${diff.inDays} hari lalu';
-    // (opsional: pakai intl untuk format yang lebih bagus)
   }
 
   // ==== LIFECYCLE ====
@@ -619,7 +672,6 @@ class LiveChatProvider with ChangeNotifier {
       await _sock.unsubscribePresence(roomId);
     } catch (_) {}
 
-    // Keep global status subscription and socket connection alive by default
     if (disconnectSocket) {
       try {
         await _sock.unsubscribeStatus();

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:radio_odan_app/screens/home/home_screen.dart';
 import 'chat_screen_wrapper.dart';
 import 'package:radio_odan_app/screens/galeri/galeri_screen.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_drawer.dart';
-import 'package:provider/provider.dart';
 import 'package:radio_odan_app/providers/live_status_provider.dart';
 
 class BottomNav extends StatefulWidget {
   final int initialIndex;
-
   const BottomNav({super.key, this.initialIndex = 0});
 
   @override
@@ -20,30 +19,30 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   late int _currentIndex;
 
+  final List<Widget> _screens = const [
+    HomeScreen(),
+    ArtikelScreen(),
+    GaleriScreen(),
+    SizedBox.shrink(), // placeholder utk tab Chat (biar aman)
+  ];
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
   }
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ArtikelScreen(),
-    const GaleriScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
-    final liveStatus = context.watch<LiveStatusProvider>();
-
     return Scaffold(
-      //Drawer
-      drawer: const AppDrawer(), // ⬅️ panggil widget app_drawer
+      drawer: const AppDrawer(),
       extendBody: true,
       body: Stack(
         children: [
-          // Main Content
-          _screens[_currentIndex],
+          // Guard utk jaga-jaga
+          (_currentIndex < _screens.length)
+              ? _screens[_currentIndex]
+              : _screens[0],
 
           // MiniPlayer with Gradient Background
           Positioned(
@@ -66,8 +65,6 @@ class _BottomNavState extends State<BottomNav> {
           ),
         ],
       ),
-
-      /// BottomNav
       bottomNavigationBar: Theme(
         data: Theme.of(context).copyWith(
           bottomNavigationBarTheme: BottomNavigationBarThemeData(
@@ -101,16 +98,12 @@ class _BottomNavState extends State<BottomNav> {
             currentIndex: _currentIndex,
             onTap: (index) async {
               if (index == 3) {
-                await liveStatus.refresh();
-                await Navigator.of(
-                  context,
-                ).push(ChatScreenWrapper.route(liveStatus.roomId));
-                return;
-              } else {
-                setState(() {
-                  _currentIndex = index;
-                });
+                // opsional: sync status terkini
+                await context.read<LiveStatusProvider>().refresh();
+                await Navigator.of(context).push(ChatScreenWrapper.route());
+                return; // jangan ubah _currentIndex
               }
+              setState(() => _currentIndex = index);
             },
             items: const [
               BottomNavigationBarItem(

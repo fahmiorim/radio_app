@@ -97,7 +97,7 @@ class LiveChatSocketService {
         // GLOBAL dispatcher untuk SEMUA event
         onEvent: (event) {
           try {
-            // ⬇️ Abaikan event internal Pusher agar log tidak berisik
+            // Abaikan event internal Pusher
             if (event.eventName.startsWith('pusher:') ||
                 event.eventName.startsWith('pusher_internal:')) {
               if (event.eventName.contains('subscription_succeeded')) {}
@@ -147,7 +147,7 @@ class LiveChatSocketService {
               return;
             }
 
-            // 5) LikeUpdated → hanya handler global (hindari double-dispatch)
+            // 5) LikeUpdated
             if (event.eventName == 'LikeUpdated' ||
                 event.eventName.endsWith('LikeUpdated') ||
                 event.eventName == 'like-updated' ||
@@ -158,14 +158,12 @@ class LiveChatSocketService {
               int? roomId;
               int? likeCount;
 
-              // Room ID: paling tepercaya dari nama channel like-room-{id}
               if (channelName.startsWith('like-room-')) {
                 roomId = int.tryParse(
                   channelName.replaceFirst('like-room-', ''),
                 );
               }
 
-              // Jika payload menyertakan channel / roomId
               roomId ??= (data['channel'] != null)
                   ? _toInt(
                       data['channel'].toString().replaceAll('like-room-', ''),
@@ -178,7 +176,6 @@ class LiveChatSocketService {
                 roomId = _toInt(data['data']['roomId']);
               }
 
-              // likeCount: dukung camelCase & snake_case & data nested
               likeCount = _toInt(
                 data['likeCount'] ??
                     (data['data'] is Map
@@ -194,7 +191,6 @@ class LiveChatSocketService {
               if (roomId != null) {
                 _handleLikeUpdate(roomId, likeCount);
               } else {
-                // fallback: coba ambil dari nama channel jika memungkinkan
                 if (channelName.startsWith('like-room-')) {
                   final fallbackRoomId = int.tryParse(
                     channelName.replaceFirst('like-room-', ''),
@@ -217,7 +213,6 @@ class LiveChatSocketService {
           } catch (_) {}
         },
 
-        // decrypt error (jika pakai encrypted/private-encrypted)
         onDecryptionFailure: (String event, String reason) {
           _onSystem?.call({
             'type': 'decryption_error',
@@ -347,22 +342,33 @@ class LiveChatSocketService {
 
       final originalOnSubscriptionSucceeded = _pusher.onSubscriptionSucceeded;
       _pusher.onSubscriptionSucceeded = (channel, data) async {
-        if (channel == channelName && data is Map) {
-          final presenceData = _asMap(data['presence']);
-          final hash = _asMap(presenceData['hash']);
-          final users = hash.entries.map((entry) {
-            final userId = _intOrString(entry.key);
-            final user = _asMap(entry.value);
-            return {'userId': userId, 'userInfo': user};
-          }).toList();
+        try {
+          if (channel == channelName && data is Map) {
+            _onSystem?.call({
+              'type': 'presence_sync_start',
+              'channel': channel,
+            });
 
-          // Kirim data user yang sedang online ke provider
-          // Provider yang akan menangani notifikasi
-          for (final u in users) {
-            _onUserJoined?.call(channelName, u);
+            final presenceData = _asMap(data['presence']);
+            final hash = _asMap(presenceData['hash']);
+            final users = hash.entries.map((entry) {
+              final userId = _intOrString(entry.key);
+              final user = _asMap(entry.value);
+              return {'userId': userId, 'userInfo': user};
+            }).toList();
+
+            for (final u in users) {
+              _onUserJoined?.call(channelName, u);
+            }
+
+            _onSystem?.call({'type': 'presence_sync_end', 'channel': channel});
           }
+        } finally {
+          // teruskan ke handler global (jika ada)
+          originalOnSubscriptionSucceeded?.call(channel, data);
+          // pulihkan handler agar tidak mengubah channel lain
+          _pusher.onSubscriptionSucceeded = originalOnSubscriptionSucceeded;
         }
-        originalOnSubscriptionSucceeded?.call(channel, data);
       };
 
       await _pusher.subscribe(channelName: channelName);
@@ -382,7 +388,6 @@ class LiveChatSocketService {
         channelName: channelName,
         onEvent: (event) {
           try {
-            // Filter internal pusher event di sini juga
             if (event.eventName.startsWith('pusher:') ||
                 event.eventName.startsWith('pusher_internal:')) {
               return;
@@ -431,6 +436,27 @@ class LiveChatSocketService {
     }
   }
 
+  Future<void> unsubscribePresence(int roomId) async {
+    final channelName = 'presence-chat.room.$roomId';
+    await _pusher.unsubscribe(channelName: channelName);
+    _presenceChannels.remove(channelName);
+  }
+
+  Future<void> unsubscribePublic(int roomId) async {
+    final channelName = 'chat.room.$roomId';
+    await _pusher.unsubscribe(channelName: channelName);
+    _subscribedChannels.remove(channelName);
+  }
+
+  Future<void> unsubscribeStatus() async {
+    const channelName = 'live-room-status';
+    if (_subscribedChannels[channelName] != true) return;
+    await _pusher.unsubscribe(channelName: channelName);
+    _subscribedChannels.remove(channelName);
+  }
+
+  // ==== Like rooms (opsional jika kamu pakai) ====
+
   Future<void> subscribeLike({
     required int roomId,
     required void Function(int likeCount) onUpdated,
@@ -463,25 +489,6 @@ class LiveChatSocketService {
     }
   }
 
-  Future<void> unsubscribePresence(int roomId) async {
-    final channelName = 'presence-chat.room.$roomId';
-    await _pusher.unsubscribe(channelName: channelName);
-    _presenceChannels.remove(channelName);
-  }
-
-  Future<void> unsubscribePublic(int roomId) async {
-    final channelName = 'chat.room.$roomId';
-    await _pusher.unsubscribe(channelName: channelName);
-    _subscribedChannels.remove(channelName);
-  }
-
-  Future<void> unsubscribeStatus() async {
-    const channelName = 'live-room-status';
-    if (_subscribedChannels[channelName] != true) return;
-    await _pusher.unsubscribe(channelName: channelName);
-    _subscribedChannels.remove(channelName);
-  }
-
   // ==== Utilities ====
 
   // Dispatch like update ke callback yang terdaftar
@@ -491,7 +498,6 @@ class LiveChatSocketService {
       cb(count);
       return;
     }
-    // fallback pencocokan string
     final match = _likeUpdateCallbacks.keys.firstWhere(
       (id) => id.toString() == roomId.toString(),
       orElse: () => -1,

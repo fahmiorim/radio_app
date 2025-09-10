@@ -50,21 +50,21 @@ class _RadioAppState extends State<RadioApp> with WidgetsBindingObserver {
 
     // Subscribe to global live status updates
     await LiveChatSocketService.I.subscribeToStatus();
-    
+
     // Initialize deep link handler
     _deepLinkHandler = DeepLinkHandler();
     _deepLinkHandler.registerHandler(
       _deepLinkHandler.handleDeepLink,
       navigatorKey,
     );
-    
+
     // Initialize date formatting
     initializeDateFormatting('id_ID', null);
-    
+
     // Initialize deep links after a short delay to ensure context is ready
     await Future.delayed(const Duration(milliseconds: 100));
     await _deepLinkHandler.init();
-    
+
     // Check for initial deep link
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

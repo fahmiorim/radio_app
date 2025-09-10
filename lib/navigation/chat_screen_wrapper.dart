@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/providers/live_chat_provider.dart';
+import 'package:radio_odan_app/providers/live_status_provider.dart';
 import 'package:radio_odan_app/screens/chat/chat_screen.dart';
 import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
-import 'package:radio_odan_app/providers/live_status_provider.dart';
 
 class ChatScreenWrapper extends StatefulWidget {
   final int? roomId;
   const ChatScreenWrapper({Key? key, this.roomId}) : super(key: key);
 
-  // route KEMBALIKAN nilai bila ingin pop dengan result
-  static Route<String?> route([int? roomId]) => MaterialPageRoute<String?> (
-        builder: (_) => ChatScreenWrapper(roomId: roomId),
-      );
+  static Route<String?> route([int? roomId]) => MaterialPageRoute<String?>(
+    builder: (_) => ChatScreenWrapper(roomId: roomId),
+  );
 
   @override
   State<ChatScreenWrapper> createState() => _ChatScreenWrapperState();
@@ -22,82 +21,82 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
   LiveChatProvider? _provider;
   bool _isInitialized = false;
   bool _hasError = false;
-  late final LiveStatusProvider _statusProvider;
+  bool _initInProgress = false;
 
   @override
   void initState() {
     super.initState();
-    _statusProvider = Provider.of<LiveStatusProvider>(context, listen: false);
-    _statusProvider.addListener(_handleStatusChange);
-    _handleStatusChange(initial: true);
-    _statusProvider.refresh();
+    // minta status awal sekali
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<LiveStatusProvider>().refresh();
+    });
   }
 
-  void _handleStatusChange({bool initial = false}) {
-    final isLive = _statusProvider.isLive;
-    final roomId = _statusProvider.roomId;
-
-    if (!isLive || roomId == null) {
-      _provider?.shutdown();
-      _provider = null;
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-          _hasError = false;
-        });
-      }
+  Future<void> _ensureProviderForRoom(int roomId) async {
+    if (_provider != null && _provider!.roomId == roomId && _isInitialized)
       return;
-    }
-
-    if (_provider == null || _provider!.roomId != roomId) {
-      _provider?.shutdown();
-      _provider = LiveChatProvider(roomId: roomId);
-      _isInitialized = false;
-      _hasError = false;
-      if (initial) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _initializeProvider();
-        });
-      } else {
-        _initializeProvider();
-      }
-    }
-  }
-
-  Future<void> _initializeProvider() async {
-    if (!mounted || _provider == null) return;
+    if (_initInProgress) return;
+    _initInProgress = true;
 
     try {
-      await _provider!.init();
-      if (!mounted) return;
+      await _provider?.shutdown();
+    } catch (_) {}
 
+    final prov = LiveChatProvider(roomId: roomId);
+    setState(() {
+      _provider = prov;
+      _isInitialized = false;
+      _hasError = false;
+    });
+
+    try {
+      await prov.init();
+      if (!mounted) return;
       setState(() {
         _isInitialized = true;
         _hasError = false;
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
-
       setState(() => _hasError = true);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal memuat obrolan')),
-        );
-      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal memuat obrolan')));
+    } finally {
+      _initInProgress = false;
     }
+  }
+
+  Future<void> _teardownProviderIfAny() async {
+    try {
+      await _provider?.shutdown();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _provider = null;
+      _isInitialized = true;
+      _hasError = false;
+    });
   }
 
   @override
   void dispose() {
-    _statusProvider.removeListener(_handleStatusChange);
-    _provider?.shutdown();
+    _provider?.shutdown(); // fire-and-forget
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_statusProvider.isLive || _statusProvider.roomId == null) {
+    final isLive = context.select<LiveStatusProvider, bool>((p) => p.isLive);
+    final roomId = context.select<LiveStatusProvider, int?>((p) => p.roomId);
+
+    if (!isLive || roomId == null) {
+      if (_provider != null) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _teardownProviderIfAny(),
+        );
+      }
       return Scaffold(
         appBar: AppBar(
           title: const Text('Live Chat'),
@@ -105,6 +104,13 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
         ),
         body: const NoLivePlaceholder(),
       );
+    }
+
+    if (_provider == null || _provider!.roomId != roomId || !_isInitialized) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _ensureProviderForRoom(roomId),
+      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_hasError) {
@@ -122,17 +128,9 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
       );
     }
 
-    if (!_isInitialized || _provider == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
     return ChangeNotifierProvider.value(
       value: _provider!,
-      child: LiveChatScreen(roomId: _statusProvider.roomId!),
+      child: LiveChatScreen(roomId: roomId),
     );
   }
 }

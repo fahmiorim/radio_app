@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/providers/live_chat_provider.dart';
@@ -20,6 +22,7 @@ class LiveChatScreen extends StatefulWidget {
 }
 
 class _LiveChatScreenState extends State<LiveChatScreen> {
+  bool _isLive = false;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -226,10 +229,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         builder: (context, prov, _) {
           if (prov.isLoading) {
             return Scaffold(
-              appBar: CustomAppBar.dark(
-                title: 'Live Chat',
-                context: context,
-              ),
+              appBar: CustomAppBar.dark(title: 'Live Chat', context: context),
               body: const Center(child: CircularProgressIndicator()),
             );
           }
@@ -257,6 +257,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () async {
+                  final prov = context.read<LiveChatProvider>();
                   await prov.leaveRoom();
                   await prov.shutdown();
                   if (!mounted) return;
@@ -273,9 +274,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             body: Stack(
               children: [
                 const AppBackground(),
-                // The LiveChatScreen should only be shown when isLive is true
-                // This is now handled by the ChatScreenWrapper
-                // So we can safely assume we're live if we get here
                 ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.only(
@@ -359,34 +357,45 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   }
 
   void _onLiveStatusChanged() {
-    final prov = context.read<LiveChatProvider>();
+    if (_isDisposed || !mounted) return;
 
-    if (prov.isLive) {
-      // If we just went live, scroll to bottom to show latest messages
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+    try {
+      final prov = context.read<LiveChatProvider>();
+      if (_isDisposed || !mounted) return;
+
+      if (prov.isLive && !_isLive) {
+        _isLive = true;
         _scrollToBottom();
-      });
-    }
+      } else if (!prov.isLive && _isLive) {
+        _isLive = false;
+      }
 
-    if (mounted) {
-      setState(() {
-        // Trigger a rebuild when live status changes
-      });
+      if (!_isDisposed && mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in _onLiveStatusChanged: $e');
+      }
     }
   }
 
+  bool _isDisposed = false;
+
   @override
   void dispose() {
+    _isDisposed = true;
+    _scrollTimer?.cancel();
     _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
     _messageController.dispose();
-    _scrollTimer?.cancel();
 
-    // Remove the status change listener
     try {
-      final prov = context.read<LiveChatProvider>();
-      prov.removeListener(_onLiveStatusChanged);
-    } catch (_) {}
+      if (context.mounted) {
+        final prov = context.read<LiveChatProvider>();
+        prov.removeListener(_onLiveStatusChanged);
+      }
+    } catch (e) {}
 
     super.dispose();
   }
