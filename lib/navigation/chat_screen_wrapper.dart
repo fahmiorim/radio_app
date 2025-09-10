@@ -30,6 +30,7 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
     _statusProvider = Provider.of<LiveStatusProvider>(context, listen: false);
     _statusProvider.addListener(_handleStatusChange);
     _handleStatusChange(initial: true);
+    _statusProvider.refresh();
   }
 
   void _handleStatusChange({bool initial = false}) {

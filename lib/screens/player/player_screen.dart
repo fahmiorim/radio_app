@@ -87,6 +87,7 @@ class _FullPlayerState extends State<FullPlayer> {
     _statusProvider = Provider.of<LiveStatusProvider>(context, listen: false);
     _statusProvider.addListener(_handleStatusChange);
     _handleStatusChange();
+    _statusProvider.refresh();
   }
 
   // ====== Helpers UI ======
