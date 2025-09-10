@@ -6,7 +6,7 @@ import 'package:radio_odan_app/config/app_routes.dart';
 typedef DeepLinkCallback = void Function(Uri uri);
 
 class DeepLinkHandler {
-  StreamSubscription? _sub;
+  StreamSubscription<Uri?>? _sub;
   DeepLinkCallback? _onDeepLink;
   GlobalKey<NavigatorState>? _navigatorKey;
   final AppLinks _appLinks = AppLinks();
