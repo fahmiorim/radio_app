@@ -1,7 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 String _readEnv(String key) {
-  final defined = const String.fromEnvironment(key);
+  final defined = String.fromEnvironment(key);
   if (defined.isNotEmpty) return defined;
   final value = dotenv.maybeGet(key);
   if (value == null || value.isEmpty) {
