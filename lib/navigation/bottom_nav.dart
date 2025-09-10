@@ -3,9 +3,10 @@ import 'package:radio_odan_app/screens/home/home_screen.dart';
 import 'chat_screen_wrapper.dart';
 import 'package:radio_odan_app/screens/galeri/galeri_screen.dart';
 import 'package:radio_odan_app/screens/artikel/artikel_screen.dart';
-import 'package:radio_odan_app/services/live_chat_service.dart';
 import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_drawer.dart';
+import 'package:provider/provider.dart';
+import 'package:radio_odan_app/providers/live_status_provider.dart';
 
 class BottomNav extends StatefulWidget {
   final int initialIndex;
@@ -19,30 +20,10 @@ class BottomNav extends StatefulWidget {
 class _BottomNavState extends State<BottomNav> {
   late int _currentIndex;
 
-  int? _roomId;
-  bool _isLoadingRoom = true;
-
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
-    _fetchLiveStatus();
-  }
-
-  Future<void> _fetchLiveStatus() async {
-    try {
-      final status = await LiveChatService.I.fetchGlobalStatus();
-      if (mounted) {
-        setState(() {
-          _roomId = status.roomId;
-          _isLoadingRoom = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingRoom = false);
-      }
-    }
   }
 
   final List<Widget> _screens = [
@@ -53,6 +34,8 @@ class _BottomNavState extends State<BottomNav> {
 
   @override
   Widget build(BuildContext context) {
+    final liveStatus = context.watch<LiveStatusProvider>();
+
     return Scaffold(
       //Drawer
       drawer: const AppDrawer(), // ⬅️ panggil widget app_drawer
@@ -118,20 +101,9 @@ class _BottomNavState extends State<BottomNav> {
             currentIndex: _currentIndex,
             onTap: (index) async {
               if (index == 3) {
-                if (_isLoadingRoom) {
-                  // Tampilkan loading indicator jika masih memuat
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Memuat ruang chat...')),
-                  );
-                  return;
-                }
-
-                // Navigate to chat screen even if there's no active broadcast
-                // The ChatScreenWrapper will handle showing the no-live placeholder
                 await Navigator.of(
                   context,
-                ).push(ChatScreenWrapper.route(_roomId));
+                ).push(ChatScreenWrapper.route(liveStatus.roomId));
                 return;
               } else {
                 setState(() {
