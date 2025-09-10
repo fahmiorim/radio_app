@@ -39,14 +39,18 @@ class AudioPlayerManager {
         ),
       );
 
-      await _player.setAudioSource(
-        AudioSource.uri(Uri.parse('')),
-        preload: false,
-      );
+      await _resetAudioSource();
     } catch (e) {
       log('Error setting up audio session: $e');
       rethrow;
     }
+  }
+
+  Future<void> _resetAudioSource() async {
+    await _player.setAudioSource(
+      AudioSource.uri(Uri.parse('')),
+      preload: false,
+    );
   }
 
   AudioPlayer get player => _player;
@@ -80,10 +84,7 @@ class AudioPlayerManager {
       );
 
       try {
-        await _player.setAudioSource(
-          AudioSource.uri(Uri.parse('')),
-          preload: false,
-        );
+        await _resetAudioSource();
 
         await _player.setAudioSource(
           audioSource,
@@ -137,15 +138,7 @@ class AudioPlayerManager {
       }
 
       await _player.pause();
-
-      await _player.setAudioSource(
-        AudioSource.uri(Uri.parse('')),
-        preload: false,
-      );
-      await _player.setAudioSource(
-        AudioSource.uri(Uri.parse('')),
-        preload: false,
-      );
+      await _resetAudioSource();
 
       await _player.stop();
 
