@@ -347,12 +347,8 @@ class LiveChatSocketService {
             return {'userId': userId, 'userInfo': user};
           }).toList();
 
-          _onSystem?.call({
-            'type': 'system',
-            'message': '🎉 Anda telah bergabung ke siaran',
-            'timestamp': DateTime.now().toIso8601String(),
-          });
-
+          // Kirim data user yang sedang online ke provider
+          // Provider yang akan menangani notifikasi
           for (final u in users) {
             _onUserJoined?.call(channelName, u);
           }

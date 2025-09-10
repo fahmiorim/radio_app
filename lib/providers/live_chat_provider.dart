@@ -61,6 +61,7 @@ class LiveChatProvider with ChangeNotifier {
   int? _listenerId;
 
   bool _isInitialized = false;
+  bool _isInitialPresenceSync = false;
   bool get isInitialized => _isInitialized;
 
   // ==== INIT ====
@@ -102,18 +103,14 @@ class LiveChatProvider with ChangeNotifier {
   }
 
   // === Realtime callbacks wiring ===
-  bool _initialPresenceSync = false;
-  
   void _wireRealtimeCallbacks() {
     _sock.setCallbacks(
       onStatusUpdate: (data) {
         // event: LiveRoomStatusUpdated
         final isLive = data['is_live'] == true || data['status'] == 'started';
-        final statusChanged = isLive != _isLive;
-        
-        if (statusChanged) {
+
+        if (isLive != _isLive) {
           _isLive = isLive;
-          _initialPresenceSync = false; // Reset presence sync flag when status changes
         }
 
         if (!_isLive) {
@@ -141,29 +138,38 @@ class LiveChatProvider with ChangeNotifier {
           final id = (user['userId'] ?? '').toString();
           if (id.isEmpty || id == '0') return;
 
-          // Extract username with fallback to 'Pengguna' if not found or invalid
-          String username =
-              (user['userInfo']?['name'] ??
-                      user['userInfo']?['username'] ??
-                      'Pengguna ${id.substring(0, 4)}')
-                  .toString()
-                  .trim();
+          // Extract username
+          String username = 'Pengguna';
+          final userInfo = user['userInfo'] as Map<String, dynamic>?;
 
-          // Skip if username is empty or contains only whitespace
-          if (username.isEmpty) {
-            return;
+          if (userInfo != null) {
+            if (userInfo['name'] != null &&
+                userInfo['name'].toString().trim().isNotEmpty) {
+              username = userInfo['name'].toString().trim();
+            } else if (userInfo['username'] != null &&
+                userInfo['username'].toString().trim().isNotEmpty) {
+              username = userInfo['username'].toString().trim();
+            }
           }
 
-          // Check if user already exists in the online users list
-          final existingUserIndex = _onlineUsers.indexWhere((x) => x.id == id);
-          final userExists = existingUserIndex != -1;
-          
-          // Only process join notification after initial presence sync
-          if (_initialPresenceSync) {
-            // Only show join notification if this is a new user joining
-            if (!userExists) {
-              final isCurrentUser =
-                  _currentUserId != null && id == _currentUserId.toString();
+          final isCurrentUser =
+              _currentUserId != null && id == _currentUserId.toString();
+          final isExistingUser = _onlineUsers.any((x) => x.id == id);
+
+          if (!isExistingUser) {
+            // Add to online users
+            _onlineUsers.add(
+              OnlineUser(
+                id: id,
+                username: username,
+                userAvatar:
+                    (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])
+                        ?.toString(),
+                joinTime: DateTime.now(),
+              ),
+            );
+
+            if (isCurrentUser || !_isInitialPresenceSync) {
               final message = isCurrentUser
                   ? '🎉 Anda telah bergabung ke siaran'
                   : '🎉 $username bergabung ke siaran';
@@ -179,32 +185,9 @@ class LiveChatProvider with ChangeNotifier {
                   isJoinNotification: true,
                 ),
               );
+
+              notifyListeners();
             }
-          }
-          
-          // Update or add user to online list
-          if (userExists) {
-            // Update existing user info if needed
-            final existing = _onlineUsers[existingUserIndex];
-            _onlineUsers[existingUserIndex] = OnlineUser(
-              id: id,
-              username: username,
-              userAvatar: (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])?.toString() ?? existing.userAvatar,
-              joinTime: existing.joinTime,
-            );
-          } else {
-            _onlineUsers.add(
-              OnlineUser(
-                id: id,
-                username: username,
-                userAvatar: (user['userInfo']?['avatar'] ?? user['userInfo']?['photo'])?.toString(),
-                joinTime: DateTime.now(),
-              ),
-            );
-          }
-          
-          if (_initialPresenceSync) {
-            notifyListeners();
           }
         } catch (_) {}
       },
@@ -335,69 +318,53 @@ class LiveChatProvider with ChangeNotifier {
       _isLive = status.isLive;
       _currentRoomId = status.roomId;
 
-      if (statusChanged) {
-        _initialPresenceSync = false; // Reset presence sync flag when status changes
-      }
+      if (statusChanged) {}
 
       // Get online users list if live
       if (_isLive) {
         try {
           final onlineUsers = await _http.getOnlineUsers(roomId);
-          
-          // Store existing user IDs to track who was removed
-          final existingUserIds = _onlineUsers.map((u) => u.id).toSet();
-          final newUserIds = <String>{};
 
-          // Update or add users
-          for (final user in onlineUsers) {
-            if (user['id'] == null ||
-                user['id'].toString().isEmpty ||
-                user['id'].toString() == '0') {
-              continue;
-            }
+          _onlineUsers.clear();
+          _onlineUsers.addAll(
+            onlineUsers
+                .where(
+                  (u) =>
+                      u['id'] != null &&
+                      u['id'].toString().isNotEmpty &&
+                      u['id'].toString() != '0',
+                )
+                .map((user) {
+                  final rawAvatar = user['avatar']?.toString().trim();
+                  String? avatarUrl;
+                  if (rawAvatar != null && rawAvatar.isNotEmpty) {
+                    if (rawAvatar.startsWith('http')) {
+                      avatarUrl = rawAvatar;
+                    } else {
+                      var base = AppApiConfig.assetBaseUrl;
+                      if (base.endsWith('/')) {
+                        base = base.substring(0, base.length - 1);
+                      }
+                      var path = rawAvatar.startsWith('/')
+                          ? rawAvatar.substring(1)
+                          : rawAvatar;
+                      avatarUrl = '$base/$path';
+                    }
+                  }
 
-            final id = user['id'].toString();
-            newUserIds.add(id);
-            
-            final existingIndex = _onlineUsers.indexWhere((u) => u.id == id);
-            final username = (user['name']?.toString() ??
-                            user['username']?.toString() ??
-                            'Pengguna ${id.length > 4 ? id.substring(0, 4) : id}')
-                        .toString()
-                        .trim();
-            final avatarUrl = user['avatar']?.toString() ??
-                            user['photo']?.toString();
-
-            if (existingIndex != -1) {
-              // Update existing user
-              final existing = _onlineUsers[existingIndex];
-              _onlineUsers[existingIndex] = OnlineUser(
-                id: id,
-                username: username,
-                userAvatar: avatarUrl ?? existing.userAvatar,
-                joinTime: existing.joinTime, // Preserve original join time
-              );
-            } else {
-              // Add new user (but don't show join notification yet)
-              _onlineUsers.add(
-                OnlineUser(
-                  id: id,
-                  username: username,
-                  userAvatar: avatarUrl,
-                  joinTime: DateTime.now(),
-                ),
-              );
-            }
-          }
-          
-          // Mark presence as synced after first successful refresh
-          if (!_initialPresenceSync) {
-            _initialPresenceSync = true;
-          }
-          
-          // Remove users that are no longer online
-          _onlineUsers.removeWhere((user) => !newUserIds.contains(user.id));
-          
+                  return OnlineUser(
+                    id: user['id']?.toString() ?? '',
+                    username:
+                        (user['name'] ??
+                                user['username'] ??
+                                'Pengguna ${user['id']?.toString().substring(0, 4) ?? ''}')
+                            .toString()
+                            .trim(),
+                    userAvatar: avatarUrl,
+                    joinTime: DateTime.now(),
+                  );
+                }),
+          );
         } catch (_) {}
 
         await _subscribePublicOnce();
@@ -405,7 +372,6 @@ class LiveChatProvider with ChangeNotifier {
       } else {
         _messages.clear();
         _onlineUsers.clear();
-        _initialPresenceSync = false;
       }
     } catch (e) {
       _isLive = false;
