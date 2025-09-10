@@ -1,28 +1,32 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class PusherConfig {
-  static String get appKey {
-    final key = dotenv.maybeGet('PUSHER_APP_KEY')?.trim();
-    if (key == null || key.isEmpty) {
-      throw Exception('PUSHER_APP_KEY tidak ditemukan di .env');
-    }
-    return key;
+String _readEnv(String key) {
+  final defined = const String.fromEnvironment(key);
+  if (defined.isNotEmpty) return defined.trim();
+  final value = dotenv.maybeGet(key)?.trim();
+  if (value == null || value.isEmpty) {
+    throw Exception('$key tidak ditemukan di konfigurasi');
   }
+  return value;
+}
 
-  static String get cluster {
-    final cluster = dotenv.maybeGet('PUSHER_CLUSTER')?.trim();
-    if (cluster == null || cluster.isEmpty) {
-      throw Exception('PUSHER_CLUSTER tidak ditemukan di .env');
-    }
-    return cluster;
-  }
+class PusherConfig {
+  static String get appKey => _readEnv('PUSHER_APP_KEY');
+
+  static String get cluster => _readEnv('PUSHER_CLUSTER');
 
   static String get authEndpoint {
-    final raw = (dotenv.maybeGet('PUSHER_AUTH_ENDPOINT') ?? '').trim();
+    final raw = _readOptional('PUSHER_AUTH_ENDPOINT');
     if (raw.isEmpty) {
       return 'https://odanfm.batubarakab.go.id/api/broadcasting/auth';
     }
     if (raw.startsWith('http')) return raw;
     return 'https://odanfm.batubarakab.go.id${raw.startsWith('/') ? raw : '/$raw'}';
   }
+}
+
+String _readOptional(String key) {
+  final defined = const String.fromEnvironment(key);
+  if (defined.isNotEmpty) return defined.trim();
+  return dotenv.maybeGet(key)?.trim() ?? '';
 }
