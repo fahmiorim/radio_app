@@ -101,6 +101,7 @@ class PhotoModel {
   final int? order;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? _directUrl;
 
   PhotoModel({
     required this.id,
@@ -109,9 +110,16 @@ class PhotoModel {
     this.order,
     this.createdAt,
     this.updatedAt,
-  });
+    String? directUrl,
+  }) : _directUrl = directUrl;
 
   String get url {
+    // If we have a direct URL from the API, use it
+    if (_directUrl?.isNotEmpty == true) {
+      return _directUrl!;
+    }
+
+    // Fallback to the image field
     if (image.isEmpty) {
       return '';
     }
@@ -130,10 +138,13 @@ class PhotoModel {
     DateTime? asDate(dynamic v) =>
         (v == null) ? null : DateTime.tryParse(v.toString());
 
-    // Ensure we get the image URL correctly
-    String? imageUrl = (json['image'] as String?)?.trim();
+    // Get the image URL from either 'image' or 'gambar' field
+    String? imageUrl = (json['image'] as String?)?.trim() ?? 
+                      (json['gambar'] as String?)?.trim();
+    
+    // Get direct URL if available
+    final directUrl = (json['url'] as String?)?.trim();
 
-    // Always use the imageUrl as is, and let the url getter handle the URL construction
     return PhotoModel(
       id: asInt(json['id']),
       albumId: asInt(json['album_id']),
@@ -143,6 +154,7 @@ class PhotoModel {
           : int.tryParse('${json['order']}'),
       createdAt: asDate(json['created_at']),
       updatedAt: asDate(json['updated_at']),
+      directUrl: directUrl,
     );
   }
 }
@@ -170,13 +182,16 @@ class AlbumDetailModel {
           ? Map<String, dynamic>.from(data['album'])
           : data;
 
-      // Handle photos array
+      // Handle photos array or string
       List<PhotoModel> photos = [];
       if (data['photos'] is List) {
         photos = (data['photos'] as List)
             .whereType<Map>()
             .map((e) => PhotoModel.fromJson(Map<String, dynamic>.from(e)))
             .toList();
+      } else if (data['photos'] is String) {
+        // Handle case when photos is a string like "Tidak ada foto"
+        photos = [];
       }
 
       final album = AlbumModel.fromJson(albumData);

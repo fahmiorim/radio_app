@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -320,29 +321,7 @@ class _FullPlayerState extends State<FullPlayer> {
     final artist = _clean(nowPlaying?.artist);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Now Playing',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.surface,
-        foregroundColor: theme.colorScheme.onSurface,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            size: 20,
-            color: theme.colorScheme.onSurface,
-          ),
-          onPressed: () {
-            if (mounted) Navigator.pop(context);
-          },
-        ),
-      ),
+      appBar: const CustomAppBar(title: 'Now Playing'),
       body: Stack(
         children: [
           const AppBackground(),

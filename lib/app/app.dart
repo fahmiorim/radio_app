@@ -113,6 +113,8 @@ class _RadioAppState extends State<RadioApp> {
   }
 }
 
+bool _isAudioInitialized = false;
+
 Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -131,11 +133,22 @@ Future<void> initializeApp() async {
   // Initialize API client with base URL from environment
   await ApiClient.I.ensureInterceptors();
 
-  // Initialize audio service
-  await JustAudioBackground.init(
-    androidNotificationChannelId: 'com.odanfm.radio.channel.audio',
-    androidNotificationChannelName: 'Odan FM Audio Playback',
-    androidNotificationOngoing: true,
-    androidStopForegroundOnPause: true,
-  );
+  // Initialize audio service only once
+  if (!_isAudioInitialized) {
+    try {
+      await JustAudioBackground.init(
+        androidNotificationChannelId: 'com.odanfm.radio.channel.audio',
+        androidNotificationChannelName: 'Odan FM Audio Playback',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+      );
+      _isAudioInitialized = true;
+    } catch (e) {
+      // If already initialized, just continue
+      if (!e.toString().contains('already initialized')) {
+        rethrow; // Re-throw if it's a different error
+      }
+      _isAudioInitialized = true;
+    }
+  }
 }
