@@ -18,7 +18,7 @@ class LiveStatusProvider with ChangeNotifier {
   }
 
   void _init() {
-    _fetchInitialStatus();
+    refresh();
     _socket.statusStream.listen((data) {
       final started = data['status'] == 'started' || data['is_live'] == true;
       final rid = data['room_id'] ?? data['roomId'];
@@ -28,7 +28,7 @@ class LiveStatusProvider with ChangeNotifier {
     });
   }
 
-  Future<void> _fetchInitialStatus() async {
+  Future<void> refresh() async {
     try {
       final status = await _http.fetchGlobalStatus();
       _isLive = status.isLive;

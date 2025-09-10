@@ -85,6 +85,8 @@ class _RadioAppState extends State<RadioApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.detached) {
       AudioPlayerManager.instance.stop();
+    } else if (state == AppLifecycleState.resumed) {
+      Provider.of<LiveStatusProvider>(context, listen: false).refresh();
     }
   }
 

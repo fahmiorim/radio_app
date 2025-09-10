@@ -101,6 +101,7 @@ class _BottomNavState extends State<BottomNav> {
             currentIndex: _currentIndex,
             onTap: (index) async {
               if (index == 3) {
+                await liveStatus.refresh();
                 await Navigator.of(
                   context,
                 ).push(ChatScreenWrapper.route(liveStatus.roomId));
