@@ -21,7 +21,7 @@ class LiveStatusProvider with ChangeNotifier {
     refresh();
     _socket.statusStream.listen((data) {
       final started = data['status'] == 'started' || data['is_live'] == true;
-      final rid = data['room_id'] ?? data['roomId'];
+      final rid = data['room_id'] ?? data['roomId'] ?? data['liveRoomId'];
       _isLive = started;
       _roomId = started ? _parseInt(rid) : null;
       notifyListeners();
