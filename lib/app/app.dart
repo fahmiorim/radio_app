@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -127,8 +128,10 @@ Future<void> initializeApp() async {
   // This will suppress the locale warnings
   await Firebase.app().setAutomaticDataCollectionEnabled(true);
 
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
+  // Load local environment variables only for non-release builds
+  if (!kReleaseMode) {
+    await dotenv.load(fileName: ".env");
+  }
 
   // Initialize API client with base URL from environment
   await ApiClient.I.ensureInterceptors();

@@ -76,7 +76,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - .env
 
 # Configure app launcher icon
 flutter_icons:

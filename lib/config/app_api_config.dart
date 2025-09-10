@@ -1,19 +1,17 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class AppApiConfig {
-  static String get apiBaseUrl {
-    final url = dotenv.maybeGet('API_BASE_URL');
-    if (url == null || url.isEmpty) {
-      throw Exception("API_BASE_URL tidak ditemukan di .env");
-    }
-    return url;
+String _readEnv(String key) {
+  final defined = const String.fromEnvironment(key);
+  if (defined.isNotEmpty) return defined;
+  final value = dotenv.maybeGet(key);
+  if (value == null || value.isEmpty) {
+    throw Exception("$key tidak ditemukan di konfigurasi");
   }
+  return value;
+}
 
-  static String get assetBaseUrl {
-    final url = dotenv.maybeGet('ASSET_BASE_URL');
-    if (url == null || url.isEmpty) {
-      throw Exception("ASSET_BASE_URL tidak ditemukan di .env");
-    }
-    return url;
-  }
+class AppApiConfig {
+  static String get apiBaseUrl => _readEnv('API_BASE_URL');
+
+  static String get assetBaseUrl => _readEnv('ASSET_BASE_URL');
 }
