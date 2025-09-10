@@ -9,7 +9,7 @@ import '../models/radio_station.dart';
 class AudioPlayerManager {
   static final AudioPlayerManager _instance = AudioPlayerManager._internal();
   static AudioPlayerManager get instance => _instance;
-  
+
   final AudioPlayer _player = AudioPlayer();
   // Track current playing station and URL
   RadioStation? _currentStation;
@@ -57,7 +57,7 @@ class AudioPlayerManager {
   /// Play a radio station
   Future<void> playRadio(RadioStation station) async {
     final url = station.streamUrl;
-    
+
     // Don't reinitialize if it's the same station and URL
     if (_currentStation?.id == station.id && _currentUrl == url) {
       if (_player.playing != true) {
