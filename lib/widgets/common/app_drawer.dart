@@ -3,10 +3,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 import 'package:radio_odan_app/models/user_model.dart';
+import 'package:radio_odan_app/providers/auth_provider.dart';
 import 'package:radio_odan_app/providers/user_provider.dart';
 import 'package:radio_odan_app/providers/theme_provider.dart';
 import 'package:radio_odan_app/config/app_routes.dart';
-import 'package:radio_odan_app/services/user_service.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -159,7 +159,9 @@ class AppDrawer extends StatelessWidget {
                                   title: "Logout",
                                   iconColor: colorScheme.error,
                                   onTap: () async {
-                                    await UserService.logout();
+                                    await context
+                                        .read<AuthProvider>()
+                                        .logout();
                                     if (context.mounted) {
                                       Navigator.pushNamedAndRemoveUntil(
                                         context,
