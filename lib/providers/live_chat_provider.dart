@@ -122,8 +122,13 @@ class LiveChatProvider with ChangeNotifier {
         }
 
         // update roomId jika dikirim
-        final rid = data['roomId'] ?? data['room_id'];
-        if (rid is int) _currentRoomId = rid;
+        final rid =
+            data['roomId'] ?? data['room_id'] ?? data['liveRoomId'];
+        if (rid is int) {
+          _currentRoomId = rid;
+        } else if (rid is String) {
+          _currentRoomId = int.tryParse(rid);
+        }
 
         // saat live start → subscribe chat + tarik history awal
         _page = 1;
