@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:radio_odan_app/models/user_model.dart';
 import 'package:radio_odan_app/services/auth_service.dart';
 import 'package:radio_odan_app/config/api_client.dart';
+import 'package:radio_odan_app/audio/audio_player_manager.dart';
 
 class AuthProvider with ChangeNotifier {
   UserModel? _user;
@@ -176,6 +177,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await AuthService.I.logout();
     } finally {
+      await AudioPlayerManager.instance.stop();
       await const FlutterSecureStorage().delete(key: 'user_token');
       _user = null;
       _token = null;
