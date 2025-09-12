@@ -64,7 +64,7 @@
                 <data
                     android:scheme="https"
                     android:host="odanfm.batubarakab.go.id"
-                    android:pathPrefix="/app/reset" />
+                    android:pathPrefix="/app/reset-password" />
             </intent-filter>
             
             <!-- Handle custom scheme for development -->
