@@ -118,7 +118,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: colors.surfaceVariant,
+        color: colors.surfaceContainerHighest,
         shape: BoxShape.circle,
       ),
     );

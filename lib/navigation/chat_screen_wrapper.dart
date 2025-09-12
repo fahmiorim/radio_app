@@ -7,7 +7,7 @@ import 'package:radio_odan_app/screens/chat/widget/no_live_placeholder.dart';
 
 class ChatScreenWrapper extends StatefulWidget {
   final int? roomId;
-  const ChatScreenWrapper({Key? key, this.roomId}) : super(key: key);
+  const ChatScreenWrapper({super.key, this.roomId});
 
   static Route<String?> route([int? roomId]) => MaterialPageRoute<String?>(
     builder: (_) => ChatScreenWrapper(roomId: roomId),
@@ -34,8 +34,9 @@ class _ChatScreenWrapperState extends State<ChatScreenWrapper> {
   }
 
   Future<void> _ensureProviderForRoom(int roomId) async {
-    if (_provider != null && _provider!.roomId == roomId && _isInitialized)
+    if (_provider != null && _provider!.roomId == roomId && _isInitialized) {
       return;
+    }
     if (_initInProgress) return;
     _initInProgress = true;
 

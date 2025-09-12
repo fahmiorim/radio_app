@@ -84,8 +84,9 @@ class VideoProvider with ChangeNotifier {
   Future<void> fetchAllVideos({bool loadMore = false}) async {
     if (_isLoadingAll ||
         (loadMore && _isLoadingMore) ||
-        (!loadMore && _isLoadingMore))
+        (!loadMore && _isLoadingMore)) {
       return;
+    }
 
     if (loadMore) {
       if (!_hasMore) return;

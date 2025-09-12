@@ -128,7 +128,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                   Text(
                     'Gagal memuat daftar program',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: colors.onBackground,
+                      color: colors.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -379,8 +379,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.6),
-            Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withOpacity(0.6),
+            Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
           ],
         ),
       ),

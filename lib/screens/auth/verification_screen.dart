@@ -167,7 +167,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                       'Verifikasi Email',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: colorScheme.onBackground,
+                        color: colorScheme.onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -188,13 +188,13 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Icon(
                             Icons.mark_email_read_outlined,
                             size: 64,
-                            color: colorScheme.onBackground,
+                            color: colorScheme.onSurface,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'Periksa Email Anda',
                             style: theme.textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onBackground,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -203,7 +203,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Kami telah mengirimkan link verifikasi ke:',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onBackground.withOpacity(0.7),
+                              color: colorScheme.onSurface.withOpacity(0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -211,7 +211,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             widget.email,
                             style: theme.textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onBackground,
+                              color: colorScheme.onSurface,
                               fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
@@ -220,7 +220,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Klik link verifikasi di email Anda, lalu kembali ke aplikasi dan tekan "Cek status".',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onBackground.withOpacity(0.7),
+                              color: colorScheme.onSurface.withOpacity(0.7),
                             ),
                             textAlign: TextAlign.center,
                           ),

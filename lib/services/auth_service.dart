@@ -341,14 +341,6 @@ class AuthService {
     }
   }
 
-  // ===================== Change Password =====================
-  /// Changes the user's password
-  /// Returns a Map with the following structure:
-  /// {
-  ///   'success': bool,
-  ///   'message': String?,
-  ///   'errors': Map<String, dynamic>?
-  /// }
   Future<Map<String, dynamic>> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -367,7 +359,7 @@ class AuthService {
       );
 
       final data = response.data as Map<String, dynamic>? ?? {};
-      
+
       // Check if the response indicates success
       if (response.statusCode == 200 && data['status'] == true) {
         return {
@@ -375,26 +367,30 @@ class AuthService {
           'message': data['message']?.toString() ?? 'Password berhasil diubah.',
         };
       }
-      
+
       // Handle validation errors (status 422)
       if (response.statusCode == 422) {
         return {
           'success': false,
-          'message': data['message']?.toString() ?? 'Validasi gagal. Silakan periksa input Anda.',
+          'message':
+              data['message']?.toString() ??
+              'Validasi gagal. Silakan periksa input Anda.',
           'errors': data['errors'] as Map<String, dynamic>? ?? {},
         };
       }
-      
+
       // Handle other error cases
       return {
         'success': false,
-        'message': data['message']?.toString() ?? 'Gagal mengubah password. Silakan coba lagi.',
+        'message':
+            data['message']?.toString() ??
+            'Gagal mengubah password. Silakan coba lagi.',
         'errors': data['errors'] as Map<String, dynamic>?,
       };
     } on DioException catch (e) {
       String errorMessage = 'Terjadi kesalahan saat mengubah password.';
       Map<String, dynamic>? errors;
-      
+
       if (e.response != null) {
         final responseData = e.response?.data as Map<String, dynamic>? ?? {};
         errorMessage = responseData['message']?.toString() ?? errorMessage;
@@ -402,12 +398,8 @@ class AuthService {
       } else {
         errorMessage = e.message ?? errorMessage;
       }
-      
-      return {
-        'success': false,
-        'message': errorMessage,
-        'errors': errors,
-      };
+
+      return {'success': false, 'message': errorMessage, 'errors': errors};
     } catch (e) {
       return {
         'success': false,

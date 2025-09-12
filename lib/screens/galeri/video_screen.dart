@@ -14,7 +14,7 @@ import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
 
 class AllVideosScreen extends StatefulWidget {
-  const AllVideosScreen({Key? key}) : super(key: key);
+  const AllVideosScreen({super.key});
 
   @override
   State<AllVideosScreen> createState() => _AllVideosScreenState();
@@ -276,7 +276,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
               Text(
                 'Gagal memuat video',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: colors.onBackground,
+                  color: colors.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -401,7 +401,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                       errorBuilder: (context, error, stackTrace) => Container(
                         width: double.infinity,
                         height: 180,
-                        color: colors.surfaceVariant,
+                        color: colors.surfaceContainerHighest,
                         child: Icon(
                           Icons.videocam_off_outlined,
                           size: 48,
@@ -413,7 +413,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                         return Container(
                           width: double.infinity,
                           height: 180,
-                          color: colors.surfaceVariant,
+                          color: colors.surfaceContainerHighest,
                           child: Center(
                             child: CircularProgressIndicator(
                               value: loadingProgress.expectedTotalBytes != null
@@ -514,7 +514,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${video.duration ?? 'N/A'}',
+                          video.duration ?? 'N/A',
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,

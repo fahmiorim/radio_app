@@ -195,12 +195,12 @@ class AppDrawer extends StatelessWidget {
                                         activeTrackColor:
                                             colorScheme.primaryContainer,
                                         thumbColor:
-                                            MaterialStateProperty.resolveWith<
+                                            WidgetStateProperty.resolveWith<
                                               Color
                                             >(
                                               (states) =>
                                                   states.contains(
-                                                    MaterialState.selected,
+                                                    WidgetState.selected,
                                                   )
                                                   ? colorScheme.onPrimary
                                                   : colorScheme
@@ -286,7 +286,7 @@ class AppDrawer extends StatelessWidget {
     if (userProvider.isLoading) {
       return CircleAvatar(
         radius: size / 2,
-        backgroundColor: colorScheme.surfaceVariant,
+        backgroundColor: colorScheme.surfaceContainerHighest,
         child: const SizedBox(
           width: 20,
           height: 20,
@@ -310,7 +310,7 @@ class AppDrawer extends StatelessWidget {
         ),
         placeholder: (_, __) => CircleAvatar(
           radius: size / 2,
-          backgroundColor: colorScheme.surfaceVariant,
+          backgroundColor: colorScheme.surfaceContainerHighest,
           child: const SizedBox(
             width: 20,
             height: 20,
@@ -337,7 +337,7 @@ class AppDrawer extends StatelessWidget {
 
     return CircleAvatar(
       radius: size / 2,
-      backgroundColor: colorScheme.surfaceVariant,
+      backgroundColor: colorScheme.surfaceContainerHighest,
       child: Text(
         initial,
         style: TextStyle(

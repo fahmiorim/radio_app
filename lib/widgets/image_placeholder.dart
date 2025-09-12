@@ -6,11 +6,11 @@ class ImagePlaceholder extends StatelessWidget {
   final Color? color;
 
   const ImagePlaceholder({
-    Key? key,
+    super.key,
     this.icon = Icons.image,
     this.size = 100,
     this.color,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +21,7 @@ class ImagePlaceholder extends StatelessWidget {
       width: size,
       height: size,
       color: schemeColor.withOpacity(0.1),
-      child: Icon(
-        icon,
-        size: size * 0.5,
-        color: schemeColor.withOpacity(0.5),
-      ),
+      child: Icon(icon, size: size * 0.5, color: schemeColor.withOpacity(0.5)),
     );
   }
 }

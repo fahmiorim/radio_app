@@ -183,7 +183,7 @@ class CustomTextField extends StatelessWidget {
   final bool? isAtScrollStartOrEndOrMiddleOrTopOrBottomOrLeftOrRight;
 
   const CustomTextField({
-    Key? key,
+    super.key,
     this.controller,
     this.label,
     this.hintText,
@@ -358,7 +358,7 @@ class CustomTextField extends StatelessWidget {
     this.isAtScrollStartOrEndOrMiddleOrTopOrLeftOrRight = false,
     this.isAtScrollStartOrEndOrMiddleOrBottomOrLeftOrRight = false,
     this.isAtScrollStartOrEndOrMiddleOrTopOrBottomOrLeftOrRight = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

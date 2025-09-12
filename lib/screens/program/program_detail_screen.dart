@@ -214,7 +214,7 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                       Icon(
                         Icons.radio,
                         size: 64,
-                        color: Theme.of(context).colorScheme.onBackground,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                       const SizedBox(height: 16),
                       Text(

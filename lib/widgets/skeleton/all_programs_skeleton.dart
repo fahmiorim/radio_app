@@ -20,13 +20,13 @@ class AllProgramsSkeleton extends StatelessWidget {
             children: [
               // Image placeholder
               Shimmer.fromColors(
-                baseColor: theme.colorScheme.surfaceVariant,
+                baseColor: theme.colorScheme.surfaceContainerHighest,
                 highlightColor: theme.colorScheme.surface,
                 child: Container(
                   width: 120,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -38,39 +38,39 @@ class AllProgramsSkeleton extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Shimmer.fromColors(
-                      baseColor: theme.colorScheme.surfaceVariant,
+                      baseColor: theme.colorScheme.surfaceContainerHighest,
                       highlightColor: theme.colorScheme.surface,
                       child: Container(
                         width: double.infinity,
                         height: 16,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant,
+                          color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Shimmer.fromColors(
-                      baseColor: theme.colorScheme.surfaceVariant,
+                      baseColor: theme.colorScheme.surfaceContainerHighest,
                       highlightColor: theme.colorScheme.surface,
                       child: Container(
                         width: 100,
                         height: 14,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant,
+                          color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Shimmer.fromColors(
-                      baseColor: theme.colorScheme.surfaceVariant,
+                      baseColor: theme.colorScheme.surfaceContainerHighest,
                       highlightColor: theme.colorScheme.surface,
                       child: Container(
                         width: 60,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceVariant,
+                          color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

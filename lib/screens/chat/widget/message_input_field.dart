@@ -30,9 +30,11 @@ class MessageInputField extends StatelessWidget {
                 minLines: 1,
                 decoration: InputDecoration(
                   hintText: 'Ketik pesan...',
-                  hintStyle: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  hintStyle: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceVariant,
+                  fillColor: theme.colorScheme.surfaceContainerHighest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                     borderSide: BorderSide.none,
@@ -48,7 +50,11 @@ class MessageInputField extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             IconButton(
-              icon: Icon(Icons.send, color: theme.colorScheme.onSurface, size: 20),
+              icon: Icon(
+                Icons.send,
+                color: theme.colorScheme.onSurface,
+                size: 20,
+              ),
               padding: const EdgeInsets.all(12),
               style: IconButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,

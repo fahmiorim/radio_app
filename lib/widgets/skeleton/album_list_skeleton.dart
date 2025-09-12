@@ -19,13 +19,14 @@ class AlbumListSkeleton extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: theme.colorScheme.surfaceVariant, // dark theme base
+          baseColor:
+              theme.colorScheme.surfaceContainerHighest, // dark theme base
           highlightColor: theme.colorScheme.surface, // shimmer highlight
           child: Container(
             margin: const EdgeInsets.only(bottom: 16),
             height: 180,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
+              color: theme.colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
           ),

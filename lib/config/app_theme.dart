@@ -12,8 +12,6 @@ class AppTheme {
       onSecondary: AppColors.white,
       surface: AppColors.lightSurface,
       onSurface: AppColors.lightTextPrimary,
-      background: AppColors.lightBackground,
-      onBackground: AppColors.lightTextPrimary,
       error: AppColors.error,
       onError: AppColors.white,
       outline: AppColors.lightBorder,
@@ -24,49 +22,49 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: colorScheme.primary,
-      scaffoldBackgroundColor: colorScheme.background,
+      scaffoldBackgroundColor: colorScheme.surface,
       disabledColor: AppColors.disabled,
       colorScheme: colorScheme,
       textTheme: TextTheme(
         displayLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
         ),
         displayMedium: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
         ),
         displaySmall: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
         ),
         headlineMedium: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
         ),
         headlineSmall: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
         ),
         titleLarge: TextStyle(
           fontSize: 20, // Increased from 16 to 20
           fontWeight: FontWeight.w700,
-          color: colorScheme.onBackground,
+          color: colorScheme.onSurface,
           height: 1.2, // Better line height for larger text
         ),
-        bodyLarge: TextStyle(fontSize: 16, color: colorScheme.onBackground),
+        bodyLarge: TextStyle(fontSize: 16, color: colorScheme.onSurface),
         bodyMedium: TextStyle(
           fontSize: 14,
-          color: colorScheme.onBackground.withOpacity(0.7),
+          color: colorScheme.onSurface.withOpacity(0.7),
         ),
         bodySmall: TextStyle(
           fontSize: 12,
-          color: colorScheme.onBackground.withOpacity(0.6),
+          color: colorScheme.onSurface.withOpacity(0.6),
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -97,25 +95,25 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.disabled)) {
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
               return colorScheme.onSurface.withOpacity(0.12);
             }
             return colorScheme.primary;
           }),
-          foregroundColor: MaterialStateProperty.resolveWith((states) {
-            if (states.contains(MaterialState.disabled)) {
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
               return colorScheme.onSurface.withOpacity(0.38);
             }
             return colorScheme.onPrimary;
           }),
-          padding: MaterialStateProperty.all(
+          padding: WidgetStateProperty.all(
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          shape: MaterialStateProperty.all(
+          shape: WidgetStateProperty.all(
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          elevation: MaterialStateProperty.all(2),
+          elevation: WidgetStateProperty.all(2),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -164,7 +162,7 @@ class AppTheme {
         thickness: 1,
         space: 1,
       ),
-      iconTheme: IconThemeData(color: colorScheme.onBackground, size: 24),
+      iconTheme: IconThemeData(color: colorScheme.onSurface, size: 24),
     );
   }
 
@@ -180,12 +178,10 @@ class AppTheme {
         primary: AppColors.darkPrimary,
         secondary: AppColors.accent,
         surface: AppColors.darkSurface,
-        background: AppColors.darkBackground,
         error: AppColors.error,
         onPrimary: AppColors.black,
         onSecondary: AppColors.black,
         onSurface: AppColors.darkTextPrimary,
-        onBackground: AppColors.darkTextPrimary,
         onError: AppColors.black,
         brightness: Brightness.dark,
       ),
@@ -256,8 +252,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: MaterialStateColor.resolveWith((states) {
-            if (states.contains(MaterialState.disabled)) {
+          backgroundColor: WidgetStateColor.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
               return AppColors.grey700;
             }
             return AppColors.blueGrey800;
@@ -339,7 +335,7 @@ class AppTheme {
     final isDark = theme.brightness == Brightness.dark;
     final color = usePrimaryColor
         ? colorScheme.primary.withOpacity(opacity)
-        : (isDark ? colorScheme.surfaceVariant : colorScheme.secondary)
+        : (isDark ? colorScheme.surfaceContainerHighest : colorScheme.secondary)
               .withOpacity(opacity);
 
     return Positioned(

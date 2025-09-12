@@ -78,7 +78,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontSize: 16,
-                color: cs.onBackground,
+                color: cs.onSurface,
               ),
             ),
             const SizedBox(height: 16),

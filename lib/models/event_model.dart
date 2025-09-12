@@ -27,10 +27,10 @@ class Event {
   });
 
   factory Event.fromJson(Map<String, dynamic> json) {
-    int _parseInt(dynamic v) =>
+    int parseInt(dynamic v) =>
         v is int ? v : int.tryParse((v ?? '').toString()) ?? 0;
 
-    DateTime _parseDate(dynamic v) {
+    DateTime parseDate(dynamic v) {
       final s = (v ?? '').toString();
       if (s.isEmpty) return DateTime.now();
       try {
@@ -40,12 +40,12 @@ class Event {
       }
     }
 
-    String _stripHtml(dynamic v) {
+    String stripHtml(dynamic v) {
       final s = (v ?? '').toString();
       return s.replaceAll(RegExp(r'<[^>]*>'), '').trim();
     }
 
-    DateTime? _parseDateNullable(dynamic v) {
+    DateTime? parseDateNullable(dynamic v) {
       if (v == null) return null;
       try {
         return DateTime.parse(v.toString());
@@ -55,20 +55,20 @@ class Event {
     }
 
     return Event(
-      id: _parseInt(json['id']),
+      id: parseInt(json['id']),
       judul: (json['judul'] ?? json['title'] ?? '').toString(),
       user:
           json['user'] ??
           json['penyiarName'] ??
           json['author'] ??
           'Tidak ada data',
-      tanggal: _parseDate(json['tanggal'] ?? json['date']),
-      deskripsi: _stripHtml(json['deskripsi'] ?? json['content']),
+      tanggal: parseDate(json['tanggal'] ?? json['date']),
+      deskripsi: stripHtml(json['deskripsi'] ?? json['content']),
       gambar: (json['gambar'] ?? json['image'] ?? json['cover'] ?? '')
           .toString(),
       status: (json['status'] ?? '').toString(),
       tipe: (json['tipe'] ?? json['type'] ?? '').toString(),
-      updatedAt: _parseDateNullable(json['updated_at'] ?? json['updatedAt']),
+      updatedAt: parseDateNullable(json['updated_at'] ?? json['updatedAt']),
     );
   }
 

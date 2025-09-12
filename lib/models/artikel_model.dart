@@ -28,7 +28,7 @@ class Artikel {
     int toInt(dynamic v) =>
         v is int ? v : int.tryParse((v ?? '').toString()) ?? 0;
 
-    DateTime? _toDate(dynamic v) {
+    DateTime? toDate(dynamic v) {
       if (v == null) return null;
       try {
         return DateTime.parse(v.toString());
@@ -44,9 +44,9 @@ class Artikel {
       content: (json['content'] ?? '').toString(),
       excerpt: (json['excerpt'] ?? '').toString(),
       image: (json['image'] ?? json['gambar'] ?? '').toString(),
-      publishedAt: _toDate(json['published_at'] ?? json['publishedAt']),
+      publishedAt: toDate(json['published_at'] ?? json['publishedAt']),
       user: (json['user'] ?? 'Admin').toString(),
-      updatedAt: _toDate(json['updated_at'] ?? json['updatedAt']),
+      updatedAt: toDate(json['updated_at'] ?? json['updatedAt']),
     );
   }
 

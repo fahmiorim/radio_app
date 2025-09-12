@@ -31,7 +31,7 @@ class EventCardSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Shimmer.fromColors(
-      baseColor: theme.colorScheme.surfaceVariant,
+      baseColor: theme.colorScheme.surfaceContainerHighest,
       highlightColor: theme.colorScheme.surface,
       child: Card(
         color: theme.colorScheme.surface.withOpacity(0.9),

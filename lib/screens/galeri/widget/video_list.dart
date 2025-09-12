@@ -17,7 +17,6 @@ class VideoList extends StatefulWidget {
 }
 
 class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
-
   bool _isMounted = false;
   List<VideoModel>? _lastVideos;
 
@@ -195,8 +194,9 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
                                                         child,
                                                         progress,
                                                       ) {
-                                                        if (progress == null)
+                                                        if (progress == null) {
                                                           return child;
+                                                        }
                                                         return SizedBox(
                                                           width: 270,
                                                           height: 150,
@@ -218,8 +218,7 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
                                                             colorScheme.surface,
                                                         child: Center(
                                                           child: Icon(
-                                                            Icons
-                                                                .broken_image,
+                                                            Icons.broken_image,
                                                             size: 40,
                                                             color:
                                                                 textSecondaryColor,
@@ -235,8 +234,7 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
                                                     child: Icon(
                                                       Icons.videocam_off,
                                                       size: 40,
-                                                      color:
-                                                          textSecondaryColor,
+                                                      color: textSecondaryColor,
                                                     ),
                                                   ),
                                                 ),
@@ -255,12 +253,11 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
                                                     child: Padding(
                                                       padding:
                                                           const EdgeInsets.all(
-                                                        8.0,
-                                                      ),
+                                                            8.0,
+                                                          ),
                                                       child: Icon(
                                                         Icons.play_arrow,
-                                                        color:
-                                                            textPrimaryColor,
+                                                        color: textPrimaryColor,
                                                         size: 40,
                                                       ),
                                                     ),

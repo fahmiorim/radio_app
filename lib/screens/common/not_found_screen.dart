@@ -30,16 +30,17 @@ class NotFoundScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   Text(
                     'Halaman Tidak Ditemukan',
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Maaf, halaman yang kamu tuju tidak tersedia atau argumennya tidak valid.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onBackground.withOpacity(0.6),
-                        ),
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),

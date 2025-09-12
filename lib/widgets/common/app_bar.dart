@@ -21,7 +21,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? flexibleSpace;
 
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.title,
     this.showBackButton = false,
     this.actions,
@@ -38,8 +38,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.shape,
     this.primary = true,
     this.flexibleSpace,
-  }) : backgroundColor = backgroundColor,
-       super(key: key);
+  }) : backgroundColor = backgroundColor;
 
   // Transparan + blur + gradasi halus dari surface → transparan
   factory CustomAppBar.transparent({
@@ -57,7 +56,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return CustomAppBar(
       title: title,
-      backgroundColor: isDark ? colors.surface.withOpacity(0.9) : colors.surface.withOpacity(0.7),
+      backgroundColor: isDark
+          ? colors.surface.withOpacity(0.9)
+          : colors.surface.withOpacity(0.7),
       elevation: 0,
       titleColor: titleColor ?? (isDark ? colors.onSurface : colors.onSurface),
       iconColor: iconColor ?? (isDark ? colors.onSurface : colors.onSurface),
@@ -121,11 +122,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     final textTheme = theme.textTheme;
 
     // Always use the theme's app bar background color
-    final effectiveBackgroundColor = backgroundColor ?? theme.appBarTheme.backgroundColor ?? colors.surface;
-    
+    final effectiveBackgroundColor =
+        backgroundColor ?? theme.appBarTheme.backgroundColor ?? colors.surface;
+
     // Use the theme's text and icon colors
-    final effectiveTitleColor = titleColor ?? theme.appBarTheme.titleTextStyle?.color ?? colors.onSurface;
-    final effectiveIconColor = iconColor ?? theme.appBarTheme.iconTheme?.color ?? colors.onSurface;
+    final effectiveTitleColor =
+        titleColor ??
+        theme.appBarTheme.titleTextStyle?.color ??
+        colors.onSurface;
+    final effectiveIconColor =
+        iconColor ?? theme.appBarTheme.iconTheme?.color ?? colors.onSurface;
 
     return AppBar(
       title: Text(
@@ -168,7 +174,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   // Tombol back modern dengan latar transparan
   Widget _buildModernBackButton(
-      BuildContext context, ColorScheme colors, Color fg) {
+    BuildContext context,
+    ColorScheme colors,
+    Color fg,
+  ) {
     const bg = AppColors.transparent;
 
     return IconButton(

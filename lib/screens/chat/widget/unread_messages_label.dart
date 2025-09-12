@@ -8,8 +8,9 @@ class UnreadMessagesLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
 
-    final label =
-        count == 1 ? '1 pesan belum dibaca' : '$count pesan belum dibaca';
+    final label = count == 1
+        ? '1 pesan belum dibaca'
+        : '$count pesan belum dibaca';
 
     final theme = Theme.of(context);
 
@@ -20,8 +21,8 @@ class UnreadMessagesLabel extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 8),
         color: Color.alphaBlend(
-          theme.colorScheme.onBackground.withOpacity(0.54),
-          theme.colorScheme.background,
+          theme.colorScheme.onSurface.withOpacity(0.54),
+          theme.colorScheme.surface,
         ),
         child: Center(
           child: Container(
@@ -31,7 +32,7 @@ class UnreadMessagesLabel extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.onBackground.withOpacity(0.2),
+                  color: theme.colorScheme.onSurface.withOpacity(0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),

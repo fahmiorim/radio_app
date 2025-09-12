@@ -135,7 +135,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                   Text(
                     'Gagal memuat event',
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: colors.onBackground,
+                      color: colors.onSurface,
                     ),
                     textAlign: TextAlign.center,
                   ),

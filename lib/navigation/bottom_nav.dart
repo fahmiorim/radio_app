@@ -56,7 +56,7 @@ class _BottomNavState extends State<BottomNav> {
                   end: Alignment.topCenter,
                   colors: [
                     Theme.of(context).colorScheme.onSurface,
-                    Theme.of(context).colorScheme.background,
+                    Theme.of(context).colorScheme.surface,
                   ],
                 ),
               ),

@@ -167,7 +167,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                         leading: CircleAvatar(
                           backgroundColor: Theme.of(
                             context,
-                          ).colorScheme.surfaceVariant,
+                          ).colorScheme.surfaceContainerHighest,
                           child: ClipOval(
                             child: (avatarUrl != null && avatarUrl.isNotEmpty)
                                 ? Image.network(

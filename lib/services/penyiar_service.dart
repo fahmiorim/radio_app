@@ -102,8 +102,9 @@ class PenyiarService {
   }
 
   String? _dataMessage(dynamic data) {
-    if (data is Map && data['message'] is String)
+    if (data is Map && data['message'] is String) {
       return data['message'] as String;
+    }
     return null;
   }
 

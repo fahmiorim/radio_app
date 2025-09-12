@@ -26,7 +26,7 @@ class ChatMessageItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
           decoration: BoxDecoration(
-            color: colors.surfaceVariant.withOpacity(0.7),
+            color: colors.surfaceContainerHighest.withOpacity(0.7),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -85,7 +85,7 @@ class ChatMessageItem extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isCurrentUser
                         ? colors.primary.withOpacity(0.9)
-                        : colors.surfaceVariant,
+                        : colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -159,7 +159,7 @@ class _Avatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: 16,
-      backgroundColor: colors.surfaceVariant,
+      backgroundColor: colors.surfaceContainerHighest,
       child: ClipOval(
         child: hasUrl
             ? Image.network(

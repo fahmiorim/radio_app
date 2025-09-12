@@ -66,7 +66,7 @@ class AlbumService {
       throw Exception(
         'Gagal memuat featured albums (status ${res.statusCode})',
       );
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       if (_featuredCache != null) return _featuredCache!;
       throw Exception('Gagal memuat album: ${e.message}');
     } catch (e) {
@@ -163,7 +163,7 @@ class AlbumService {
         };
       }
       throw Exception('Gagal memuat daftar album (status ${res.statusCode})');
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       if (_allCache[page] != null) {
         return {
           'albums': _allCache[page]!,
@@ -221,7 +221,7 @@ class AlbumService {
         );
       }
       throw Exception('Gagal memuat detail album (status ${res.statusCode})');
-    } on DioError catch (e) {
+    } on DioException catch (e) {
       // Return cached data if available
       if (_detailCache[cacheKey] != null) {
         return _detailCache[cacheKey]!;

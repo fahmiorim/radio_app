@@ -199,7 +199,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onBackground.withOpacity(0.2),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),

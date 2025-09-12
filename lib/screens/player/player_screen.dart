@@ -238,7 +238,6 @@ class _FullPlayerState extends State<FullPlayer> {
     if (_subscribedRoomId != null) {
       try {
         await LiveChatSocketService.I.unsubscribeLike(_subscribedRoomId!);
-      } catch (e) {
       } finally {
         _subscribedRoomId = null;
       }
@@ -514,8 +513,10 @@ class _FullPlayerState extends State<FullPlayer> {
                                                 ? Colors.red.withOpacity(0.1)
                                                 : theme
                                                       .colorScheme
-                                                      .surfaceVariant)
-                                          : theme.colorScheme.surfaceVariant
+                                                      .surfaceContainerHighest)
+                                          : theme
+                                                .colorScheme
+                                                .surfaceContainerHighest
                                                 .withOpacity(0.5),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(

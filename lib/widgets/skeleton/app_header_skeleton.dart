@@ -7,7 +7,7 @@ class AppHeaderSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
@@ -17,14 +17,11 @@ class AppHeaderSkeleton extends StatelessWidget {
           bottomRight: Radius.circular(20),
         ),
         border: Border(
-          bottom: BorderSide(
-            color: colors.outline.withOpacity(0.08),
-            width: 1,
-          ),
+          bottom: BorderSide(color: colors.outline.withOpacity(0.08), width: 1),
         ),
       ),
       child: Shimmer.fromColors(
-        baseColor: colors.surfaceVariant,
+        baseColor: colors.surfaceContainerHighest,
         highlightColor: colors.surface,
         period: const Duration(milliseconds: 1200),
         child: Row(
@@ -38,7 +35,7 @@ class AppHeaderSkeleton extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: colors.surfaceVariant,
+                    color: colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
@@ -52,7 +49,7 @@ class AppHeaderSkeleton extends StatelessWidget {
                       width: 100,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: colors.surfaceVariant,
+                        color: colors.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -61,7 +58,7 @@ class AppHeaderSkeleton extends StatelessWidget {
                       width: 60,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: colors.surfaceVariant,
+                        color: colors.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -74,7 +71,7 @@ class AppHeaderSkeleton extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: colors.surfaceVariant,
+                color: colors.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
             ),

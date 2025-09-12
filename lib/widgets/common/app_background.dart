@@ -21,7 +21,7 @@ class AppBackground extends StatelessWidget {
 
     return Stack(
       children: [
-        Container(color: theme.colorScheme.background),
+        Container(color: theme.colorScheme.surface),
         if (child != null) child!,
         if (showTopRightBubble)
           Positioned(

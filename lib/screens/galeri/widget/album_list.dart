@@ -130,11 +130,15 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                         );
                       },
                       errorBuilder: (_, __, ___) => Container(
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         alignment: Alignment.center,
                         child: const Icon(Icons.broken_image, size: 32),
                       ),

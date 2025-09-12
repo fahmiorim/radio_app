@@ -174,11 +174,12 @@ class LiveChatProvider with ChangeNotifier {
         _isLive = nowLive;
         if (_isLive) {
           final rid = data['roomId'] ?? data['room_id'] ?? data['liveRoomId'];
-          if (rid is int)
+          if (rid is int) {
             _currentRoomId = rid;
-          else
+          } else {
             _currentRoomId =
                 int.tryParse(rid?.toString() ?? '') ?? _currentRoomId;
+          }
         }
       },
 

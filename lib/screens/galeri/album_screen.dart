@@ -142,7 +142,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                 Text(
                   'Gagal memuat album',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: colors.onBackground,
+                    color: colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -265,7 +265,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
             Container(
               height: 150,
               decoration: BoxDecoration(
-                color: colors.surfaceVariant,
+                color: colors.surfaceContainerHighest,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(12),
                 ),
@@ -278,7 +278,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                 children: [
                   Container(
                     height: 16,
-                    color: colors.surfaceVariant,
+                    color: colors.surfaceContainerHighest,
                     margin: const EdgeInsets.only(bottom: 8),
                   ),
                   Row(
@@ -291,13 +291,13 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                             Container(
                               width: 12,
                               height: 12,
-                              color: colors.surfaceVariant,
+                              color: colors.surfaceContainerHighest,
                             ),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Container(
                                 height: 12,
-                                color: colors.surfaceVariant,
+                                color: colors.surfaceContainerHighest,
                               ),
                             ),
                           ],
@@ -311,13 +311,13 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                             Container(
                               width: 12,
                               height: 12,
-                              color: colors.surfaceVariant,
+                              color: colors.surfaceContainerHighest,
                             ),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Container(
                                 height: 12,
-                                color: colors.surfaceVariant,
+                                color: colors.surfaceContainerHighest,
                               ),
                             ),
                           ],
@@ -389,7 +389,7 @@ class _AlbumCard extends StatelessWidget {
         height: 120, // Reduced height
         fit: BoxFit.cover,
         placeholder: (_, __) => Container(
-          color: colors.surfaceVariant,
+          color: colors.surfaceContainerHighest,
           child: Center(
             child: CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
@@ -397,7 +397,7 @@ class _AlbumCard extends StatelessWidget {
           ),
         ),
         errorWidget: (_, __, ___) => Container(
-          color: colors.surfaceVariant,
+          color: colors.surfaceContainerHighest,
           padding: const EdgeInsets.all(16),
           child: Icon(Icons.error_outline, color: colors.error),
         ),

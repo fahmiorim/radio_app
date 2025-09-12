@@ -14,7 +14,7 @@ class VideoListSkeleton extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(width: 16),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: theme.colorScheme.surfaceVariant,
+          baseColor: theme.colorScheme.surfaceContainerHighest,
           highlightColor: theme.colorScheme.surface,
           child: SizedBox(
             width: 270,
@@ -27,7 +27,7 @@ class VideoListSkeleton extends StatelessWidget {
                   height: 160, // Reduced height to accommodate the text
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
@@ -36,7 +36,7 @@ class VideoListSkeleton extends StatelessWidget {
                   height: 16,
                   width: 200,
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),

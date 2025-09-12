@@ -26,13 +26,14 @@ class ProgramSkeleton extends StatelessWidget {
               children: [
                 // shimmer gambar
                 Shimmer.fromColors(
-                  baseColor: theme.colorScheme.surfaceVariant, // dark mode
+                  baseColor:
+                      theme.colorScheme.surfaceContainerHighest, // dark mode
                   highlightColor: theme.colorScheme.surface,
                   child: Container(
                     height: 225,
                     width: 160,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
@@ -40,13 +41,13 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 8),
                 // shimmer judul program
                 Shimmer.fromColors(
-                  baseColor: theme.colorScheme.surfaceVariant,
+                  baseColor: theme.colorScheme.surfaceContainerHighest,
                   highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 120,
                     height: 16,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -54,13 +55,13 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 4),
                 // shimmer nama penyiar
                 Shimmer.fromColors(
-                  baseColor: theme.colorScheme.surfaceVariant,
+                  baseColor: theme.colorScheme.surfaceContainerHighest,
                   highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 100,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -68,13 +69,13 @@ class ProgramSkeleton extends StatelessWidget {
                 const SizedBox(height: 2),
                 // shimmer hari & jam
                 Shimmer.fromColors(
-                  baseColor: theme.colorScheme.surfaceVariant,
+                  baseColor: theme.colorScheme.surfaceContainerHighest,
                   highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 80,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),

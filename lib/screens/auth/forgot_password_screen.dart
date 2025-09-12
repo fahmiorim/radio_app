@@ -93,10 +93,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
                             validator: (v) {
-                              if (v == null || v.trim().isEmpty)
+                              if (v == null || v.trim().isEmpty) {
                                 return 'Email wajib diisi';
-                              if (!v.contains('@'))
+                              }
+                              if (!v.contains('@')) {
                                 return 'Format email tidak valid';
+                              }
                               return null;
                             },
                           ),

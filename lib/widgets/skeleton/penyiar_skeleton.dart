@@ -21,25 +21,25 @@ class PenyiarSkeleton extends StatelessWidget {
             child: Column(
               children: [
                 Shimmer.fromColors(
-                  baseColor: theme.colorScheme.surfaceVariant,
+                  baseColor: theme.colorScheme.surfaceContainerHighest,
                   highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceVariant,
+                      color: theme.colorScheme.surfaceContainerHighest,
                       shape: BoxShape.circle,
                     ),
                   ),
                 ),
                 const SizedBox(height: 6),
                 Shimmer.fromColors(
-                  baseColor: theme.colorScheme.surfaceVariant,
+                  baseColor: theme.colorScheme.surfaceContainerHighest,
                   highlightColor: theme.colorScheme.surface,
                   child: Container(
                     width: 60,
                     height: 14,
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ],
