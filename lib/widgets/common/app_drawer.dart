@@ -257,7 +257,6 @@ class AppDrawer extends StatelessWidget {
                                       return Text("v—", style: style);
                                     }
                                     final info = snap.data!;
-                                    // pubspec: version: 1.0.3+3  -> version=1.0.3, buildNumber=3
                                     return Text(
                                       "v${info.version} (${info.buildNumber})",
                                       style: style,

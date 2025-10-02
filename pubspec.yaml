@@ -1,7 +1,7 @@
 name: radio_odan_app
-description: "A new Flutter project."
-publish_to: "none"
-version: 1.0.4+7
+description: "Radio Odan"
+publish_to: "Google Play"
+version: 1.0.7+7
 environment:
   sdk: ^3.8.1
 
