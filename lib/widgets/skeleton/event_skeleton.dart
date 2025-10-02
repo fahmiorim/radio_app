@@ -34,7 +34,7 @@ class EventCardSkeleton extends StatelessWidget {
       baseColor: theme.colorScheme.surfaceContainerHighest,
       highlightColor: theme.colorScheme.surface,
       child: Card(
-        color: theme.colorScheme.surface.withOpacity(0.9),
+        color: theme.colorScheme.surface.withValues(alpha: 0.9),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 2,
         child: Padding(
@@ -47,7 +47,7 @@ class EventCardSkeleton extends StatelessWidget {
                 aspectRatio: 16 / 9,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.onSurface.withOpacity(0.1),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
                   ),
                 ),
@@ -58,7 +58,7 @@ class EventCardSkeleton extends StatelessWidget {
                 height: 20,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.1),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -68,7 +68,7 @@ class EventCardSkeleton extends StatelessWidget {
                 height: 16,
                 width: 120,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.1),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

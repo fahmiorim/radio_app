@@ -60,11 +60,11 @@ class AppTheme {
         bodyLarge: TextStyle(fontSize: 16, color: colorScheme.onSurface),
         bodyMedium: TextStyle(
           fontSize: 14,
-          color: colorScheme.onSurface.withOpacity(0.7),
+          color: colorScheme.onSurface.withValues(alpha: 0.7),
         ),
         bodySmall: TextStyle(
           fontSize: 12,
-          color: colorScheme.onSurface.withOpacity(0.6),
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -77,8 +77,11 @@ class AppTheme {
           color: colorScheme.onPrimary,
         ),
         iconTheme: IconThemeData(color: colorScheme.onPrimary, size: 24),
-        systemOverlayStyle:
-            SystemUiOverlayStyle.light, // status bar icons putih
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
       ),
     );
 
@@ -97,13 +100,13 @@ class AppTheme {
         style: ButtonStyle(
           backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return colorScheme.onSurface.withOpacity(0.12);
+              return colorScheme.onSurface.withValues(alpha: 0.12);
             }
             return colorScheme.primary;
           }),
           foregroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
-              return colorScheme.onSurface.withOpacity(0.38);
+              return colorScheme.onSurface.withValues(alpha: 0.38);
             }
             return colorScheme.onPrimary;
           }),
@@ -146,14 +149,14 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: colorScheme.error, width: 1.5),
         ),
-        labelStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.9)),
-        hintStyle: TextStyle(color: colorScheme.onSurface.withOpacity(0.6)),
+        labelStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.9)),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6)),
         errorStyle: TextStyle(color: colorScheme.error, fontSize: 12),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: colorScheme.surface,
         selectedItemColor: colorScheme.primary,
-        unselectedItemColor: colorScheme.onSurface.withOpacity(0.7),
+        unselectedItemColor: colorScheme.onSurface.withValues(alpha: 0.7),
         selectedLabelStyle: const TextStyle(fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
       ),
@@ -231,8 +234,8 @@ class AppTheme {
           color: AppColors.darkTextPrimary,
         ),
         iconTheme: IconThemeData(color: AppColors.darkTextPrimary, size: 24),
-        systemOverlayStyle: SystemUiOverlayStyle.light.copyWith(
-          statusBarColor: AppColors.transparent,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
           statusBarBrightness: Brightness.dark,
         ),
@@ -252,16 +255,18 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: WidgetStateColor.resolveWith((states) {
+          backgroundColor: AppColors.blueGrey800,
+          foregroundColor: AppColors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 2,
+        ).copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.disabled)) {
               return AppColors.grey700;
             }
             return AppColors.blueGrey800;
           }),
-          foregroundColor: AppColors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          elevation: 2,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -334,9 +339,9 @@ class AppTheme {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final color = usePrimaryColor
-        ? colorScheme.primary.withOpacity(opacity)
+        ? colorScheme.primary.withValues(alpha: opacity)
         : (isDark ? colorScheme.surfaceContainerHighest : colorScheme.secondary)
-              .withOpacity(opacity);
+              .withValues(alpha: opacity);
 
     return Positioned(
       top: top,

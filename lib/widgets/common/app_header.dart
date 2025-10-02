@@ -93,7 +93,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: colors.shadow.withOpacity(0.1),
+            color: colors.shadow.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -140,7 +140,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: colors.shadow.withOpacity(0.1),
+            color: colors.shadow.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -187,13 +187,13 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
             ),
             border: Border(
               bottom: BorderSide(
-                color: colors.outline.withOpacity(0.08),
+                color: colors.outline.withValues(alpha: 0.08),
                 width: 1,
               ),
             ),
             boxShadow: [
               BoxShadow(
-                color: colors.shadow.withOpacity(0.05),
+                color: colors.shadow.withValues(alpha: 0.05),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
                 spreadRadius: 2,
@@ -215,7 +215,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: colors.primary.withOpacity(0.2),
+                          color: colors.primary.withValues(alpha: 0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -236,7 +236,7 @@ class _AppHeaderState extends State<AppHeader> with WidgetsBindingObserver {
                       height: 1.2,
                       shadows: [
                         Shadow(
-                          color: colors.shadow.withOpacity(0.3),
+                          color: colors.shadow.withValues(alpha: 0.3),
                           blurRadius: 2,
                           offset: const Offset(0, 1),
                         ),

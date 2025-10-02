@@ -39,17 +39,17 @@ class NoLivePlaceholder extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: colors.surface.withOpacity(0.7),
+                    color: colors.surface.withValues(alpha: 0.7),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: colors.error.withOpacity(0.3),
+                      color: colors.error.withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
                   child: Icon(
                     Icons.radio_outlined,
                     size: 64,
-                    color: colors.error.withOpacity(0.8),
+                    color: colors.error.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -94,7 +94,7 @@ class NoLivePlaceholder extends StatelessWidget {
                         borderRadius: BorderRadius.circular(25),
                         boxShadow: [
                           BoxShadow(
-                            color: colors.error.withOpacity(0.3),
+                            color: colors.error.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -131,10 +131,7 @@ class NoLivePlaceholder extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: AppColors.transparent,
                         borderRadius: BorderRadius.circular(25),
-                        border: Border.all(
-                          color: colors.outline,
-                          width: 1.5,
-                        ),
+                        border: Border.all(color: colors.outline, width: 1.5),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

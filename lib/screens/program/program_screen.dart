@@ -179,7 +179,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                 Icon(
                   Icons.radio,
                   size: 64,
-                  color: colors.onSurfaceVariant.withOpacity(0.6),
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -237,12 +237,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [colors.surface, colors.surface.withOpacity(0.9)],
+          colors: [colors.surface, colors.surface.withValues(alpha: 0.9)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colors.shadow.withOpacity(0.1),
+            color: colors.shadow.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 4),
           ),
@@ -267,7 +267,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: colors.outline.withOpacity(0.1),
+                color: colors.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -285,12 +285,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: colors.primary.withOpacity(0.2),
+                          color: colors.primary.withValues(alpha: 0.2),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: colors.shadow.withOpacity(0.1),
+                            color: colors.shadow.withValues(alpha: 0.1),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -303,9 +303,8 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                             : CachedNetworkImage(
                                 imageUrl: url,
                                 fit: BoxFit.cover,
-                                placeholder: (_, __) => _thumbLoading(),
-                                errorWidget: (_, __, ___) =>
-                                    _thumbPlaceholder(),
+                                placeholder: (_, _) => _thumbLoading(),
+                                errorWidget: (_, _, _) => _thumbPlaceholder(),
                               ),
                       ),
                     ),
@@ -321,7 +320,7 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
                             shaderCallback: (bounds) => LinearGradient(
                               colors: [
                                 colors.primary,
-                                colors.primary.withOpacity(0.8),
+                                colors.primary.withValues(alpha: 0.8),
                               ],
                             ).createShader(bounds),
                             child: Text(
@@ -386,10 +385,10 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
           colors: [
             Theme.of(
               context,
-            ).colorScheme.surfaceContainerHighest.withOpacity(0.6),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
             Theme.of(
               context,
-            ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
           ],
         ),
       ),
@@ -397,7 +396,9 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
       child: Icon(
         Icons.radio_rounded,
         size: 32,
-        color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
       ),
     ),
   );

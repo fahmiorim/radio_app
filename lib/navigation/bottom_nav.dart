@@ -47,7 +47,7 @@ class _BottomNavState extends State<BottomNav> {
             BoxShadow(
               color: Theme.of(
                 context,
-              ).colorScheme.onSurfaceVariant.withOpacity(0.1),
+              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -95,10 +95,13 @@ class _BottomNavState extends State<BottomNav> {
                 currentIndex: _currentIndex,
                 onTap: (index) async {
                   if (index == 3) {
-                    // opsional: sync status terkini
+                    final currentContext = context;
                     await context.read<LiveStatusProvider>().refresh();
-                    await Navigator.of(context).push(ChatScreenWrapper.route());
-                    return; // jangan ubah _currentIndex
+                    if (!mounted) return;
+                    await Navigator.of(
+                      currentContext,
+                    ).push(ChatScreenWrapper.route());
+                    return;
                   }
                   setState(() => _currentIndex = index);
                 },

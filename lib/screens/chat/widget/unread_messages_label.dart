@@ -21,7 +21,7 @@ class UnreadMessagesLabel extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 8),
         color: Color.alphaBlend(
-          theme.colorScheme.onSurface.withOpacity(0.54),
+          theme.colorScheme.onSurface.withValues(alpha: 0.54),
           theme.colorScheme.surface,
         ),
         child: Center(
@@ -32,7 +32,7 @@ class UnreadMessagesLabel extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.onSurface.withOpacity(0.2),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),

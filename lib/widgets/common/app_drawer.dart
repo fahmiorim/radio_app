@@ -41,7 +41,7 @@ class AppDrawer extends StatelessWidget {
             color: colorScheme.surface,
             border: Border(
               right: BorderSide(
-                color: colorScheme.outline.withOpacity(0.1),
+                color: colorScheme.outline.withValues(alpha: 0.1),
                 width: 1,
               ),
             ),
@@ -57,7 +57,7 @@ class AppDrawer extends StatelessWidget {
                   height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: colorScheme.primary.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -69,7 +69,7 @@ class AppDrawer extends StatelessWidget {
                   height: 150,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: colorScheme.tertiary.withOpacity(0.1),
+                    color: colorScheme.tertiary.withValues(alpha: 0.1),
                   ),
                 ),
               ),
@@ -84,7 +84,7 @@ class AppDrawer extends StatelessWidget {
                         color: colorScheme.surfaceContainerHighest,
                         border: Border(
                           bottom: BorderSide(
-                            color: colorScheme.outline.withOpacity(0.1),
+                            color: colorScheme.outline.withValues(alpha: 0.1),
                             width: 1,
                           ),
                         ),
@@ -221,7 +221,9 @@ class AppDrawer extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Divider(
-                                  color: colorScheme.outline.withOpacity(0.1),
+                                  color: colorScheme.outline.withValues(
+                                    alpha: 0.1,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 Row(
@@ -248,7 +250,7 @@ class AppDrawer extends StatelessWidget {
                                   builder: (context, snap) {
                                     final style = TextStyle(
                                       color: colorScheme.onSurfaceVariant
-                                          .withOpacity(0.7),
+                                          .withValues(alpha: 0.7),
                                       fontSize: 12,
                                     );
                                     if (!snap.hasData) {
@@ -308,7 +310,7 @@ class AppDrawer extends StatelessWidget {
             backgroundImage: imageProvider,
           ),
         ),
-        placeholder: (_, __) => CircleAvatar(
+        placeholder: (_, _) => CircleAvatar(
           radius: size / 2,
           backgroundColor: colorScheme.surfaceContainerHighest,
           child: const SizedBox(
@@ -317,8 +319,7 @@ class AppDrawer extends StatelessWidget {
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
-        errorWidget: (_, __, ___) =>
-            _buildInitialsAvatar(size, colorScheme, user),
+        errorWidget: (_, _, _) => _buildInitialsAvatar(size, colorScheme, user),
       );
     }
 
@@ -366,12 +367,12 @@ class AppDrawer extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: isDark
-            ? colorScheme.onSurface.withOpacity(0.1)
+            ? colorScheme.onSurface.withValues(alpha: 0.1)
             : colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark
-              ? colorScheme.onSurface.withOpacity(0.1)
+              ? colorScheme.onSurface.withValues(alpha: 0.1)
               : colorScheme.outlineVariant,
         ),
       ),
@@ -381,7 +382,7 @@ class AppDrawer extends StatelessWidget {
           width: 40,
           decoration: BoxDecoration(
             color: isDark
-                ? colorScheme.onSurface.withOpacity(0.15)
+                ? colorScheme.onSurface.withValues(alpha: 0.15)
                 : colorScheme.surfaceContainerHigh,
             borderRadius: BorderRadius.circular(12),
           ),
@@ -399,11 +400,11 @@ class AppDrawer extends StatelessWidget {
             trailing ??
             Icon(
               Icons.chevron_right,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
             ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        hoverColor: colorScheme.onSurface.withOpacity(0.1),
+        hoverColor: colorScheme.onSurface.withValues(alpha: 0.1),
       ),
     );
   }

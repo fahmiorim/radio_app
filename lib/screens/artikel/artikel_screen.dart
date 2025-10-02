@@ -152,7 +152,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
                 'Gagal memuat artikel: ${p.error}',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colors.onSurface.withOpacity(0.7),
+                  color: colors.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -208,11 +208,13 @@ class _ArtikelScreenState extends State<ArtikelScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface.withOpacity(0.1),
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -253,7 +255,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
                       fontSize: 14,
                       color: Theme.of(
                         context,
-                      ).colorScheme.onSurface.withOpacity(0.8),
+                      ).colorScheme.onSurface.withValues(alpha: 0.8),
                       height: 1.4,
                     ),
                     maxLines: 2,
@@ -269,7 +271,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -278,7 +280,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
                         style: TextStyle(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.5),
+                          ).colorScheme.onSurface.withValues(alpha: 0.5),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -288,7 +290,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(
                           context,
-                        ).colorScheme.onSurface.withOpacity(0.7),
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -319,8 +321,8 @@ class _ArtikelThumb extends StatelessWidget {
             : CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => _loading(),
-                errorWidget: (_, __, ___) => _placeholder(),
+                placeholder: (_, _) => _loading(),
+                errorWidget: (_, _, _) => _placeholder(),
               ),
       ),
     );
@@ -328,12 +330,12 @@ class _ArtikelThumb extends StatelessWidget {
 
   Widget _placeholder() => Builder(
     builder: (context) => Container(
-      color: Theme.of(context).colorScheme.surface.withOpacity(0.8),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
       alignment: Alignment.center,
       child: Icon(
         Icons.broken_image,
         size: 40,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
       ),
     ),
   );

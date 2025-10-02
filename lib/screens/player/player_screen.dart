@@ -17,6 +17,8 @@ import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 import 'package:radio_odan_app/providers/live_status_provider.dart';
 
 class FullPlayer extends StatefulWidget {
+  const FullPlayer({super.key});
+
   @override
   State<FullPlayer> createState() => _FullPlayerState();
 }
@@ -33,7 +35,6 @@ class _FullPlayerState extends State<FullPlayer> {
   static const Duration _dvrWindowDuration = Duration(
     minutes: 30,
   ); // 30 menit sliding window
-  Duration _dvrStartTime = Duration.zero;
   Duration _dvrEndTime = _dvrWindowDuration;
   bool _showGoLiveButton = false;
 
@@ -109,7 +110,7 @@ class _FullPlayerState extends State<FullPlayer> {
       'assets/odanlogo.png',
       width: double.infinity,
       fit: BoxFit.contain,
-      errorBuilder: (context, _, __) => Icon(
+      errorBuilder: (context, _, _) => Icon(
         Icons.music_note,
         size: 100,
         color: Theme.of(context).colorScheme.onSurface,
@@ -255,7 +256,6 @@ class _FullPlayerState extends State<FullPlayer> {
     final currentPosition = _audioManager.player.position;
     setState(() {
       _dvrEndTime = currentPosition;
-      _dvrStartTime = currentPosition - _dvrWindowDuration;
       _showGoLiveButton =
           currentPosition < (_dvrEndTime - const Duration(seconds: 5));
     });
@@ -404,7 +404,7 @@ class _FullPlayerState extends State<FullPlayer> {
                                 imageUrl: cover,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                errorWidget: (context, _, __) =>
+                                errorWidget: (context, _, _) =>
                                     _buildDefaultCover(),
                               )
                             : _buildDefaultCover(),
@@ -544,19 +544,13 @@ class _FullPlayerState extends State<FullPlayer> {
                               ),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isLive
-                                  ? theme.colorScheme.error
-                                  : theme.colorScheme.surfaceVariant,
                               foregroundColor: _isLive
                                   ? theme.colorScheme.onError
-                                  : theme.colorScheme.onSurfaceVariant,
+                                  : theme.colorScheme.onSurface,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                             ),
                           ),
                         ),
@@ -606,23 +600,25 @@ class _FullPlayerState extends State<FullPlayer> {
                                     decoration: BoxDecoration(
                                       color: _isLive
                                           ? (_liked
-                                                ? Colors.red.withOpacity(0.1)
+                                                ? Colors.red.withValues(
+                                                    alpha: 0.1,
+                                                  )
                                                 : theme
                                                       .colorScheme
                                                       .surfaceContainerHighest)
                                           : theme
                                                 .colorScheme
                                                 .surfaceContainerHighest
-                                                .withOpacity(0.5),
+                                                .withValues(alpha: 0.5),
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
                                         color: _isLive
                                             ? (_liked
                                                   ? Colors.red
                                                   : theme.colorScheme.outline
-                                                        .withOpacity(0.5))
+                                                        .withValues(alpha: 0.5))
                                             : theme.colorScheme.outline
-                                                  .withOpacity(0.3),
+                                                  .withValues(alpha: 0.3),
                                         width: 1,
                                       ),
                                     ),
@@ -711,12 +707,14 @@ class _FullPlayerState extends State<FullPlayer> {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                               iconSize: 28,
-                              onPressed: currentStation != null ? () async {
-                                final s = currentStation;
-                                await Share.share(
-                                  '🎵 Listening to "${s.title}" on ${s.host}\n\n${s.streamUrl}',
-                                );
-                              } : null,
+                              onPressed: currentStation != null
+                                  ? () async {
+                                      final s = currentStation;
+                                      await Share.share(
+                                        '🎵 Listening to "${s.title}" on ${s.host}\n\n${s.streamUrl}',
+                                      );
+                                    }
+                                  : null,
                             ),
                           ],
                         );

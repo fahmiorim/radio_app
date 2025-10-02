@@ -68,42 +68,33 @@ class DeepLinkHandler {
     }
 
     try {
-      final isHost = uri.host == 'odanfm.batubarakab.go.id';
-      debugPrint('[DeepLinkHandler] Host: ${uri.host}, isHost: $isHost');
-
-      if (!isHost) {
-        debugPrint('[DeepLinkHandler] Host does not match');
+      // Validasi host untuk keamanan
+      final validHosts = ['odanfm.batubarakab.go.id', 'dev.odanfm.com'];
+      if (!validHosts.contains(uri.host)) {
+        debugPrint('[DeepLinkHandler] Host does not match: ${uri.host}');
         return;
       }
 
-      // Handle /reset-password/{token}
-      if (uri.pathSegments.isNotEmpty &&
-          uri.pathSegments.first == 'reset-password') {
-        final token = uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
-        final email = uri.queryParameters['email'];
+      // Menggabungkan penanganan untuk kedua format link reset password
+      if (uri.path.contains('reset-password')) {
+        String? token;
+        String? email;
+
+        // Coba dapatkan token dari path segments
+        if (uri.pathSegments.length > 1 &&
+            uri.pathSegments[0] == 'reset-password') {
+          token = uri.pathSegments[1];
+        }
+
+        // Coba dapatkan token dan email dari query parameters
+        token ??= uri.queryParameters['token'];
+        email = uri.queryParameters['email'];
+
         debugPrint(
           '[DeepLinkHandler] Reset password link detected. Token: $token, Email: $email',
         );
 
         if (token != null && email != null) {
-          // Decode the email (in case it's URL encoded)
-          final decodedEmail = Uri.decodeComponent(email);
-          debugPrint('[DeepLinkHandler] Decoded email: $decodedEmail');
-          _navigateToResetPassword(token, decodedEmail);
-        } else {
-          debugPrint('[DeepLinkHandler] Missing token or email in URL');
-        }
-      }
-      // Handle /reset-password?token=...&email=...
-      else if (uri.path == '/reset-password') {
-        final token = uri.queryParameters['token'];
-        final email = uri.queryParameters['email'];
-        debugPrint(
-          '[DeepLinkHandler] App reset link detected. Token: $token, Email: $email',
-        );
-
-        if (token != null && email != null) {
-          // Decode the email (in case it's URL encoded)
           final decodedEmail = Uri.decodeComponent(email);
           debugPrint('[DeepLinkHandler] Decoded email: $decodedEmail');
           _navigateToResetPassword(token, decodedEmail);

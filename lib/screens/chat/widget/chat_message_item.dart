@@ -26,14 +26,14 @@ class ChatMessageItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
           decoration: BoxDecoration(
-            color: colors.surfaceContainerHighest.withOpacity(0.7),
+            color: colors.surfaceContainerHighest.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             message.message,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: colors.onSurfaceVariant.withOpacity(0.9),
+              color: colors.onSurfaceVariant.withValues(alpha: 0.9),
               fontSize: 12,
               fontStyle: FontStyle.italic,
             ),
@@ -73,7 +73,7 @@ class ChatMessageItem extends StatelessWidget {
                       message.username,
                       style: TextStyle(
                         fontSize: 12,
-                        color: colors.onSurface.withOpacity(0.7),
+                        color: colors.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ),
@@ -84,7 +84,7 @@ class ChatMessageItem extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isCurrentUser
-                        ? colors.primary.withOpacity(0.9)
+                        ? colors.primary.withValues(alpha: 0.9)
                         : colors.surfaceContainerHighest,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
@@ -95,7 +95,7 @@ class ChatMessageItem extends StatelessWidget {
                     boxShadow: [
                       if (!isCurrentUser)
                         BoxShadow(
-                          color: colors.shadow.withOpacity(0.1),
+                          color: colors.shadow.withValues(alpha: 0.1),
                           blurRadius: 2,
                           offset: const Offset(0, 1),
                         ),
@@ -121,7 +121,7 @@ class ChatMessageItem extends StatelessWidget {
                               (isCurrentUser
                                       ? colors.onPrimary
                                       : colors.onSurfaceVariant)
-                                  .withOpacity(0.7),
+                                  .withValues(alpha: 0.7),
                           fontSize: 10,
                         ),
                       ),
@@ -167,7 +167,7 @@ class _Avatar extends StatelessWidget {
                 width: 32,
                 height: 32,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Image.asset(
+                errorBuilder: (_, _, _) => Image.asset(
                   'assets/avatar.png',
                   width: 32,
                   height: 32,

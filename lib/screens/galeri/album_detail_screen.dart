@@ -23,21 +23,21 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   Widget _buildPlaceholder() {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      color: cs.surface.withOpacity(0.8),
+      color: cs.surface.withValues(alpha: 0.8),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.photo_library,
             size: 40,
-            color: cs.onSurface.withOpacity(0.5),
+            color: cs.onSurface.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 8),
           Text(
             'Tidak ada gambar',
             style: TextStyle(
               fontSize: 12,
-              color: cs.onSurface.withOpacity(0.7),
+              color: cs.onSurface.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -176,7 +176,9 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         color: theme.colorScheme.surface,
                         child: Icon(
                           Icons.error,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
                           size: 40,
                         ),
                       ),
@@ -194,8 +196,8 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                         end: Alignment.topCenter,
                         stops: const [0.0, 0.6, 1.0],
                         colors: [
-                          Colors.black.withOpacity(0.35),
-                          Colors.black.withOpacity(0.15),
+                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.15),
                           Colors.transparent,
                         ],
                       ),
@@ -319,7 +321,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
                     fontSize: 16,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.6),
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -398,7 +400,7 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
               child: Icon(
                 Icons.broken_image_outlined,
                 size: 48,
-                color: cs.onSurface.withOpacity(0.6),
+                color: cs.onSurface.withValues(alpha: 0.6),
               ),
             ),
           );

@@ -47,7 +47,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Password berhasil diubah. Silakan login kembali dengan password baru.'),
+            content: Text(
+              'Password berhasil diubah. Silakan login kembali dengan password baru.',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -61,14 +63,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           );
         }
       } else {
-        String errorMessage = result['message'] ?? 'Gagal mengubah password. Silakan coba lagi.';
-        
+        String errorMessage =
+            result['message'] ?? 'Gagal mengubah password. Silakan coba lagi.';
+
         // Handle specific error messages
         if (result['errors'] != null) {
           final errors = result['errors'] as Map<String, dynamic>;
           errorMessage = errors.values.first?.first?.toString() ?? errorMessage;
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -92,7 +95,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
     }
   }
-
 
   String? _validateNewPassword(String? value) {
     if (value == null || value.isEmpty) {
@@ -146,7 +148,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     Text(
                       'Buat password baru yang aman dan mudah diingat',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -162,114 +166,126 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         }
                         return null;
                       },
-                            decoration: InputDecoration(
-                              labelText: 'Password Saat Ini',
-                              prefixIcon: Icon(
-                                Icons.lock_outline,
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(() {
-                                  _obscureCurrentPassword = !_obscureCurrentPassword;
-                                }),
-                                icon: Icon(
-                                  _obscureCurrentPassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
+                      decoration: InputDecoration(
+                        labelText: 'Password Saat Ini',
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() {
+                            _obscureCurrentPassword = !_obscureCurrentPassword;
+                          }),
+                          icon: Icon(
+                            _obscureCurrentPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
                             ),
                           ),
-                          const SizedBox(height: 16),
-
-                          // New Password
-                          TextFormField(
-                            controller: _newPasswordController,
-                            obscureText: _obscureNewPassword,
-                            enabled: !isBusy,
-                            validator: _validateNewPassword,
-                            decoration: InputDecoration(
-                              labelText: 'Password Baru',
-                              prefixIcon: Icon(
-                                Icons.lock_outline,
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(() {
-                                  _obscureNewPassword = !_obscureNewPassword;
-                                }),
-                                icon: Icon(
-                                  _obscureNewPassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Confirm New Password
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
-                            enabled: !isBusy,
-                            validator: _validateConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText: 'Konfirmasi Password Baru',
-                              prefixIcon: Icon(
-                                Icons.lock_outline,
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                              ),
-                              suffixIcon: IconButton(
-                                onPressed: () => setState(() {
-                                  _obscureConfirmPassword = !_obscureConfirmPassword;
-                                }),
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Submit Button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: isBusy ? null : _changePassword,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: isBusy
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text(
-                                      'Simpan Perubahan',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                            ),
-                          ),
-                    
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                    
+
+                    // New Password
+                    TextFormField(
+                      controller: _newPasswordController,
+                      obscureText: _obscureNewPassword,
+                      enabled: !isBusy,
+                      validator: _validateNewPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Password Baru',
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() {
+                            _obscureNewPassword = !_obscureNewPassword;
+                          }),
+                          icon: Icon(
+                            _obscureNewPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Confirm New Password
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      obscureText: _obscureConfirmPassword,
+                      enabled: !isBusy,
+                      validator: _validateConfirmPassword,
+                      decoration: InputDecoration(
+                        labelText: 'Konfirmasi Password Baru',
+                        prefixIcon: Icon(
+                          Icons.lock_outline,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          }),
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.7,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: isBusy ? null : _changePassword,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: isBusy
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Text(
+                                'Simpan Perubahan',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
                     // Back to Profile Button
                     TextButton(
                       onPressed: isBusy ? null : () => Navigator.pop(context),

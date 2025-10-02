@@ -25,7 +25,7 @@ class NotFoundScreen extends StatelessWidget {
                   Icon(
                     Icons.search_off,
                     size: 100,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -39,7 +39,7 @@ class NotFoundScreen extends StatelessWidget {
                   Text(
                     'Maaf, halaman yang kamu tuju tidak tersedia atau argumennya tidak valid.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     textAlign: TextAlign.center,
                   ),

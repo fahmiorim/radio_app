@@ -135,7 +135,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                           ).colorScheme.surfaceContainerHighest,
                         );
                       },
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: Theme.of(
                           context,
                         ).colorScheme.surfaceContainerHighest,
@@ -154,7 +154,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                             colors: [
                               Theme.of(
                                 context,
-                              ).colorScheme.onSurface.withOpacity(0.7),
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
                               AppColors.transparent,
                               AppColors.transparent,
                             ],
@@ -176,7 +176,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.55),
+                          ).colorScheme.onSurface.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(
@@ -300,7 +300,7 @@ class _AlbumListState extends State<AlbumList> with WidgetsBindingObserver {
                         style: TextStyle(
                           color: Theme.of(
                             context,
-                          ).colorScheme.onSurface.withOpacity(0.7),
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
                         ),
                       ),
                     )

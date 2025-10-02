@@ -14,9 +14,7 @@ class PenyiarList extends StatefulWidget {
   State<PenyiarList> createState() => _PenyiarListState();
 }
 
-class _PenyiarListState extends State<PenyiarList>
-    with WidgetsBindingObserver {
-
+class _PenyiarListState extends State<PenyiarList> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -73,44 +71,49 @@ class _PenyiarListState extends State<PenyiarList>
                       child: PenyiarSkeleton(),
                     )
                   : vm.items.isEmpty
-                      ? Container(
-                          height: 120,
-                          alignment: Alignment.center,
-                          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                  ? Container(
+                      height: 120,
+                      alignment: Alignment.center,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                          child: Text(
-                            'Tidak ada data penyiar',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            ),
+                        ],
+                      ),
+                      child: Text(
+                        'Tidak ada data penyiar',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.6,
                           ),
-                        )
-                      : ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          itemCount: vm.items.length,
-                          itemBuilder: (context, index) {
-                            final p = vm.items[index];
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: index == 0 ? 8.0 : 0,
-                                right: index == vm.items.length - 1 ? 8.0 : 12.0,
-                              ),
-                              child: _PenyiarCard(penyiar: p),
-                            );
-                          },
                         ),
+                      ),
+                    )
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      itemCount: vm.items.length,
+                      itemBuilder: (context, index) {
+                        final p = vm.items[index];
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            left: index == 0 ? 8.0 : 0,
+                            right: index == vm.items.length - 1 ? 8.0 : 12.0,
+                          ),
+                          child: _PenyiarCard(penyiar: p),
+                        );
+                      },
+                    ),
             ),
           ],
         );
@@ -125,7 +128,11 @@ class _PenyiarListState extends State<PenyiarList>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: Theme.of(context).colorScheme.error, size: 48),
+            Icon(
+              Icons.error_outline,
+              color: Theme.of(context).colorScheme.error,
+              size: 48,
+            ),
             const SizedBox(height: 12),
             Text(
               'Gagal memuat data penyiar',
@@ -162,22 +169,24 @@ class _PenyiarCard extends StatelessWidget {
                 ? Icon(
                     Icons.person,
                     size: 50,
-                    color: theme.colorScheme.onSurface.withOpacity(0.38),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.38),
                   )
                 : CachedNetworkImage(
                     imageUrl: penyiar.avatarUrl,
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => const Center(
+                    placeholder: (_, _) => const Center(
                       child: SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
-                    errorWidget: (_, __, ___) => Icon(
+                    errorWidget: (_, _, _) => Icon(
                       Icons.person,
                       size: 50,
-                      color: theme.colorScheme.onSurface.withOpacity(0.38),
+                      color: theme.colorScheme.onSurface.withValues(
+                        alpha: 0.38,
+                      ),
                     ),
                   ),
           ),
@@ -185,10 +194,9 @@ class _PenyiarCard extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
-                .withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
             child: Text(
               penyiar.name,
               maxLines: 1,

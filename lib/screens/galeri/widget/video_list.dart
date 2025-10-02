@@ -118,7 +118,7 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
         final colorScheme = Theme.of(context).colorScheme;
         final textPrimaryColor = colorScheme.onSurface;
         final textSecondaryColor = colorScheme.onSurfaceVariant;
-        final overlayColor = colorScheme.surface.withOpacity(0.6);
+        final overlayColor = colorScheme.surface.withValues(alpha: 0.6);
 
         return Stack(
           children: [
@@ -164,8 +164,7 @@ class _VideoListState extends State<VideoList> with WidgetsBindingObserver {
                           physics: const BouncingScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           itemCount: items.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: 16),
+                          separatorBuilder: (_, _) => const SizedBox(width: 16),
                           itemBuilder: (context, index) {
                             final video = items[index];
                             final thumbnailUrl = _thumbUrl(video);

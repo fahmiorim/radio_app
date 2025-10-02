@@ -17,7 +17,10 @@ class AppHeaderSkeleton extends StatelessWidget {
           bottomRight: Radius.circular(20),
         ),
         border: Border(
-          bottom: BorderSide(color: colors.outline.withOpacity(0.08), width: 1),
+          bottom: BorderSide(
+            color: colors.outline.withValues(alpha: 0.08),
+            width: 1,
+          ),
         ),
       ),
       child: Shimmer.fromColors(

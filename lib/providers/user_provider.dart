@@ -53,7 +53,9 @@ class UserProvider with ChangeNotifier {
             _error = null;
             notifyListeners();
           }
-        } catch (e) {}
+        } catch (e) {
+          // ignore
+        }
       }
 
       // Always try to get fresh data

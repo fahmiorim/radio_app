@@ -15,9 +15,7 @@ class EventList extends StatefulWidget {
   State<EventList> createState() => _EventListState();
 }
 
-class _EventListState extends State<EventList>
-    with WidgetsBindingObserver {
-
+class _EventListState extends State<EventList> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -76,7 +74,7 @@ class _EventListState extends State<EventList>
               borderRadius: BorderRadius.circular(12.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -85,8 +83,9 @@ class _EventListState extends State<EventList>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error_outline, 
-                  color: Theme.of(context).colorScheme.error, 
+                Icon(
+                  Icons.error_outline,
+                  color: Theme.of(context).colorScheme.error,
                   size: 40,
                 ),
                 const SizedBox(height: 12),
@@ -102,7 +101,9 @@ class _EventListState extends State<EventList>
                   Text(
                     error,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -138,10 +139,9 @@ class _EventListState extends State<EventList>
             child: Text(
               'Belum ada event',
               style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withOpacity(0.7),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -198,8 +198,8 @@ class _EventListState extends State<EventList>
                                 : CachedNetworkImage(
                                     imageUrl: url,
                                     fit: BoxFit.cover,
-                                    placeholder: (_, __) => _thumbLoading(),
-                                    errorWidget: (_, __, ___) =>
+                                    placeholder: (_, _) => _thumbLoading(),
+                                    errorWidget: (_, _, _) =>
                                         _thumbPlaceholder(),
                                   ),
                           ),
@@ -227,10 +227,9 @@ class _EventListState extends State<EventList>
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.7),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ),
@@ -253,7 +252,7 @@ class _EventListState extends State<EventList>
       child: Icon(
         Icons.broken_image,
         size: 44,
-        color: theme.colorScheme.onSurface.withOpacity(0.38),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.38),
       ),
     );
   }

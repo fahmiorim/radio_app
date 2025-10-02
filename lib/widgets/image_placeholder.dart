@@ -20,8 +20,12 @@ class ImagePlaceholder extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      color: schemeColor.withOpacity(0.1),
-      child: Icon(icon, size: size * 0.5, color: schemeColor.withOpacity(0.5)),
+      color: schemeColor.withValues(alpha: 0.1),
+      child: Icon(
+        icon,
+        size: size * 0.5,
+        color: schemeColor.withValues(alpha: 0.5),
+      ),
     );
   }
 }

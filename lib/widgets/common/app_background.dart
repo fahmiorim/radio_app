@@ -32,8 +32,8 @@ class AppBackground extends StatelessWidget {
               height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(
-                  isDarkMode ? 0.15 : 0.05,
+                color: theme.colorScheme.primary.withValues(
+                  alpha: isDarkMode ? 0.15 : 0.05,
                 ),
               ),
             ),
@@ -47,8 +47,8 @@ class AppBackground extends StatelessWidget {
               height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(
-                  isDarkMode ? 0.15 : 0.05,
+                color: theme.colorScheme.primary.withValues(
+                  alpha: isDarkMode ? 0.15 : 0.05,
                 ),
               ),
             ),
@@ -62,8 +62,8 @@ class AppBackground extends StatelessWidget {
               height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: theme.colorScheme.primary.withOpacity(
-                  isDarkMode ? 0.1 : 0.03,
+                color: theme.colorScheme.primary.withValues(
+                  alpha: isDarkMode ? 0.1 : 0.03,
                 ),
               ),
             ),

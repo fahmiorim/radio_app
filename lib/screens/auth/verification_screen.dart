@@ -179,7 +179,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                         color: colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: colorScheme.outline.withOpacity(0.2),
+                          color: colorScheme.outline.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -203,7 +203,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Kami telah mengirimkan link verifikasi ke:',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.7),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -220,7 +222,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                           Text(
                             'Klik link verifikasi di email Anda, lalu kembali ke aplikasi dan tekan "Cek status".',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurface.withOpacity(0.7),
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),

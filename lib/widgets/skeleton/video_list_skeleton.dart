@@ -11,7 +11,7 @@ class VideoListSkeleton extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       itemCount: 3,
-      separatorBuilder: (_, __) => const SizedBox(width: 16),
+      separatorBuilder: (_, _) => const SizedBox(width: 16),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
           baseColor: theme.colorScheme.surfaceContainerHighest,

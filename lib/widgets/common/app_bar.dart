@@ -57,8 +57,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return CustomAppBar(
       title: title,
       backgroundColor: isDark
-          ? colors.surface.withOpacity(0.9)
-          : colors.surface.withOpacity(0.7),
+          ? colors.surface.withValues(alpha: 0.9)
+          : colors.surface.withValues(alpha: 0.7),
       elevation: 0,
       titleColor: titleColor ?? (isDark ? colors.onSurface : colors.onSurface),
       iconColor: iconColor ?? (isDark ? colors.onSurface : colors.onSurface),
@@ -74,10 +74,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        colors.surface.withOpacity(isDark ? 0.9 : 0.7),
-                        colors.surface.withOpacity(isDark ? 0.7 : 0.5),
-                        colors.surface.withOpacity(isDark ? 0.4 : 0.3),
-                        colors.surface.withOpacity(0.0),
+                        colors.surface.withValues(alpha: isDark ? 0.9 : 0.7),
+                        colors.surface.withValues(alpha: isDark ? 0.7 : 0.5),
+                        colors.surface.withValues(alpha: isDark ? 0.4 : 0.3),
+                        colors.surface.withValues(alpha: 0.0),
                       ],
                       stops: const [0.0, 0.30, 0.60, 1.0],
                     ),
@@ -105,7 +105,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return CustomAppBar(
       title: title,
-      backgroundColor: backgroundColor ?? colors.surface.withOpacity(0.90),
+      backgroundColor:
+          backgroundColor ?? colors.surface.withValues(alpha: 0.90),
       titleColor: titleColor ?? colors.onSurface,
       iconColor: iconColor ?? colors.onSurface,
       actions: actions,
@@ -188,7 +189,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         foregroundColor: fg,
         padding: const EdgeInsets.all(12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        side: BorderSide(color: colors.outline.withOpacity(0.3), width: 1),
+        side: BorderSide(
+          color: colors.outline.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       tooltip: 'Kembali',
     );

@@ -368,7 +368,7 @@ class CustomTextField extends StatelessWidget {
 
     final defaultBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.3)),
+      borderSide: BorderSide(color: colorScheme.outline.withValues(alpha: 0.3)),
     );
 
     final decoration = InputDecoration(
@@ -416,7 +416,7 @@ class CustomTextField extends StatelessWidget {
       prefix: prefix,
       helperText: helperText,
       helperStyle: textTheme.bodySmall?.copyWith(
-        color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+        color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
       ),
       errorText: errorText,
       errorStyle: textTheme.bodySmall?.copyWith(color: colorScheme.error),
@@ -438,19 +438,36 @@ class CustomTextField extends StatelessWidget {
       textAlignVertical: textAlignVertical,
       textDirection: textDirection,
       readOnly: readOnly,
-      toolbarOptions: enableCopyPaste
-          ? const ToolbarOptions(
-              copy: true,
-              cut: true,
-              paste: true,
-              selectAll: true,
+      contextMenuBuilder: enableCopyPaste
+          ? (context, editableTextState) => AdaptiveTextSelectionToolbar(
+              anchors: editableTextState.contextMenuAnchors,
+              children: [
+                if (editableTextState.currentTextEditingValue.selection.isValid)
+                  ...[
+                    TextSelectionToolbarTextButton(
+                      padding: EdgeInsets.zero,
+                      child: Text('Copy'),
+                      onPressed: () => editableTextState.copySelection(SelectionChangedCause.toolbar),
+                    ),
+                    TextSelectionToolbarTextButton(
+                      padding: EdgeInsets.zero,
+                      child: Text('Cut'),
+                      onPressed: () => editableTextState.cutSelection(SelectionChangedCause.toolbar),
+                    ),
+                  ],
+                TextSelectionToolbarTextButton(
+                  padding: EdgeInsets.zero,
+                  child: Text('Paste'),
+                  onPressed: () => editableTextState.pasteText(SelectionChangedCause.toolbar),
+                ),
+                TextSelectionToolbarTextButton(
+                  padding: EdgeInsets.zero,
+                  child: Text('Select All'),
+                  onPressed: () => editableTextState.selectAll(SelectionChangedCause.toolbar),
+                ),
+              ],
             )
-          : const ToolbarOptions(
-              copy: false,
-              cut: false,
-              paste: false,
-              selectAll: false,
-            ),
+          : (context, editableTextState) => const SizedBox.shrink(),
       showCursor: showCursor,
       autofocus: autofocus,
       obscuringCharacter: obscuringCharacter!,

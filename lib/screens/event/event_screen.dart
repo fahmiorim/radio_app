@@ -185,7 +185,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                 Icon(
                   Icons.event_available_outlined,
                   size: 48,
-                  color: colors.onSurfaceVariant.withOpacity(0.6),
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.6),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -199,7 +199,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                 Text(
                   'Cek kembali nanti untuk event terbaru',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant.withOpacity(0.7),
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -248,7 +248,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
     return Card(
       key: Key('event_${e.id}'),
       margin: const EdgeInsets.only(bottom: 16),
-      color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 2,
       child: InkWell(
@@ -271,9 +271,8 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                       : CachedNetworkImage(
                           imageUrl: url,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => _thumbLoading(),
-                          errorWidget: (_, __, ___) =>
-                              _thumbPlaceholder(context),
+                          placeholder: (_, _) => _thumbLoading(),
+                          errorWidget: (_, _, _) => _thumbPlaceholder(context),
                         ),
                 ),
               ),
@@ -295,7 +294,7 @@ class _AllEventsScreenState extends State<AllEventsScreen>
                   fontSize: 14,
                   color: Theme.of(
                     context,
-                  ).colorScheme.onSurface.withOpacity(0.8),
+                  ).colorScheme.onSurface.withValues(alpha: 0.8),
                 ),
               ),
             ],
@@ -306,12 +305,12 @@ class _AllEventsScreenState extends State<AllEventsScreen>
   }
 
   Widget _thumbPlaceholder(BuildContext context) => Container(
-    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.9),
+    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.9),
     alignment: Alignment.center,
     child: Icon(
       Icons.image_not_supported,
       size: 40,
-      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
     ),
   );
 

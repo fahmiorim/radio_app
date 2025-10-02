@@ -16,9 +16,7 @@ class ProgramList extends StatefulWidget {
   State<ProgramList> createState() => _ProgramListState();
 }
 
-class _ProgramListState extends State<ProgramList>
-    with WidgetsBindingObserver {
-
+class _ProgramListState extends State<ProgramList> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -61,9 +59,7 @@ class _ProgramListState extends State<ProgramList>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-            title: 'Program Hari Ini',
-          ),
+          const SectionTitle(title: 'Program Hari Ini'),
           const SizedBox(height: 4),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -73,7 +69,7 @@ class _ProgramListState extends State<ProgramList>
               borderRadius: BorderRadius.circular(12.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -98,7 +94,9 @@ class _ProgramListState extends State<ProgramList>
                 Text(
                   'Silakan tarik untuk refresh',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -113,9 +111,7 @@ class _ProgramListState extends State<ProgramList>
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionTitle(
-            title: 'Program Hari Ini',
-          ),
+          const SectionTitle(title: 'Program Hari Ini'),
           const SizedBox(height: 16),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -125,7 +121,7 @@ class _ProgramListState extends State<ProgramList>
               borderRadius: BorderRadius.circular(12.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -136,13 +132,17 @@ class _ProgramListState extends State<ProgramList>
                 Icon(
                   Icons.schedule,
                   size: 40,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.8),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Tidak ada program untuk hari ini',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -164,9 +164,9 @@ class _ProgramListState extends State<ProgramList>
             children: [
               Text(
                 'Program Hari Ini',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () => _openAll(context),
@@ -230,8 +230,8 @@ class _ProgramListState extends State<ProgramList>
                                   height: 200,
                                   width: 160,
                                   fit: BoxFit.cover,
-                                  placeholder: (_, __) => _buildLoadingThumb(),
-                                  errorWidget: (_, __, ___) =>
+                                  placeholder: (_, _) => _buildLoadingThumb(),
+                                  errorWidget: (_, _, _) =>
                                       _buildPlaceholderImage(context),
                                 ),
                         ),
@@ -273,7 +273,7 @@ class _ProgramListState extends State<ProgramList>
       child: Icon(
         Icons.image,
         size: 44,
-        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
       ),
     );
   }

@@ -30,7 +30,10 @@ class EventDetailScreen extends StatelessWidget {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: colors.outline.withOpacity(0.1), width: 1),
+            side: BorderSide(
+              color: colors.outline.withValues(alpha: 0.1),
+              width: 1,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -113,7 +116,7 @@ class EventDetailScreen extends StatelessWidget {
                       child: Icon(
                         Icons.event_available,
                         size: 80,
-                        color: colors.onSurfaceVariant.withOpacity(0.5),
+                        color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                       ),
                     )
                   : CachedNetworkImage(

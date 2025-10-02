@@ -165,7 +165,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             width: double.infinity,
                             height: 200,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               height: 200,
                               color: Theme.of(context).colorScheme.surface,
                               alignment: Alignment.center,
@@ -173,7 +173,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                                 Icons.broken_image,
                                 color: Theme.of(
                                   context,
-                                ).colorScheme.onSurface.withOpacity(0.54),
+                                ).colorScheme.onSurface.withValues(alpha: 0.54),
                               ),
                             ),
                           ),
@@ -246,7 +246,7 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                           style: TextStyle(
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.7),
+                            ).colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                         ),
                       const SizedBox(height: 96),

@@ -17,9 +17,7 @@ class ArtikelList extends StatefulWidget {
   State<ArtikelList> createState() => ArtikelListState();
 }
 
-class ArtikelListState extends State<ArtikelList>
-    with WidgetsBindingObserver {
-
+class ArtikelListState extends State<ArtikelList> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -95,7 +93,7 @@ class ArtikelListState extends State<ArtikelList>
               borderRadius: BorderRadius.circular(12.0),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -106,13 +104,17 @@ class ArtikelListState extends State<ArtikelList>
                 Icon(
                   Icons.article_outlined,
                   size: 40,
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.8),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Belum ada artikel tersedia',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -157,9 +159,8 @@ class ArtikelListState extends State<ArtikelList>
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ArtikelDetailScreen(
-                        artikelSlug: artikel.slug,
-                      ),
+                      builder: (_) =>
+                          ArtikelDetailScreen(artikelSlug: artikel.slug),
                     ),
                   );
                   if (mounted) {}
@@ -201,13 +202,11 @@ class ArtikelListState extends State<ArtikelList>
                               'dd MMM yyyy',
                             ).format(artikel.publishedAt!)
                           : '',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.7)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
                     ),
                   ],
                 ),
@@ -235,7 +234,7 @@ class ArtikelListState extends State<ArtikelList>
       child: Icon(
         Icons.image,
         size: 44,
-        color: theme.colorScheme.onSurface.withOpacity(0.38),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.38),
       ),
     );
   }

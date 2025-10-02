@@ -192,7 +192,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                 Icon(
                   Icons.photo_album_outlined,
                   size: 64,
-                  color: colors.onSurfaceVariant.withOpacity(0.5),
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -205,7 +205,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
                 Text(
                   'Cek kembali nanti untuk album terbaru',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant.withOpacity(0.7),
+                    color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -261,13 +261,16 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
         childAspectRatio: 0.72,
       ),
       itemCount: 4,
-      itemBuilder: (_, __) => Card(
+      itemBuilder: (_, _) => Card(
         margin: EdgeInsets.zero,
         color: colors.surface,
         elevation: 1,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: colors.outline.withOpacity(0.1), width: 1),
+          side: BorderSide(
+            color: colors.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,7 +370,10 @@ class _AlbumCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colors.outline.withOpacity(0.1), width: 1),
+        side: BorderSide(
+          color: colors.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
       ),
       child: InkWell(
         onTap: () => _navigateToAlbumDetail(context),
@@ -398,7 +404,7 @@ class _AlbumCard extends StatelessWidget {
         width: double.infinity,
         height: 120, // Reduced height
         fit: BoxFit.cover,
-        placeholder: (_, __) => Container(
+        placeholder: (_, _) => Container(
           color: colors.surfaceContainerHighest,
           child: Center(
             child: CircularProgressIndicator(
@@ -406,7 +412,7 @@ class _AlbumCard extends StatelessWidget {
             ),
           ),
         ),
-        errorWidget: (_, __, ___) => Container(
+        errorWidget: (_, _, _) => Container(
           color: colors.surfaceContainerHighest,
           padding: const EdgeInsets.all(16),
           child: Icon(Icons.error_outline, color: colors.error),

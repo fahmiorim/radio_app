@@ -188,19 +188,22 @@ class _AllVideosScreenState extends State<AllVideosScreen>
     return ListView.builder(
       padding: const EdgeInsets.only(top: 16, bottom: 96, left: 16, right: 16),
       itemCount: 3,
-      itemBuilder: (_, __) => Container(
+      itemBuilder: (_, _) => Container(
         margin: const EdgeInsets.only(bottom: 24),
         decoration: BoxDecoration(
           color: colors.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: colors.shadow.withOpacity(0.05),
+              color: colors.shadow.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
           ],
-          border: Border.all(color: colors.outline.withOpacity(0.1), width: 1),
+          border: Border.all(
+            color: colors.outline.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -325,7 +328,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
             Icon(
               Icons.videocam_off_outlined,
               size: 64,
-              color: colors.onSurfaceVariant.withOpacity(0.5),
+              color: colors.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -338,7 +341,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
             Text(
               'Cek kembali nanti untuk video terbaru',
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant.withOpacity(0.7),
+                color: colors.onSurfaceVariant.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -377,12 +380,15 @@ class _AllVideosScreenState extends State<AllVideosScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: colors.shadow.withOpacity(0.05),
+            color: colors.shadow.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: colors.outline.withOpacity(0.1), width: 1),
+        border: Border.all(
+          color: colors.outline.withValues(alpha: 0.1),
+          width: 1,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -412,7 +418,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                         child: Icon(
                           Icons.videocam_off_outlined,
                           size: 48,
-                          color: colors.onSurfaceVariant.withOpacity(0.3),
+                          color: colors.onSurfaceVariant.withValues(alpha: 0.3),
                         ),
                       ),
                       loadingBuilder: (context, child, loadingProgress) {
@@ -447,7 +453,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            Colors.black.withOpacity(0.1),
+                            Colors.black.withValues(alpha: 0.1),
                           ],
                         ),
                       ),
@@ -459,11 +465,11 @@ class _AllVideosScreenState extends State<AllVideosScreen>
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: colors.primary.withOpacity(0.9),
+                          color: colors.primary.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: colors.primary.withOpacity(0.3),
+                              color: colors.primary.withValues(alpha: 0.3),
                               blurRadius: 8,
                               spreadRadius: 2,
                             ),

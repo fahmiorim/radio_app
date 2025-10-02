@@ -124,14 +124,14 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
             : CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.cover,
-                placeholder: (_, __) => const Center(
+                placeholder: (_, _) => const Center(
                   child: SizedBox(
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
-                errorWidget: (_, __, ___) => Container(
+                errorWidget: (_, _, _) => Container(
                   color: Theme.of(context).colorScheme.surface,
                   child: Center(
                     child: Icon(

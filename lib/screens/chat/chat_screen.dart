@@ -175,7 +175,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                                     width: 40,
                                     height: 40,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Image.asset(
+                                    errorBuilder: (_, _, _) => Image.asset(
                                       'assets/avatar.png',
                                       width: 40,
                                       height: 40,
@@ -201,7 +201,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           style: TextStyle(
                             color: Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.6),
+                            ).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       );
@@ -218,12 +218,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope<Object?>(
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) return;
         final prov = context.read<LiveChatProvider>();
         await prov.leaveRoom();
         await prov.shutdown();
-        return true;
       },
       child: Consumer<LiveChatProvider>(
         builder: (context, prov, _) {
@@ -322,7 +322,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             BoxShadow(
                               color: Theme.of(
                                 context,
-                              ).shadowColor.withOpacity(0.2),
+                              ).shadowColor.withValues(alpha: 0.2),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),

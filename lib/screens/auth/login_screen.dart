@@ -243,10 +243,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final allow = await _onWillPop();
-        if (allow) await SystemNavigator.pop();
+        if (allow) {
+          await SystemNavigator.pop();
+        }
       },
       child: Scaffold(
         body: Stack(
@@ -281,7 +283,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       'Masuk untuk melanjutkan ke Radio Odan',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(.7),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: .7,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -290,12 +294,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surface.withOpacity(0.92),
+                        color: theme.colorScheme.surface.withValues(
+                          alpha: 0.92,
+                        ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.onSurface.withOpacity(
-                              0.08,
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.08,
                             ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -321,8 +327,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 labelText: 'Email',
                                 prefixIcon: Icon(
                                   Icons.email,
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                               ),
                             ),
@@ -339,8 +346,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 labelText: 'Password',
                                 prefixIcon: Icon(
                                   Icons.lock,
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                  color: theme.colorScheme.onSurface.withValues(
+                                    alpha: 0.7,
+                                  ),
                                 ),
                                 suffixIcon: IconButton(
                                   onPressed: () =>
@@ -350,7 +358,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ? Icons.visibility
                                         : Icons.visibility_off,
                                     color: theme.colorScheme.onSurface
-                                        .withOpacity(0.7),
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                               ),
