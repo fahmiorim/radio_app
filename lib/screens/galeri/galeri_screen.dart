@@ -70,9 +70,11 @@ class _GaleriScreenState extends State<GaleriScreen> {
                 slivers: [
                   // Content
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
+                    padding: const EdgeInsets.only(
+                      left: 16.0,
+                      right: 16.0,
+                      top: 8.0,
+                      bottom: 100, // Tambahkan ruang untuk MiniPlayer
                     ),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([

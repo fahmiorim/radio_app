@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
-import 'package:radio_odan_app/config/app_colors.dart';
-import 'package:radio_odan_app/models/artikel_model.dart';
 import 'package:radio_odan_app/providers/artikel_provider.dart';
-import 'package:radio_odan_app/widgets/skeleton/artikel_all_skeleton.dart';
-import 'artikel_detail_screen.dart';
-import 'package:radio_odan_app/widgets/common/app_bar.dart';
+import 'package:radio_odan_app/models/artikel_model.dart';
+import 'package:radio_odan_app/screens/artikel/artikel_detail_screen.dart';
+import 'package:radio_odan_app/widgets/common/mini_player.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
+import 'package:radio_odan_app/widgets/common/app_bar.dart';
 
 class ArtikelScreen extends StatefulWidget {
   const ArtikelScreen({super.key});
@@ -110,15 +109,24 @@ class _ArtikelScreenState extends State<ArtikelScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Cek apakah sedang dalam konteks BottomNav utama
+    final bool isInBottomNav = Scaffold.maybeOf(context)?.hasDrawer ?? false;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: CustomAppBar(title: 'Artikel'),
+      // Hanya tampilkan AppBar jika tidak dalam BottomNav
+      appBar: !isInBottomNav ? CustomAppBar(title: 'Semua Artikel') : null,
       body: Stack(
         children: [
           const AppBackground(),
           Consumer<ArtikelProvider>(builder: (_, p, _) => _buildBody(p)),
+          // Hanya tampilkan MiniPlayer jika tidak dalam BottomNav
+          if (!isInBottomNav)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: MediaQuery.of(context).padding.bottom,
+              child: const MiniPlayer(),
+            ),
         ],
       ),
     );
@@ -128,9 +136,8 @@ class _ArtikelScreenState extends State<ArtikelScreen>
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    if (p.isLoading && p.artikels.isEmpty) {
-      return const ArtikelAllSkeleton();
-    }
+    // Cek apakah sedang dalam konteks BottomNav utama
+    final bool isInBottomNav = Scaffold.maybeOf(context)?.hasDrawer ?? false;
 
     if (p.error != null && p.artikels.isEmpty) {
       return Center(
@@ -175,7 +182,13 @@ class _ArtikelScreenState extends State<ArtikelScreen>
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          // Jika dalam BottomNav, tidak perlu padding bawah karena BottomNav sudah handle MiniPlayer
+          bottom: isInBottomNav ? 16 : 96,
+        ),
         itemCount: p.artikels.length + (p.hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= p.artikels.length) {
@@ -206,7 +219,7 @@ class _ArtikelScreenState extends State<ArtikelScreen>
         ],
       ),
       child: Material(
-        color: AppColors.transparent,
+        color: Colors.transparent,
         child: InkWell(
           onTap: () {
             Navigator.of(context).push(

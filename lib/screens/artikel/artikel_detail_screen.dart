@@ -249,17 +249,17 @@ class _ArtikelDetailScreenState extends State<ArtikelDetailScreen> {
                             ).colorScheme.onSurface.withOpacity(0.7),
                           ),
                         ),
-                      const SizedBox(height: 80),
+                      const SizedBox(height: 96),
                     ],
                   ),
                 ),
 
                 // Mini Player
-                const Positioned(
+                Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 0,
-                  child: MiniPlayer(),
+                  bottom: MediaQuery.of(context).padding.bottom,
+                  child: const MiniPlayer(),
                 ),
               ],
             ),

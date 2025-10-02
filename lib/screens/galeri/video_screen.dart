@@ -166,9 +166,16 @@ class _AllVideosScreenState extends State<AllVideosScreen>
               },
             ),
           ),
+
+          // Mini Player
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).padding.bottom,
+            child: const MiniPlayer(),
+          ),
         ],
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -179,7 +186,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[200]!;
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 16, bottom: 100, left: 16, right: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 96, left: 16, right: 16),
       itemCount: 3,
       itemBuilder: (_, __) => Container(
         margin: const EdgeInsets.only(bottom: 24),
@@ -341,7 +348,7 @@ class _AllVideosScreenState extends State<AllVideosScreen>
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 100),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 96),
       itemCount: vp.allVideos.length + (vp.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index >= vp.allVideos.length) {

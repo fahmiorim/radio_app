@@ -20,14 +20,14 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuthStatus() async {
     // Tunggu minimal 1 detik untuk splash screen
     await Future.delayed(const Duration(seconds: 1));
-    
+
     if (!mounted) return;
-    
+
     // Periksa status login
     final isLoggedIn = await AuthService.isLoggedIn();
-    
+
     if (!mounted) return;
-    
+
     if (isLoggedIn) {
       // Jika sudah login, arahkan ke bottom navigation
       Navigator.pushReplacementNamed(context, AppRoutes.bottomNav);
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final logoPath = theme.brightness == Brightness.dark
-        ? 'assets/logo.png'
+        ? 'assets/logo-white.png'
         : 'assets/logo.png';
 
     return Scaffold(

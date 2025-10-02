@@ -79,39 +79,18 @@ class AudioPlayerManager {
         ),
       );
 
-      try {
-        await _player.setAudioSource(
-          AudioSource.uri(Uri.parse('')),
-          preload: false,
-        );
+      // Set audio source directly without empty source first
+      await _player.setAudioSource(
+        audioSource,
+        preload: true,
+        initialPosition: Duration.zero,
+        initialIndex: 0,
+      );
 
-        await _player.setAudioSource(
-          audioSource,
-          preload: true,
-          initialPosition: Duration.zero,
-          initialIndex: 0,
-        );
-      } catch (error) {
-        _currentStation = null;
-        _currentUrl = null;
-        rethrow;
-      }
-      try {
-        await _player.setVolume(1.0);
-        await _player.play();
+      await _player.setVolume(1.0);
+      await _player.play();
+      await _player.seek(Duration.zero);
 
-        await _player.seek(Duration.zero);
-        await Future.delayed(const Duration(seconds: 3));
-
-        final state = _player.playerState;
-        if (!state.playing) {
-          await _player.play();
-        }
-      } catch (e) {
-        _currentStation = null;
-        _currentUrl = null;
-        rethrow;
-      }
     } catch (e) {
       _currentStation = null;
       _currentUrl = null;

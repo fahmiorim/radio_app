@@ -36,20 +36,28 @@ class _BottomNavState extends State<BottomNav> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      extendBody: true,
-      body: Stack(
-        children: [
-          // Guard utk jaga-jaga
-          (_currentIndex < _screens.length)
-              ? _screens[_currentIndex]
-              : _screens[0],
-
-          // MiniPlayer with Gradient Background
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: kBottomNavigationBarHeight,
-            child: Container(
+      // extendBody: true, // Hapus extendBody untuk mencegah bottomNavigationBar menutupi MiniPlayer
+      body: (_currentIndex < _screens.length)
+          ? _screens[_currentIndex]
+          : _screens[0],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurfaceVariant.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // MiniPlayer with Gradient Background
+            Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
@@ -62,68 +70,59 @@ class _BottomNavState extends State<BottomNav> {
               ),
               child: const MiniPlayer(),
             ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: Theme(
-        data: Theme.of(context).copyWith(
-          bottomNavigationBarTheme: BottomNavigationBarThemeData(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            selectedItemColor: Theme.of(context).primaryColor,
-            unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-            selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-            unselectedLabelStyle: const TextStyle(
-              fontWeight: FontWeight.normal,
+            // Bottom Navigation Bar
+            Theme(
+              data: Theme.of(context).copyWith(
+                bottomNavigationBarTheme: BottomNavigationBarThemeData(
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  selectedItemColor: Theme.of(context).primaryColor,
+                  unselectedItemColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                  selectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.normal,
+                  ),
+                  elevation: 8,
+                  type: BottomNavigationBarType.fixed,
+                  showSelectedLabels: true,
+                  showUnselectedLabels: true,
+                ),
+              ),
+              child: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                onTap: (index) async {
+                  if (index == 3) {
+                    // opsional: sync status terkini
+                    await context.read<LiveStatusProvider>().refresh();
+                    await Navigator.of(context).push(ChatScreenWrapper.route());
+                    return; // jangan ubah _currentIndex
+                  }
+                  setState(() => _currentIndex = index);
+                },
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home_outlined),
+                    label: "Home",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.article_outlined),
+                    label: "Artikel",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.photo_library_outlined),
+                    label: "Galeri",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.chat_bubble_outline),
+                    label: "Chat",
+                  ),
+                ],
+              ),
             ),
-            elevation: 8,
-            type: BottomNavigationBarType.fixed,
-            showSelectedLabels: true,
-            showUnselectedLabels: true,
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            currentIndex: _currentIndex,
-            onTap: (index) async {
-              if (index == 3) {
-                // opsional: sync status terkini
-                await context.read<LiveStatusProvider>().refresh();
-                await Navigator.of(context).push(ChatScreenWrapper.route());
-                return; // jangan ubah _currentIndex
-              }
-              setState(() => _currentIndex = index);
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                label: "Home",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.article_outlined),
-                label: "Artikel",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.photo_library_outlined),
-                label: "Galeri",
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline),
-                label: "Chat",
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

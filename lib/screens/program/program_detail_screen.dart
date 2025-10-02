@@ -276,11 +276,11 @@ class _ProgramDetailScreenState extends State<ProgramDetailScreen> {
                   ],
                 ),
 
-              const Positioned(
+              Positioned(
                 left: 0,
                 right: 0,
-                bottom: 0,
-                child: MiniPlayer(),
+                bottom: MediaQuery.of(context).padding.bottom,
+                child: const MiniPlayer(),
               ),
             ],
           ),

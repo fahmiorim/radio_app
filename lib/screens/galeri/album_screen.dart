@@ -116,8 +116,18 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(title: 'Semua Album'),
-      body: Stack(children: [const AppBackground(), _buildBody()]),
-      bottomNavigationBar: const MiniPlayer(),
+      body: Stack(
+        children: [
+          const AppBackground(),
+          _buildBody(),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).padding.bottom,
+            child: const MiniPlayer(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -211,7 +221,7 @@ class _AllAlbumsScreenState extends State<AllAlbumsScreen>
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,

@@ -1,12 +1,13 @@
 // lib/screens/full_player.dart
 import 'dart:math';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'package:radio_odan_app/widgets/common/app_bar.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 
 import 'package:radio_odan_app/audio/audio_player_manager.dart';
 import 'package:radio_odan_app/widgets/common/app_background.dart';
@@ -16,8 +17,6 @@ import 'package:radio_odan_app/services/live_chat_socket_service.dart';
 import 'package:radio_odan_app/providers/live_status_provider.dart';
 
 class FullPlayer extends StatefulWidget {
-  const FullPlayer({super.key});
-
   @override
   State<FullPlayer> createState() => _FullPlayerState();
 }
@@ -30,11 +29,15 @@ class _FullPlayerState extends State<FullPlayer> {
   bool _isLive = false;
   int? _liveRoomId;
 
-  late final LiveStatusProvider _statusProvider;
+  // DVR Progress Bar Variables
+  static const Duration _dvrWindowDuration = Duration(
+    minutes: 30,
+  ); // 30 menit sliding window
+  Duration _dvrStartTime = Duration.zero;
+  Duration _dvrEndTime = _dvrWindowDuration;
+  bool _showGoLiveButton = false;
 
-  // Flag untuk mencegah aksi ganda
-  bool _busyToggle = false;
-  bool _showLikeAnimation = false;
+  late final LiveStatusProvider _statusProvider;
   final Random _random = Random();
   final List<IconData> _reactions = [
     Icons.favorite,
@@ -45,6 +48,10 @@ class _FullPlayerState extends State<FullPlayer> {
 
   // Room yang saat ini disubscribe untuk like
   int? _subscribedRoomId;
+
+  // Flag untuk mencegah aksi ganda
+  bool _busyToggle = false;
+  bool _showLikeAnimation = false;
 
   // Animasi floating emoji
   Widget _buildFloatingEmoji() {
@@ -82,12 +89,18 @@ class _FullPlayerState extends State<FullPlayer> {
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
+
+    // Initialize player without loading state
+    _initializePlayerAsync();
+
     _setupSocketListeners();
+
+    // Initialize status provider but don't wait for it to avoid blocking
     _statusProvider = Provider.of<LiveStatusProvider>(context, listen: false);
     _statusProvider.addListener(_handleStatusChange);
-    _handleStatusChange();
-    _statusProvider.refresh();
+
+    // Refresh status in background
+    Future.microtask(() => _statusProvider.refresh());
   }
 
   // ====== Helpers UI ======
@@ -110,22 +123,34 @@ class _FullPlayerState extends State<FullPlayer> {
     return t;
   }
 
-  // ====== Init audio ======
-  Future<void> _initializePlayer() async {
+  // ====== Socket listeners setup ======
+  Future<void> _setupSocketListeners() async {
+    try {
+      // Ensure socket connection is established for live status updates
+      // Add timeout to prevent hanging
+      await LiveChatSocketService.I.ensureConnected().timeout(
+        Duration(seconds: 10),
+      );
+    } catch (e) {
+      // Socket connection is handled by LiveStatusProvider, continue silently
+      // but log the error for debugging
+    }
+  }
+
+  // ====== Init audio (async without loading state) ======
+  Future<void> _initializePlayerAsync() async {
     try {
       final radioProvider = Provider.of<RadioStationProvider>(
         context,
         listen: false,
       );
+
       final currentStation = radioProvider.currentStation;
       if (currentStation != null) {
         await _audioManager.playRadio(currentStation);
       }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memutar radio. Coba lagi nanti.')),
-      );
+    } catch (e) {
+      // Silently handle errors since we're not showing loading state
     }
   }
 
@@ -156,6 +181,25 @@ class _FullPlayerState extends State<FullPlayer> {
     });
     await _loadLikeStatus();
     await _subscribeToLikeUpdates(roomId);
+  }
+
+  // Subscribe to like updates
+  Future<void> _subscribeToLikeUpdates(int roomId) async {
+    try {
+      await LiveChatSocketService.I.subscribeLike(
+        roomId: roomId,
+        onUpdated: (likeCount) {
+          if (mounted) {
+            setState(() {
+              _likeCount = likeCount;
+            });
+          }
+        },
+      );
+      _subscribedRoomId = roomId;
+    } catch (e) {
+      // Handle subscription error silently or log it
+    }
   }
 
   void _onLiveEnded() {
@@ -206,31 +250,43 @@ class _FullPlayerState extends State<FullPlayer> {
     }
   }
 
-  // ====== WebSocket Handlers ======
-  void _setupSocketListeners() {
-    // No need for direct callback setup as we'll use subscribeLike with callback
+  // DVR Progress Bar Methods
+  void _updateDvrWindow() {
+    final currentPosition = _audioManager.player.position;
+    setState(() {
+      _dvrEndTime = currentPosition;
+      _dvrStartTime = currentPosition - _dvrWindowDuration;
+      _showGoLiveButton =
+          currentPosition < (_dvrEndTime - const Duration(seconds: 5));
+    });
   }
 
-  // Subscribe to like updates for a room
-  Future<void> _subscribeToLikeUpdates(int roomId) async {
-    if (_subscribedRoomId == roomId) return;
-
-    // Unsubscribe from previous room if any
-    await _unsubscribeFromLikeUpdates();
-
+  Future<void> _seekToPosition(Duration position) async {
     try {
-      await LiveChatSocketService.I.subscribeLike(
-        roomId: roomId,
-        onUpdated: (count) {
-          if (mounted) {
-            setState(() {
-              _likeCount = count < 0 ? 0 : count;
-            });
-          }
-        },
-      );
-      _subscribedRoomId = roomId;
-    } catch (e) {}
+      await _audioManager.player.seek(position);
+      _updateDvrWindow();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Gagal melakukan seek')));
+      }
+    }
+  }
+
+  Future<void> _goLive() async {
+    try {
+      await _audioManager.player.seek(_dvrEndTime);
+      setState(() {
+        _showGoLiveButton = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Gagal kembali ke live')));
+      }
+    }
   }
 
   // Unsubscribe from like updates
@@ -317,26 +373,12 @@ class _FullPlayerState extends State<FullPlayer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final radioProvider = Provider.of<RadioStationProvider>(context);
+    final radioProvider = Provider.of<RadioStationProvider>(
+      context,
+    ); // RadioStationProvider
     final currentStation = radioProvider.currentStation;
+
     final nowPlaying = radioProvider.nowPlaying;
-
-    if (currentStation == null) {
-      return Scaffold(
-        body: Stack(
-          children: [
-            const AppBackground(),
-            Center(
-              child: Text(
-                'No radio station selected',
-                style: theme.textTheme.bodyMedium,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     final cover = _clean(nowPlaying?.artUrl);
     final title = _clean(nowPlaying?.title);
     final artist = _clean(nowPlaying?.artist);
@@ -422,49 +464,103 @@ class _FullPlayerState extends State<FullPlayer> {
                   ),
                 ),
 
-                // === Progress Bar ===
+                // === DVR Progress Bar (YouTube Live Style) ===
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 15,
+                    horizontal: 16,
+                    vertical: 8,
                   ),
-                  child: StreamBuilder<Duration>(
-                    stream: _audioManager.player.positionStream,
-                    builder: (context, snapshot) {
-                      final pos = snapshot.data ?? Duration.zero;
-                      final duration = _audioManager.player.duration;
+                  child: Column(
+                    children: [
+                      // DVR Progress Bar
+                      SizedBox(
+                        height: 20,
+                        child: StreamBuilder<Duration>(
+                          stream: _audioManager.player.positionStream,
+                          builder: (context, snapshot) {
+                            final currentPosition =
+                                snapshot.data ?? Duration.zero;
 
-                      // Radio live → duration null/0 = indeterminate
-                      final isIndeterminate =
-                          duration == null || duration.inMilliseconds <= 0;
-                      double? progress;
-                      if (!isIndeterminate) {
-                        final denom = duration.inMilliseconds == 0
-                            ? 1
-                            : duration.inMilliseconds;
-                        progress = (pos.inMilliseconds / denom)
-                            .clamp(0.0, 1.0)
-                            .toDouble();
-                        if (progress.isNaN) progress = 0.0;
-                      }
+                            // Update DVR window based on current position
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) _updateDvrWindow();
+                            });
 
-                      return Column(
-                        children: [
-                          SizedBox(
-                            height: 4,
-                            child: LinearProgressIndicator(
-                              value: isIndeterminate ? null : progress,
-                              backgroundColor: theme.colorScheme.onSurface
+                            return ProgressBar(
+                              progress: currentPosition,
+                              total: _dvrEndTime,
+                              buffered:
+                                  currentPosition, // For live streams, buffered = current position
+                              onSeek: _seekToPosition,
+                              progressBarColor: theme.colorScheme.primary,
+                              baseBarColor: theme.colorScheme.onSurface
                                   .withAlpha(30),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colorScheme.primary,
+                              bufferedBarColor: theme.colorScheme.primary
+                                  .withAlpha(100),
+                              thumbColor: theme.colorScheme.primary,
+                              thumbGlowColor: theme.colorScheme.primary
+                                  .withAlpha(100),
+                              timeLabelLocation: TimeLabelLocation.sides,
+                              timeLabelType: TimeLabelType.totalTime,
+                              timeLabelTextStyle: theme.textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontFeatures: [
+                                      const FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                              barHeight: 4,
+                              thumbRadius: 8,
+                              timeLabelPadding: 8,
+                            );
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Go Live Button (YouTube Live Style)
+                      if (_showGoLiveButton)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: ElevatedButton.icon(
+                            onPressed: _goLive,
+                            icon: Icon(
+                              Icons.play_arrow,
+                              color: _isLive
+                                  ? Colors.white
+                                  : theme.colorScheme.onPrimary,
+                            ),
+                            label: Text(
+                              'LIVE',
+                              style: TextStyle(
+                                color: _isLive
+                                    ? Colors.white
+                                    : theme.colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isLive
+                                  ? theme.colorScheme.error
+                                  : theme.colorScheme.surfaceVariant,
+                              foregroundColor: _isLive
+                                  ? theme.colorScheme.onError
+                                  : theme.colorScheme.onSurfaceVariant,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                      );
-                    },
+                        ),
+                    ],
                   ),
                 ),
 
@@ -615,13 +711,12 @@ class _FullPlayerState extends State<FullPlayer> {
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
                               iconSize: 28,
-                              onPressed: () async {
+                              onPressed: currentStation != null ? () async {
                                 final s = currentStation;
                                 await Share.share(
                                   '🎵 Listening to "${s.title}" on ${s.host}\n\n${s.streamUrl}',
-                                  subject: 'Listen to ${s.title}',
                                 );
-                              },
+                              } : null,
                             ),
                           ],
                         );

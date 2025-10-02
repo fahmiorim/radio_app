@@ -20,9 +20,6 @@ class AlbumDetailScreen extends StatefulWidget {
 class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
   late final ScrollController _scrollController;
 
-  // Tinggi MiniPlayer untuk padding konten agar tidak ketutupan
-  static const double _miniPlayerHeight = 72;
-
   Widget _buildPlaceholder() {
     final cs = Theme.of(context).colorScheme;
     return Container(
@@ -132,7 +129,12 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
             },
           ),
           // MiniPlayer menempel di bawah
-          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).padding.bottom,
+            child: const MiniPlayer(),
+          ),
         ],
       ),
     );
@@ -326,7 +328,7 @@ class _AlbumDetailScreenState extends State<AlbumDetailScreen> {
           ),
 
         // Padding bawah supaya tidak ketutup MiniPlayer
-        SliverToBoxAdapter(child: SizedBox(height: _miniPlayerHeight + 16)),
+        SliverToBoxAdapter(child: SizedBox(height: 96)),
       ],
     );
   }

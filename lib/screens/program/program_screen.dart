@@ -98,7 +98,12 @@ class _AllProgramsScreenState extends State<AllProgramsScreen>
           // Main content
           _buildBody(),
           // Mini Player
-          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).padding.bottom,
+            child: const MiniPlayer(),
+          ),
         ],
       ),
     );

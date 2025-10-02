@@ -107,7 +107,12 @@ class _AllEventsScreenState extends State<AllEventsScreen>
         children: [
           const AppBackground(),
           _buildBody(),
-          const Positioned(left: 0, right: 0, bottom: 0, child: MiniPlayer()),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).padding.bottom,
+            child: const MiniPlayer(),
+          ),
         ],
       ),
     );

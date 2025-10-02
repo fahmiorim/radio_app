@@ -170,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
                       // Main Content
                       SliverPadding(
-                        padding: const EdgeInsets.only(bottom: 100),
+                        padding: const EdgeInsets.only(bottom: 100), // Kembalikan ke 100 karena extendBody sudah dihapus
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             // Section: Penyiar

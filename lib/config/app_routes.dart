@@ -171,7 +171,7 @@ class AppRoutes {
         return const AllAlbumsScreen();
 
       case fullPlayer:
-        return const FullPlayer();
+        return FullPlayer();
 
       case editProfile:
         {
